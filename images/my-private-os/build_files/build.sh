@@ -13,7 +13,7 @@ cp -avf "/ctx/system_files"/. /
 # https://mirrors.rpmfusion.org/mirrorlist?path=free/fedora/updates/43/x86_64/repoview/index.html&protocol=https&redirect=1
 
 # this installs a package from fedora repos
-dnf5 install -y tmux htop
+dnf5 install -y tmux htop cockpit cockpit-podman cockpit-ostree 
 
 # Use a COPR Example:
 #
@@ -25,3 +25,4 @@ dnf5 install -y tmux htop
 #### Example for enabling a System Unit File
 
 systemctl enable podman.socket
+systemctl enable cockpit.socket

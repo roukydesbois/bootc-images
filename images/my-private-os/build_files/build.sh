@@ -14,6 +14,8 @@ cp -avf "/ctx/system_files"/. /
 
 # Install regular packages
 dnf5 install -y tmux htop cockpit cockpit-podman cockpit-ostree
+# Install dependencies for argon one - maybe python-gpiozero is needed
+dnf5 install -y python-pigpio python3-rpi-gpio2 i2c-tools python3-i2c-tools smartmontools
 
 # Use a COPR Example:
 #

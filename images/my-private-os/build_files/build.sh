@@ -13,7 +13,9 @@ cp -avf "/ctx/system_files"/. /
 # https://mirrors.rpmfusion.org/mirrorlist?path=free/fedora/updates/43/x86_64/repoview/index.html&protocol=https&redirect=1
 
 # this installs a package from fedora repos
-dnf5 install -y tmux htop cockpit cockpit-podman cockpit-ostree 
+dnf5 install -y \
+    tmux htop cockpit cockpit-podman cockpit-ostree \ # regular packages
+    gcc dtc git bash kernel-headers make # for the argonone daemon
 
 # Use a COPR Example:
 #

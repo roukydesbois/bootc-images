@@ -17,19 +17,8 @@ dnf5 install -y tmux htop cockpit cockpit-podman cockpit-ostree
 # Install dependencies for argon one - maybe python-gpiozero is needed
 dnf5 install -y python-pigpio python3-rpi-gpio2 i2c-tools python3-i2c-tools smartmontools
 
-# Install netbird
-# Add netbird repo
-cat <<-EOF | tee /etc/yum.repos.d/netbird.repo
-[NetBird]
-name=NetBird
-baseurl=https://pkgs.netbird.io/yum/
-enabled=1
-gpgcheck=1
-gpgkey=https://pkgs.netbird.io/yum/repodata/repomd.xml.key
-repo_gpgcheck=1
-EOF
-# Install the package
-dnf5 install -y netbird
+# Install netbird - repo and service are created via system_files
+dnf5 install --setopt=tsflags=noscripts -y netbird
 
 # Use a COPR Example:
 #

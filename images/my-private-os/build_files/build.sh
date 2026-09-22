@@ -12,10 +12,10 @@ cp -avf "/ctx/system_files"/. /
 # List of rpmfusion packages can be found here:
 # https://mirrors.rpmfusion.org/mirrorlist?path=free/fedora/updates/43/x86_64/repoview/index.html&protocol=https&redirect=1
 
-# this installs a package from fedora repos
-dnf5 install -y \
-    tmux htop cockpit cockpit-podman cockpit-ostree \ # regular packages
-    gcc dtc git bash kernel-headers make # for the argonone daemon
+# Install regular packages
+dnf5 install -y tmux htop cockpit cockpit-podman cockpit-ostree
+# for the argonone daemon
+dnf5 install -y gcc dtc git bash kernel-headers make
 
 # Use a COPR Example:
 #

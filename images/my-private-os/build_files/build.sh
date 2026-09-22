@@ -28,3 +28,5 @@ dnf5 install -y python-pigpio python3-rpi-gpio2 i2c-tools python3-i2c-tools smar
 
 systemctl enable podman.socket
 systemctl enable cockpit.socket
+systemctl daemon-reload
+systemctl enable argononed.service

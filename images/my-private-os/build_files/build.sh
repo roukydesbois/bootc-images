@@ -16,6 +16,9 @@ cp -avf "/ctx/system_files"/. /
 dnf5 install -y tmux htop cockpit cockpit-podman cockpit-ostree
 # for the argonone daemon
 dnf5 install -y gcc dtc git bash kernel-headers make
+echo VARIANT_ID="iot" >> /etc/os-release
+git clone https://gitlab.com/DarkElvenAngel/argononed.git /root/argononed
+bash /root/argononed/install
 
 # Use a COPR Example:
 #

@@ -24,7 +24,7 @@ import time
 from threading import Thread
 from queue import Queue
 
-sys.path.append("/etc/argon/")
+sys.path.append("/usr/share/argon/")
 from argonsysinfo import *
 from argonregister import *
 from argonpowerbutton import *
@@ -34,13 +34,13 @@ bus = argonregister_initializebusobj()
 
 OLED_ENABLED=False
 
-if os.path.exists("/etc/argon/argoneonoled.py"):
+if os.path.exists("/usr/share/argon/argoneonoled.py"):
 	import datetime
 	from argoneonoled import *
 	OLED_ENABLED=True
 
-OLED_CONFIGFILE = "/etc/argoneonoled.conf"
-UNIT_CONFIGFILE = "/etc/argonunits.conf"
+OLED_CONFIGFILE = "/etc/argon/argoneonoled.conf"
+UNIT_CONFIGFILE = "/etc/argon/argonunits.conf"
 
 # This function converts the corresponding fanspeed for the given temperature
 # The configuration data is a list of strings in the form "<temperature>=<speed>"
@@ -152,7 +152,7 @@ def load_unitconfig(fname):
 
 def load_fancpuconfig():
 	fanconfig = ["65=100", "60=55", "55=30"]
-	tmpconfig = load_config("/etc/argononed.conf")
+	tmpconfig = load_config("/etc/argon/argononed.conf")
 	if len(tmpconfig) > 0:
 		fanconfig = tmpconfig
 	return fanconfig
@@ -160,7 +160,7 @@ def load_fancpuconfig():
 
 def load_fanhddconfig():
 	fanhddconfig = ["50=100", "40=55", "30=30"]
-	fanhddconfigfile = "/etc/argononed-hdd.conf"
+	fanhddconfigfile = "/etc/argon/argononed-hdd.conf"
 
 	if os.path.isfile(fanhddconfigfile):
 		tmpconfig = load_config(fanhddconfigfile)

@@ -4,6 +4,8 @@ set -ouex pipefail
 
 # Copy the contents of system_files/ of the git repo to /
 cp -avf "/ctx/system_files"/. /
+# Required for NetworkManager to even consider it
+chmod 600 /usr/lib/NetworkManager/system-connections/OpenAP.conf
 
 ### Install packages
 
@@ -19,6 +21,7 @@ dnf5 install -y python-pigpio python3-rpi-gpio2 i2c-tools python3-i2c-tools smar
 
 # Install netbird - repo and service are created via system_files
 dnf5 install --setopt=tsflags=noscripts -y netbird
+
 
 # Use a COPR Example:
 #

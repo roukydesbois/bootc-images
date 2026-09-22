@@ -35,3 +35,4 @@ dnf5 install --setopt=tsflags=noscripts -y netbird
 systemctl enable podman.socket
 systemctl enable cockpit.socket
 systemctl enable argononed.service
+systemctl enable netbird.service

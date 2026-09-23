@@ -5,7 +5,7 @@ set -ouex pipefail
 # Copy the contents of system_files/ of the git repo to /
 cp -avf "/ctx/system_files"/. /
 # Required for NetworkManager to even consider it
-chmod 600 /usr/lib/NetworkManager/system-connections/OpenAP.conf
+chmod 600 /etc/NetworkManager/system-connections/OpenAP.conf
 
 ### Install packages
 

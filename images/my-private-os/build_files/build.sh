@@ -22,10 +22,8 @@ dnf5 install -y python-pigpio python3-rpi-gpio2 i2c-tools python3-i2c-tools smar
 # Install netbird - repo and service are created via system_files
 dnf5 install -y --setopt=tsflags=noscripts netbird
 
-# Install zellij from copr
-dnf5 copr enable -y varlad/zellij
+# Install zellij - repo is created via system_files
 dnf5 install -y zellij
-dnf5 copr disable -y varlad/zellij
 
 # Use a COPR Example:
 #

@@ -14,6 +14,8 @@ chmod 600 /usr/lib/NetworkManager/system-connections/OpenAP.conf
 # List of rpmfusion packages can be found here:
 # https://mirrors.rpmfusion.org/mirrorlist?path=free/fedora/updates/43/x86_64/repoview/index.html&protocol=https&redirect=1
 
+# Install packages for wifi
+dnf5 install -y wireless-regdb
 # Install regular packages
 dnf5 install -y htop cockpit cockpit-podman cockpit-ostree
 # Install dependencies for argon one - maybe python-gpiozero is needed

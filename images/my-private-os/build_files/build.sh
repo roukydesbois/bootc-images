@@ -29,7 +29,7 @@ dnf5 install -y zellij
 
 # Install niri - repo is created via system_files
 dnf5 install -y niri dms
-systemctl --user add-wants niri.service dms
+# systemctl --user add-wants niri.service dms
 
 # Use a COPR Example:
 #

@@ -15,16 +15,17 @@ chmod 600 /usr/lib/NetworkManager/system-connections/OpenAP.conf
 # https://mirrors.rpmfusion.org/mirrorlist?path=free/fedora/updates/43/x86_64/repoview/index.html&protocol=https&redirect=1
 
 # Install regular packages
-dnf5 -y install htop cockpit cockpit-podman cockpit-ostree
+dnf5 install -y htop cockpit cockpit-podman cockpit-ostree
 # Install dependencies for argon one - maybe python-gpiozero is needed
-dnf5 -y install python-pigpio python3-rpi-gpio2 i2c-tools python3-i2c-tools smartmontools
+dnf5 install -y python-pigpio python3-rpi-gpio2 i2c-tools python3-i2c-tools smartmontools
 
 # Install netbird - repo and service are created via system_files
-dnf5 -y install --setopt=tsflags=noscripts netbird
+dnf5 install -y --setopt=tsflags=noscripts netbird
 
 # Install zellij from copr
-dnf5 -y copr enable varlad/zellij
-dnf -y install zellij
+dnf5 copr enable -y varlad/zellij
+dnf5 install -y zellij
+dnf5 copr disable -y varlad/zellij
 
 # Use a COPR Example:
 #

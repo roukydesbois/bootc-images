@@ -27,6 +27,10 @@ dnf5 install -y --setopt=tsflags=noscripts netbird
 # Install zellij - repo is created via system_files
 dnf5 install -y zellij
 
+# Install niri - repo is created via system_files
+dnf5 install -y niri dms
+systemctl --user add-wants niri.service dms
+
 # Use a COPR Example:
 #
 # dnf5 -y copr enable ublue-os/staging

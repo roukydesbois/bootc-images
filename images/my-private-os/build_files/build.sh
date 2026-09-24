@@ -7,6 +7,10 @@ cp -avf "/ctx/system_files"/. /
 # Required for NetworkManager to even consider it
 chmod 600 /etc/NetworkManager/system-connections/OpenAP.conf
 
+# Enable rpmfusion
+dnf5 install -y  https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm
+dnf5 install -y  https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
+
 # Install packages for wifi
 dnf5 install -y NetworkManager-wifi wpa_supplicant wireless-regdb dnsmasq
 # Install packages for monitoring
@@ -35,6 +39,9 @@ dnf5 install -y fish
 
 # Install useful graphical applications
 dnf5 install -y firefox thunderbird
+
+# Install kodi
+dnf5 install -y kodi
 
 systemctl enable podman.socket
 systemctl enable cockpit.socket

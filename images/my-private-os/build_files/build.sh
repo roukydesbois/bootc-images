@@ -35,7 +35,7 @@ systemctl --global add-wants niri.service dms
 dnf5 -y copr disable avengemedia/dms
 
 # Install cli tools
-dnf5 install -y fish
+dnf5 install -y fish helix git
 
 # Install useful graphical applications
 dnf5 install -y firefox thunderbird

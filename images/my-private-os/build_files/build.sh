@@ -16,20 +16,24 @@ chmod 600 /etc/NetworkManager/system-connections/OpenAP.conf
 
 # Install packages for wifi
 dnf5 install -y NetworkManager-wifi wpa_supplicant wireless-regdb dnsmasq
-# Install regular packages
+# Install packages for monitoring
 dnf5 install -y htop cockpit cockpit-podman cockpit-ostree
 # Install dependencies for argon one - maybe python-gpiozero is needed
 dnf5 install -y python-pigpio python3-rpi-gpio2 i2c-tools python3-i2c-tools smartmontools
+# Install dnf5-plugins to be able to use copr repos
+dnf5 install -y dnf5-plugins
 
 # Install netbird - repo and service are created via system_files
 dnf5 install -y --setopt=tsflags=noscripts netbird
 
 # Install zellij - repo is created via system_files
+dnf5 -y copr enable varlad/zellij
 dnf5 install -y zellij
 
 # Install niri - repo is created via system_files
+dnf5 -y copr enable avengemedia/dms
 dnf5 install -y niri dms
-# systemctl --user add-wants niri.service dms
+systemctl --user add-wants niri.service dms
 
 # Use a COPR Example:
 #

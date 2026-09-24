@@ -22,7 +22,7 @@ Kodi is installed as a regular application. Work in progress.
 
 ### systemd-homed
 
-systemd-homed is already in the image, and in order to use it you need to run the `sudo authselect enable-feature with-systemd-homed` command so that it works at login and cockpit and ssh.
+systemd-homed is already in the image, and in order to use it you need to run the `sudo authselect enable-feature with-systemd-homed` command so that it works at login and cockpit and ssh. Also, for each user, run `homectl update [user] --ssh-authorized-keys=@/path/to/.ssh/authorized_keys`.
 
 # image-template
 

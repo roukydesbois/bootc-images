@@ -33,7 +33,7 @@ dnf5 install -y zellij
 # Install niri - repo is created via system_files
 dnf5 -y copr enable avengemedia/dms
 dnf5 install -y niri dms
-systemctl --user add-wants niri.service dms
+systemctl --global add-wants niri.service dms
 
 # Use a COPR Example:
 #

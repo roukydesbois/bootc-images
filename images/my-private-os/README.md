@@ -1,3 +1,29 @@
+# my-private-os
+
+This repository, a copy of Universal Blue's image template, is originally meant to be run on my RPI4 that I can travel with. It serves multiple roles and has multiple functionalities.
+
+## Argon case fan
+
+My RPI4 runs in an Argon40 ONE case. I took the scripts from argon40, modified them slightly (the path in which they are stored) in order to work properly. 
+
+## Wifi Hotspot
+
+The image ships with a file that creates an open hotspot on wlan0. For now it's deactivated at boot. 
+
+## Desktop - niri + dms
+
+Run `niri-session` and the RPI4 transforms into a regular computer (given a keyboard and mouse are connected). Installed niri and dms. Need to do what's in the [documentation](https://niri-wm.github.io/niri/Getting-Started.html#quick-start): `pkill waybar` and then comment the `spawn-at-startup "waybar"` line in `~/.config/niri/config.kdl`.
+
+## kodi
+
+Kodi is installed as a regular application. Work in progress.
+
+## "Manual" setup
+
+### systemd-homed
+
+systemd-homed is already in the image, and in order to use it you need to run the `sudo authselect enable-feature with-systemd-homed` command so that it works at login and cockpit and ssh.
+
 # image-template
 
 This repository is meant to be a template for building your own custom [bootc](https://github.com/bootc-dev/bootc) image. This template is the recommended way to make customizations to any image published by the Universal Blue Project.

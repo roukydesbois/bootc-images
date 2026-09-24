@@ -7,13 +7,6 @@ cp -avf "/ctx/system_files"/. /
 # Required for NetworkManager to even consider it
 chmod 600 /etc/NetworkManager/system-connections/OpenAP.conf
 
-### Install packages
-
-# Packages can be installed from any enabled yum repo on the image.
-# RPMfusion repos are available by default in ublue main images
-# List of rpmfusion packages can be found here:
-# https://mirrors.rpmfusion.org/mirrorlist?path=free/fedora/updates/43/x86_64/repoview/index.html&protocol=https&redirect=1
-
 # Install packages for wifi
 dnf5 install -y NetworkManager-wifi wpa_supplicant wireless-regdb dnsmasq
 # Install packages for monitoring
@@ -29,20 +22,19 @@ dnf5 install -y --setopt=tsflags=noscripts netbird
 # Install zellij - repo is created via system_files
 dnf5 -y copr enable varlad/zellij
 dnf5 install -y zellij
+dnf5 -y copr disable varlad/zellij
 
 # Install niri - repo is created via system_files
 dnf5 -y copr enable avengemedia/dms
 dnf5 install -y niri dms
 systemctl --global add-wants niri.service dms
+dnf5 -y copr disable avengemedia/dms
 
-# Use a COPR Example:
-#
-# dnf5 -y copr enable ublue-os/staging
-# dnf5 -y install package
-# Disable COPRs so they don't end up enabled on the final image:
-# dnf5 -y copr disable ublue-os/staging
+# Install cli tools
+dnf5 install -y fish
 
-#### Example for enabling a System Unit File
+# Install useful graphical applications
+dnf5 install -y firefox thunderbird
 
 systemctl enable podman.socket
 systemctl enable cockpit.socket

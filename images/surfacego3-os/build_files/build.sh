@@ -15,6 +15,8 @@ cp -avf "/ctx/system_files"/. /
 # this installs a package from fedora repos
 # dnf5 install -y tmux
 
+dnf5 -y install helix fish lazygit
+
 # Use a COPR Example:
 #
 # dnf5 -y copr enable ublue-os/staging

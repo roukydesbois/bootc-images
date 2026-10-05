@@ -28,9 +28,9 @@ dnf5 install -y niri dms
 systemctl --global add-wants niri.service dms
 dnf5 -y copr disable avengemedia/dms
 
-# Install linux-surface kernel
-dnf5 -y config-manager addrepo --from-repofile=https://pkg.surfacelinux.com/fedora/linux-surface.repo
-dnf5 -y install --allowerasing kernel-surface iptsd libwacom-surface
+# Install linux-surface kernel - wait for PR https://github.com/linux-surface/linux-surface/pull/2092 to be merged and have fedora 44 support
+# dnf5 -y config-manager addrepo --from-repofile=https://pkg.surfacelinux.com/fedora/linux-surface.repo
+# dnf5 -y install --allowerasing kernel-surface iptsd libwacom-surface
 
 #### Example for enabling a System Unit File
 

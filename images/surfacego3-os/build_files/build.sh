@@ -28,6 +28,10 @@ dnf5 install -y niri dms
 systemctl --global add-wants niri.service dms
 dnf5 -y copr disable avengemedia/dms
 
+# Install linux-surface kernel
+dnf5 -y config-manager addrepo --from-repofile=https://pkg.surfacelinux.com/fedora/linux-surface.repo
+dnf5 -y install --allowerasing kernel-surface iptsd libwacom-surface
+
 #### Example for enabling a System Unit File
 
 # systemctl enable podman.socket

@@ -16,6 +16,9 @@ cp -avf "/ctx/system_files"/. /
 # dnf5 install -y tmux
 
 dnf5 -y install helix fish lazygit
+dnf5 -y copr enable dejan/lazygit
+dnf5 -y install lazygit
+dnf5 -y copr disable dejan/lazygit
 
 # Use a COPR Example:
 #

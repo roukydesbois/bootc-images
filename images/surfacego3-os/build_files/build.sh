@@ -19,6 +19,7 @@ dnf5 -y install helix fish
 dnf5 -y copr enable dejan/lazygit
 dnf5 -y install lazygit
 dnf5 -y copr disable dejan/lazygit
+dnf5 -y remove firefox
 
 # Use a COPR Example:
 #

@@ -24,7 +24,7 @@ cp -avf "/ctx/system_files"/. /
 
 # Install niri - repo is created via system_files
 dnf5 -y copr enable avengemedia/dms
-dnf5 install -y niri dms
+dnf5 install -y niri dms dms-greeter
 systemctl --global add-wants niri.service dms
 dnf5 -y copr disable avengemedia/dms
 
@@ -35,3 +35,4 @@ dnf5 -y copr disable avengemedia/dms
 #### Example for enabling a System Unit File
 
 # systemctl enable podman.socket
+systemctl enable greetd

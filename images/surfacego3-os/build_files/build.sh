@@ -1,6 +1,6 @@
 #!/bin/bash
 
-IIO_NIRI_TOGGLE_VERSION="v1.0.4"
+IIO_NIRI_TOGGLE_VERSION="1.0.4"
 
 set -ouex pipefail
 

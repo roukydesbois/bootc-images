@@ -50,7 +50,3 @@ dnf5 -y copr disable avengemedia/dms
 
 # systemctl enable podman.socket
 systemctl enable greetd
-
-curl -LO https://raw.githubusercontent.com/zhangmq/iio-niri-toggle/main/deploy/install-release.sh
-bash install-release.sh $IIO_NIRI_TOGGLE_VERSION
-rm install-release.sh

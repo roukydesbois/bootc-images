@@ -1,5 +1,7 @@
 #!/bin/bash
 
+IIO_NIRI_TOGGLE_VERSION="v1.0.4"
+
 set -ouex pipefail
 
 # Copy the contents of system_files/ of the git repo to /
@@ -15,11 +17,17 @@ cp -avf "/ctx/system_files"/. /
 # this installs a package from fedora repos
 # dnf5 install -y tmux
 
-dnf5 -y install helix fish
+dnf5 -y install helix fish iio-sensor-proxy
+
 dnf5 -y copr enable dejan/lazygit
 dnf5 -y install lazygit
 dnf5 -y copr disable dejan/lazygit
+
 dnf5 -y remove firefox
+
+dnf5 -y copr enable varlad/zellij
+dnf5 install -y zellij
+dnf5 -y copr disable varlad/zellij
 
 # Use a COPR Example:
 #
@@ -42,3 +50,7 @@ dnf5 -y copr disable avengemedia/dms
 
 # systemctl enable podman.socket
 systemctl enable greetd
+
+curl -LO https://raw.githubusercontent.com/zhangmq/iio-niri-toggle/main/deploy/install-release.sh
+bash install-release.sh $IIO_NIRI_TOGGLE_VERSION
+rm install-release.sh

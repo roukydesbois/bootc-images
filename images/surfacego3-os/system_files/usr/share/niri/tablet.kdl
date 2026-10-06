@@ -1,5 +1,10 @@
 input {
-    touch { map-to-output "eDP-1"; }
+    touch {
+        map-to-output "eDP-1"
+    }
+    tablet {
+        map-to-output "eDP-1"
+    }
 }
 spawn-at-startup "niri-autorotate"
 switch-events {

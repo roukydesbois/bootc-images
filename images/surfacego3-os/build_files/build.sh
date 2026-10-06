@@ -36,7 +36,7 @@ dnf5 -y copr disable varlad/zellij
 
 # Install niri - repo is created via system_files
 dnf5 -y copr enable avengemedia/dms
-dnf5 install -y niri dms dms-greeter
+dnf5 install -y niri dms dms-greeter dankcalendar-git
 systemctl --global add-wants niri.service dms
 dnf5 -y copr disable avengemedia/dms
 
@@ -48,3 +48,4 @@ dnf5 -y copr disable avengemedia/dms
 
 # systemctl enable podman.socket
 systemctl enable greetd
+systemctl --user enable dcal

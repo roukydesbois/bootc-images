@@ -15,7 +15,7 @@ cp -avf "/ctx/system_files"/. /
 # this installs a package from fedora repos
 # dnf5 install -y tmux
 
-dnf5 -y install helix fish iio-sensor-proxy squeekboard
+dnf5 -y install helix fish iio-sensor-proxy
 
 dnf5 -y copr enable dejan/lazygit
 dnf5 -y install lazygit

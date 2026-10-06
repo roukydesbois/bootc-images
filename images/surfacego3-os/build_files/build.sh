@@ -48,4 +48,4 @@ dnf5 -y copr disable avengemedia/dms
 
 # systemctl enable podman.socket
 systemctl enable greetd
-systemctl --user enable dcal
+# systemctl --user enable dcal

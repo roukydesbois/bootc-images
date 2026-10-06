@@ -1,7 +1,5 @@
 #!/bin/bash
 
-IIO_NIRI_TOGGLE_VERSION="1.0.4"
-
 set -ouex pipefail
 
 # Copy the contents of system_files/ of the git repo to /

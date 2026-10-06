@@ -2,3 +2,11 @@ input {
     touch { map-to-output "eDP-1"; }
 }
 spawn-at-startup "niri-autorotate"
+switch-events {
+    tablet-mode-on {
+        spawn "sh" "-c" "touch \"$XDG_RUNTIME_DIR/tablet-mode\"; gsettings set org.gnome.desktop.a11y.applications screen-keyboard-enabled true";
+    }
+    tablet-mode-off {
+        spawn "sh" "-c" "rm -f \"$XDG_RUNTIME_DIR/tablet-mode\"; niri msg output eDP-1 transform normal; gsettings set org.gnome.desktop.a11y.applications screen-keyboard-enabled false";
+    }
+}

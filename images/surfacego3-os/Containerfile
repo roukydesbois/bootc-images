@@ -3,8 +3,19 @@ FROM scratch AS ctx
 COPY build_files /
 COPY system_files /system_files
 
+# Build wvkbd (not packaged in Fedora)
+FROM ghcr.io/ublue-os/base-main:latest AS wvkbd
+ARG WVKBD_VERSION=v0.15
+RUN dnf5 -y install gcc make git scdoc wayland-devel cairo-devel \
+        pango-devel libxkbcommon-devel && \
+    git clone --depth 1 --branch "${WVKBD_VERSION}" \
+        https://git.sr.ht/~proycon/wvkbd /src && \
+    make -C /src && \
+    make -C /src PREFIX=/usr DESTDIR=/out install
+
 # Base Image
 FROM ghcr.io/ublue-os/base-main:latest
+COPY --from=wvkbd /out/usr/ /usr/
 
 ### [IM]MUTABLE /opt
 ## Some bootable images, like Fedora, have /opt symlinked to /var/opt, in order to

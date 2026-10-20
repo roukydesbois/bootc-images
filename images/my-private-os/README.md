@@ -6,6 +6,11 @@ This repository, a copy of Universal Blue's image template, is originally meant 
 
 My RPI4 runs in an Argon40 ONE case. I took the scripts from argon40, modified them slightly (the path in which they are stored) in order to work properly. 
 
+- code in `/usr/share/argon/`, config in `/etc/argon/` (fan curves in `argononed.conf` and `argononed-hdd.conf`)
+- `argononed.service` handles the fan and the power button (double press reboots, long press shuts down)
+- `/usr/lib/systemd/system-shutdown/argon-shutdown.sh` turns the fan off and tells the case to cut power on poweroff
+- the `i2c-dev` module is loaded at boot (`/usr/lib/modules-load.d/argon-i2c.conf`) since the fan is driven over I2C
+
 ## Wifi Hotspot
 
 The image ships with a file that creates an open hotspot on wlan0. For now it's deactivated at boot. 

@@ -1,0 +1,11 @@
+[Unit]
+Description=NFS export for thomelab's nfs-csi-4tb StorageClass
+
+[Mount]
+What=/dev/mapper/hdd4tb
+Where=/export/thomelab-dynamic-4tb-hdd
+Type=btrfs
+Options=subvol=thomelab-dynamic-4tb-hdd,noatime,nofail
+
+[Install]
+WantedBy=multi-user.target

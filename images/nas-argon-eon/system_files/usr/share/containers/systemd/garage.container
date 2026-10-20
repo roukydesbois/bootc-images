@@ -1,0 +1,25 @@
+[Unit]
+Description=Garage S3 object storage
+# Config and metadata on the 1 TB SSD, data blocks on the 4 TB HDD
+RequiresMountsFor=/var/srv/ssd1tb /var/srv/hdd4tb
+
+[Container]
+Image=docker.io/dxflrs/garage:v2.2.0
+ContainerName=garage
+PublishPort=3900:3900
+PublishPort=3901:3901
+PublishPort=3902:3902
+PublishPort=3903:3903
+# garage.toml holds rpc_secret and admin_token, so it stays on the data disk, not in the image
+Volume=/var/srv/ssd1tb/compose-files/garage/garage.toml:/etc/garage.toml:ro
+Volume=/var/srv/ssd1tb/compose-data/garage/meta:/var/lib/garage/meta
+Volume=/var/srv/hdd4tb/garage-data/garage/data:/var/lib/garage/data
+# The data was written without SELinux labels; relabelling it (:z) would walk
+# every object block, so run the container unconfined instead
+SecurityLabelDisable=true
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

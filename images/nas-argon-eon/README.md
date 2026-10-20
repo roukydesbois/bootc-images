@@ -23,6 +23,55 @@ The `i2c-dev` module is loaded at boot (`/usr/lib/modules-load.d/argon-i2c.conf`
 
 Status of the machine can be checked with `python3 /usr/share/argon/argonstatus.py` or `python3 /usr/share/argon/argondashboard.py`.
 
+## NAS
+
+The OS runs from the SD card. The three data disks are LUKS2 + btrfs, independent from each other (no RAID).
+
+### Disks
+
+`/etc/crypttab` opens the disks as `hdd4tb`, `ssd2tb` and `ssd1tb`. They have no key file: each LUKS header holds a [Tang](https://github.com/latchset/tang) binding, and `clevis-luks-askpass` answers the passphrase prompt once the network is up. The passphrase still works, from the console or over SSH (`systemd-tty-ask-password-agent`), when Tang is not reachable.
+
+- The entries are `_netdev`, so `remote-cryptsetup.target` is enabled to start them, and `nofail`, so boot and SSH don't wait for the disks.
+- What depends on the disks waits for them as long as needed (`JobRunningTimeoutSec=infinity` on each `/dev/mapper` device): mounts, then NFS and Garage.
+
+Each disk is mounted whole (top-level subvolume) under `/var/srv/<disk>`, and its NFS subvolume directly under `/export/`:
+
+| Disk | Whole filesystem | NFS export |
+|---|---|---|
+| 4 TB HDD | `/var/srv/hdd4tb` | `/export/thomelab-dynamic-4tb-hdd` |
+| 2 TB SSD | `/var/srv/ssd2tb` | `/export/thomelab-dynamic-2tb-ssd` |
+| 1 TB SSD | `/var/srv/ssd1tb` | `/export/thomelab-dynamic-1tb-ssd` |
+
+### NFS
+
+`nfs-server` only starts once the three exports are mounted. The exports file isn't part of the image since it holds the LAN range: create `/etc/exports.d/thomelab.exports` on the machine (see `/etc/exports.d/README`). NFS v3 and v4 are both enabled.
+
+### Garage
+
+[Garage](https://garagehq.deuxfleurs.fr/) runs as a Podman Quadlet (`/usr/share/containers/systemd/garage.container`), with its config and metadata on the 1 TB SSD and its data on the 4 TB HDD. `garage.toml` holds secrets, so it stays on the data disk: `/var/srv/ssd1tb/compose-files/garage/garage.toml`.
+
+### Updates
+
+Automatic updates are off (`bootc-fetch-apply-updates.timer` is masked): a reboot takes NFS and Garage down. Update by hand when convenient:
+
+```bash
+sudo bootc upgrade   # downloads and stages the new image
+sudo systemctl reboot
+```
+
+`sudo bootc rollback` goes back to the previous image.
+
+### Installation
+
+On a Raspberry Pi 4, install Fedora IoT first (with an SSH public key for the user), then rebase to this image:
+
+```bash
+sudo rpm-ostree rebase ostree-unverified-registry:ghcr.io/roukydesbois/nas-argon-eon:latest
+sudo systemctl reboot
+```
+
+SSH only accepts public keys. After the first boot, check that `/etc/crypttab` matches the image (`diff /usr/etc/crypttab /etc/crypttab`): `/etc` files changed locally are kept over the image's.
+
 # image-template
 
 This repository is meant to be a template for building your own custom [bootc](https://github.com/bootc-dev/bootc) image. This template is the recommended way to make customizations to any image published by the Universal Blue Project.

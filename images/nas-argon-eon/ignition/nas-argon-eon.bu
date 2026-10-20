@@ -1,0 +1,23 @@
+# First boot of the Fedora IoT raw image, before rebasing to nas-argon-eon.
+# Edit this file, then regenerate the .ign next to it (see README.md):
+#   butane --strict --pretty ignition/nas-argon-eon.bu > ignition/nas-argon-eon.ign
+variant: fiot
+version: 1.0.0
+passwd:
+  users:
+    - name: roukydesbois
+      groups:
+        - wheel
+      # Same keys as https://github.com/roukydesbois.keys
+      ssh_authorized_keys:
+        - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICMH/yRpnGAezra+JiVyyK9h1Z9X3xyRxOILZkYZSEbC
+        - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILoB5VNLuNL9YFTR19qkYlpKw4spF9SatgiN/QJ3H9bH
+        - ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA7203mRSL0zmYWIxDwTS2gvT7iW0kKMvhWNUBOzg91e
+storage:
+  files:
+    # The user has no password (SSH keys only), so sudo can't ask for one
+    - path: /etc/sudoers.d/roukydesbois
+      mode: 0440
+      contents:
+        inline: |
+          roukydesbois ALL=(ALL) NOPASSWD: ALL

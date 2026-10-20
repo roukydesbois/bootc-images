@@ -1,0 +1,32 @@
+{
+  "ignition": {
+    "version": "3.4.0"
+  },
+  "passwd": {
+    "users": [
+      {
+        "groups": [
+          "wheel"
+        ],
+        "name": "roukydesbois",
+        "sshAuthorizedKeys": [
+          "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAICMH/yRpnGAezra+JiVyyK9h1Z9X3xyRxOILZkYZSEbC",
+          "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAILoB5VNLuNL9YFTR19qkYlpKw4spF9SatgiN/QJ3H9bH",
+          "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIA7203mRSL0zmYWIxDwTS2gvT7iW0kKMvhWNUBOzg91e"
+        ]
+      }
+    ]
+  },
+  "storage": {
+    "files": [
+      {
+        "path": "/etc/sudoers.d/roukydesbois",
+        "contents": {
+          "compression": "",
+          "source": "data:,roukydesbois%20ALL%3D(ALL)%20NOPASSWD%3A%20ALL%0A"
+        },
+        "mode": 288
+      }
+    ]
+  }
+}

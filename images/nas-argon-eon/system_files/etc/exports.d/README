@@ -1,0 +1,12 @@
+The exports file is created on the machine, it is not part of the image since it
+holds the LAN range. Create /etc/exports.d/thomelab.exports with one line per
+disk (keep the fsid values when migrating, they are part of the NFS file handles):
+
+/export/thomelab-dynamic-4tb-hdd <lan-cidr>(fsid=<uuid>,rw,no_subtree_check,insecure,root_squash,sync)
+/export/thomelab-dynamic-2tb-ssd <lan-cidr>(fsid=<uuid>,rw,no_subtree_check,insecure,root_squash,sync)
+/export/thomelab-dynamic-1tb-ssd <lan-cidr>(fsid=<uuid>,rw,no_subtree_check,insecure,root_squash,sync)
+
+Don't add an fsid=0 export of /export: it makes /export the NFSv4 root, so v4
+clients would have to mount /thomelab-dynamic-* instead of the full path.
+
+Then run `exportfs -ra`.

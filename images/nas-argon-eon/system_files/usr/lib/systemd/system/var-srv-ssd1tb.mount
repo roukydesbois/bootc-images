@@ -1,0 +1,11 @@
+[Unit]
+Description=1 TB SSD (whole btrfs filesystem)
+
+[Mount]
+What=/dev/mapper/ssd1tb
+Where=/var/srv/ssd1tb
+Type=btrfs
+Options=subvolid=5,noatime,nofail
+
+[Install]
+WantedBy=multi-user.target

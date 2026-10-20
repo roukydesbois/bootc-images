@@ -1,0 +1,11 @@
+[Unit]
+Description=4 TB HDD (whole btrfs filesystem)
+
+[Mount]
+What=/dev/mapper/hdd4tb
+Where=/var/srv/hdd4tb
+Type=btrfs
+Options=subvolid=5,noatime,nofail
+
+[Install]
+WantedBy=multi-user.target

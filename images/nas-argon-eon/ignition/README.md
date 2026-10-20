@@ -1,6 +1,6 @@
 # Ignition: first boot of Fedora IoT
 
-The Fedora IoT raw image runs [Ignition](https://coreos.github.io/ignition/) on its first boot. `nas-argon-eon.ign` creates the `roukydesbois` user, with the SSH keys from [github.com/roukydesbois.keys](https://github.com/roukydesbois.keys) and passwordless `sudo` (the user has no password). After that, rebase to the nas-argon-eon image.
+The Fedora IoT raw image runs [Ignition](https://coreos.github.io/ignition/) on its first boot. `nas-argon-eon.ign` sets the hostname to `evora` and creates the `roukydesbois` user, with the SSH keys from [github.com/roukydesbois.keys](https://github.com/roukydesbois.keys) and passwordless `sudo` (the user has no password). After that, rebase to the nas-argon-eon image.
 
 `nas-argon-eon.bu` is the source, written in [Butane](https://coreos.github.io/butane/). After editing it, regenerate the Ignition file and commit both (CI fails if they don't match):
 

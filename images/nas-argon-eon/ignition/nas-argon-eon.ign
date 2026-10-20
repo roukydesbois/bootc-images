@@ -20,6 +20,14 @@
   "storage": {
     "files": [
       {
+        "path": "/etc/hostname",
+        "contents": {
+          "compression": "",
+          "source": "data:,evora"
+        },
+        "mode": 420
+      },
+      {
         "path": "/etc/sudoers.d/roukydesbois",
         "contents": {
           "compression": "",

@@ -15,8 +15,8 @@ dnf5 install -y  https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfre
 dnf5 install -y NetworkManager-wifi wpa_supplicant wireless-regdb dnsmasq
 # Install packages for monitoring
 dnf5 install -y htop cockpit cockpit-podman cockpit-ostree cockpit-files
-# Install dependencies for argon one - maybe python-gpiozero is needed
-dnf5 install -y python-pigpio python3-rpi-gpio2 i2c-tools python3-i2c-tools smartmontools
+# Install dependencies for argon one - python3-libgpiod is used by the power button script
+dnf5 install -y python-pigpio python3-rpi-gpio2 python3-libgpiod i2c-tools python3-i2c-tools smartmontools
 # Install dnf5-plugins to be able to use copr repos
 dnf5 install -y dnf5-plugins
 

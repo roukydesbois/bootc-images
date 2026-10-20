@@ -30,8 +30,10 @@ concurrency:
 jobs:
   build:
     name: Build disk images
-    # The image is only built for arm64 (Raspberry Pi 4), see build.yml
-    runs-on: ubuntu-26.04-arm
+    # The image is only built for arm64 (Raspberry Pi 4), see build.yml.
+    # Not 26.04: osbuild's mounts inside bootc-image-builder fail there with
+    # "permission denied", even in a privileged container.
+    runs-on: ubuntu-24.04-arm
     strategy:
       fail-fast: false
       matrix:

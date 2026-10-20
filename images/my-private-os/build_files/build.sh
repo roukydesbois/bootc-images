@@ -23,12 +23,12 @@ dnf5 install -y dnf5-plugins
 # Install netbird - repo and service are created via system_files
 dnf5 install -y --setopt=tsflags=noscripts netbird
 
-# Install zellij - repo is created via system_files
+# Install zellij from copr
 dnf5 -y copr enable varlad/zellij
 dnf5 install -y zellij
 dnf5 -y copr disable varlad/zellij
 
-# Install niri - repo is created via system_files
+# Install niri and dms from copr
 dnf5 -y copr enable avengemedia/dms
 dnf5 install -y niri dms
 systemctl --global add-wants niri.service dms

@@ -1,3 +1,28 @@
+# nas-argon-eon
+
+This repository, a copy of Universal Blue's image template, builds a bootc image (Fedora bootc 44, arm64) meant to run a NAS on a RPI4 inside an Argon40 EON case.
+
+## Argon EON case
+
+The scripts come from Argon40's EON installer ([argoneon.sh](https://download.argon40.com/argoneon.sh), version 2608001) and are shipped through `system_files/` instead of being installed at runtime, like in [my-private-os](https://github.com/roukydesbois/my-private-os):
+
+- the code (and the OLED fonts/backgrounds) lives in `/usr/share/argon/` since `/usr` is immutable on bootc,
+- the configuration lives in `/etc/argon/` (upstream puts it directly in `/etc`), so it can be edited on the machine:
+  - `argononed.conf` / `argononed-hdd.conf`: fan speed curves for the CPU and HDD temperatures,
+  - `argoneonoled.conf`: OLED screens,
+  - `argoneonrtc.conf`: RTC power on/off schedules,
+  - `argonunits.conf`: temperature unit.
+
+Services:
+
+- `argononed.service`: fan, power button and OLED display,
+- `argoneond.service`: RTC (system time sync and power schedules),
+- `/usr/lib/systemd/system-shutdown/argon-shutdown.sh`: turns the fan off and tells the case to cut power on poweroff.
+
+The `i2c-dev` module is loaded at boot (`/usr/lib/modules-load.d/argon-i2c.conf`) since the fan, OLED and RTC are all on the I2C bus. The power button uses the libgpiod flavour of Argon's script, which supports libgpiod v2 as shipped by Fedora.
+
+Status of the machine can be checked with `python3 /usr/share/argon/argonstatus.py` or `python3 /usr/share/argon/argondashboard.py`.
+
 # image-template
 
 This repository is meant to be a template for building your own custom [bootc](https://github.com/bootc-dev/bootc) image. This template is the recommended way to make customizations to any image published by the Universal Blue Project.

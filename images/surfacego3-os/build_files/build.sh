@@ -16,7 +16,7 @@ cp -avf "/ctx/system_files"/. /
 # dnf5 install -y tmux
 
 # Regular stuff
-dnf5 -y install helix fish nautilus
+dnf5 -y install helix fish nautilus papers
 # For the tablet mode
 dnf5 -y install iio-sensor-proxy
 # To make sure the on screen keyboard can be built

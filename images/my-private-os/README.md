@@ -35,15 +35,24 @@ The image is built for arm64 only and is based on `quay.io/fedora/fedora-bootc:4
 
 [build.yml](./.github/workflows/build.yml) builds the image on every push to `main` and once a day, then pushes and signs it as `ghcr.io/roukydesbois/my-private-os:latest`. Pull requests only build it.
 
-To switch a running bootc system to this image:
+## Installing on the Raspberry Pi 4
+
+Disk images built from this image don't boot on the Pi, because bootc-image-builder doesn't add the Raspberry Pi firmware or U-Boot to the boot partition. Instead:
+
+1. Flash a Fedora IoT aarch64 image of the same Fedora release as the base image. It includes everything the Pi needs to boot.
+2. Boot it and switch to this image:
 
 ```bash
 sudo bootc switch ghcr.io/roukydesbois/my-private-os:latest
 ```
 
+3. Reboot. From then on, `bootc upgrade` keeps the system up to date.
+
+`bootc upgrade` only updates the OS. It doesn't touch the Pi firmware and U-Boot in the boot partition, so they stay at the versions that came with the Fedora IoT install.
+
 ## Disk images
 
-[build-disk.yml](./.github/workflows/build-disk.yml) uses [bootc-image-builder](https://osbuild.org/docs/bootc/) to build a `raw` disk image (from [disk_config/disk.toml](./disk_config/disk.toml)) and an Anaconda ISO (from [disk_config/iso.toml](./disk_config/iso.toml)). Run it manually from the Actions tab. You get the images as job artifacts, or in S3 if you set `upload-to-s3` and these repository secrets: `S3_PROVIDER`, `S3_BUCKET_NAME`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_REGION`, `S3_ENDPOINT`.
+[build-disk.yml](./.github/workflows/build-disk.yml) uses [bootc-image-builder](https://osbuild.org/docs/bootc/) to build a `raw` disk image (it doesn't boot on the Pi, see above) (from [disk_config/disk.toml](./disk_config/disk.toml)) and an Anaconda ISO (from [disk_config/iso.toml](./disk_config/iso.toml)). Run it manually from the Actions tab. You get the images as job artifacts, or in S3 if you set `upload-to-s3` and these repository secrets: `S3_PROVIDER`, `S3_BUCKET_NAME`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_REGION`, `S3_ENDPOINT`.
 
 ## Local builds
 

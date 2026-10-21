@@ -1,10 +1,18 @@
+# Fedora major version is pinned on purpose: `latest` moves to a new Fedora
+# release on its own, possibly before the COPRs used in build.sh have builds
+# for it. Bump this in a PR when upgrading. Both stages use the same image so
+# wvkbd is compiled against the libraries the final image ships.
+ARG BASE_IMAGE=ghcr.io/ublue-os/base-main:44
+
 # Allow build scripts to be referenced without being copied into the final image
 FROM scratch AS ctx
 COPY build_files /
 COPY system_files /system_files
 
 # Build wvkbd (not packaged in Fedora)
-FROM ghcr.io/ublue-os/base-main:latest AS wvkbd
+FROM ${BASE_IMAGE} AS wvkbd
+# No release tracking (Dependabot can't follow sourcehut tags): check
+# https://git.sr.ht/~proycon/wvkbd/refs now and then.
 ARG WVKBD_VERSION=v0.15
 RUN dnf5 -y install gcc make git scdoc wayland-devel cairo-devel \
         pango-devel libxkbcommon-devel && \
@@ -14,7 +22,7 @@ RUN dnf5 -y install gcc make git scdoc wayland-devel cairo-devel \
     make -C /src PREFIX=/usr DESTDIR=/out install
 
 # Base Image
-FROM ghcr.io/ublue-os/base-main:latest
+FROM ${BASE_IMAGE}
 COPY --from=wvkbd /out/usr/ /usr/
 
 ### [IM]MUTABLE /opt

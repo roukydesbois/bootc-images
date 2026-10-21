@@ -37,7 +37,7 @@ The image is built for arm64 only and is based on `quay.io/fedora/fedora-bootc:4
 
 ## Installing on the Raspberry Pi 4
 
-Disk images built from this image don't boot on the Pi, because bootc-image-builder doesn't add the Raspberry Pi firmware or U-Boot to the boot partition. Instead:
+This repository doesn't build disk images: bootc-image-builder doesn't add the Raspberry Pi firmware or U-Boot to the boot partition, so its images don't boot on the Pi. Instead:
 
 1. Flash a Fedora IoT aarch64 image of the same Fedora release as the base image. It includes everything the Pi needs to boot.
 2. Boot it and switch to this image:
@@ -50,16 +50,11 @@ sudo bootc switch ghcr.io/roukydesbois/my-private-os:latest
 
 `bootc upgrade` only updates the OS. It doesn't touch the Pi firmware and U-Boot in the boot partition, so they stay at the versions that came with the Fedora IoT install.
 
-## Disk images
-
-[build-disk.yml](./.github/workflows/build-disk.yml) uses [bootc-image-builder](https://osbuild.org/docs/bootc/) to build a `raw` disk image (it doesn't boot on the Pi, see above) (from [disk_config/disk.toml](./disk_config/disk.toml)) and an Anaconda ISO (from [disk_config/iso.toml](./disk_config/iso.toml)). Run it manually from the Actions tab. You get the images as job artifacts, or in S3 if you set `upload-to-s3` and these repository secrets: `S3_PROVIDER`, `S3_BUCKET_NAME`, `S3_ACCESS_KEY_ID`, `S3_SECRET_ACCESS_KEY`, `S3_REGION`, `S3_ENDPOINT`.
-
 ## Local builds
 
 Run `just` to see the available recipes. The ones used most:
 
 - `just build`: build the container image with podman
-- `just build-raw` / `just build-iso` / `just build-qcow2`: build a disk image from `localhost/my-private-os`
 - `just lint` / `just format`: run shellcheck / shfmt on the shell scripts
 
 To test a local build on a bootc system, the image has to be in root's container storage (`sudo just build` puts it there):

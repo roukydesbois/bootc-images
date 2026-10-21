@@ -61,6 +61,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
+      # GitHub's Ubuntu 26.04 runners load an AppArmor profile
+      # (bwrap-userns-restrict) that strips capabilities from bwrap, the
+      # sandbox osbuild runs every stage in, even inside a privileged
+      # container: "mount: /run/osbuild/tree/dev: permission denied".
+      # The runner is thrown away after the job, so unloading it is safe.
+      - name: Allow the image builder's sandbox to mount (AppArmor)
+        run: |
+          set -x
+          if [ -f /etc/apparmor.d/bwrap-userns-restrict ]; then
+            sudo apparmor_parser -R /etc/apparmor.d/bwrap-userns-restrict || true
+          fi
+          sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0 || true
+
       - name: Build disk images
         id: build
         uses: osbuild/bootc-image-builder-action@028e4d28330efe546229eb9cb52aee78174d2347 # main

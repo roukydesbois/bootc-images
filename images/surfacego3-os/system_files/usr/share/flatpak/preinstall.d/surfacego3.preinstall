@@ -1,0 +1,51 @@
+# Flathub apps installed on every boot by surfacego3-flatpak-preinstall.service
+# (`flatpak preinstall`). Removing an entry uninstalls the app; uninstalling
+# an app by hand keeps it uninstalled.
+
+[Flatpak Preinstall com.bitwarden.desktop]
+Branch=stable
+
+[Flatpak Preinstall com.github.tchx84.Flatseal]
+Branch=stable
+
+[Flatpak Preinstall com.github.xournalpp.xournalpp]
+Branch=stable
+
+[Flatpak Preinstall com.ktechpit.whatsie]
+Branch=stable
+
+[Flatpak Preinstall com.nextcloud.desktopclient.nextcloud]
+Branch=stable
+
+[Flatpak Preinstall com.protonvpn.www]
+Branch=stable
+
+[Flatpak Preinstall im.riot.Riot]
+Branch=stable
+
+[Flatpak Preinstall io.github.cosmic_utils.camera]
+Branch=stable
+
+[Flatpak Preinstall io.github.kolunmi.Bazaar]
+Branch=stable
+
+[Flatpak Preinstall io.github.tobagin.Ntfyr]
+Branch=stable
+
+[Flatpak Preinstall me.proton.Mail]
+Branch=stable
+
+[Flatpak Preinstall org.gnome.Fractal]
+Branch=stable
+
+[Flatpak Preinstall org.gnome.World.Iotas]
+Branch=stable
+
+[Flatpak Preinstall org.gnome.gitlab.cheywood.Pulp]
+Branch=stable
+
+[Flatpak Preinstall org.jellyfin.JellyfinDesktop]
+Branch=stable
+
+[Flatpak Preinstall org.mozilla.firefox]
+Branch=stable

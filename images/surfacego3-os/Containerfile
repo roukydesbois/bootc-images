@@ -9,6 +9,11 @@ FROM scratch AS ctx
 COPY build_files /
 COPY system_files /system_files
 
+# DMS plugins, fetched at the commits pinned in dms/plugins.lock.json
+FROM ${BASE_IMAGE} AS dms-plugins
+COPY build_files/dms-plugins.sh dms/plugins.lock.json /tmp/
+RUN dnf5 -y install git && /tmp/dms-plugins.sh /tmp/plugins.lock.json /out
+
 # Build wvkbd (not packaged in Fedora)
 FROM ${BASE_IMAGE} AS wvkbd
 # No release tracking (Dependabot can't follow sourcehut tags): check
@@ -24,6 +29,9 @@ RUN dnf5 -y install gcc make git scdoc wayland-devel cairo-devel \
 # Base Image
 FROM ${BASE_IMAGE}
 COPY --from=wvkbd /out/usr/ /usr/
+# System plugin directory: DMS lists these next to ~/.config/dms/plugins, but
+# they can only be updated through this repo, not from the DMS UI
+COPY --from=dms-plugins /out/ /etc/xdg/quickshell/dms-plugins/
 
 ### [IM]MUTABLE /opt
 ## Some bootable images, like Fedora, have /opt symlinked to /var/opt, in order to

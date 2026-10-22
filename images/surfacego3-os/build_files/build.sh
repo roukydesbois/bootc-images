@@ -5,13 +5,37 @@ set -ouex pipefail
 ### Install packages
 
 # Regular stuff
-dnf5 -y install helix fish nautilus papers
+# Nautilus also provides the file chooser behind xdg-desktop-portal-gnome,
+# which niri's portal config uses for file dialogs
+dnf5 -y install helix fish nautilus papers chezmoi
+# French locale (/etc/locale.conf) and OCR language
+dnf5 -y install glibc-langpack-fr
+# quickCapture DMS plugin: recording, exports, OCR and QR scanning (ffmpeg
+# comes with the base image). Installed by command so package names don't
+# matter.
+dnf5 -y install wf-recorder /usr/bin/magick /usr/bin/img2pdf \
+    /usr/bin/tesseract tesseract-langpack-fra /usr/bin/zbarimg
 # For the tablet mode
 dnf5 -y install iio-sensor-proxy
 # Runtime libraries for wvkbd (built in its own stage, see Containerfile)
 dnf5 -y install cairo pango libxkbcommon
 
 dnf5 -y remove firefox
+
+# NetBird client (netbirdStatus DMS plugin). The repo is only needed at build
+# time; the service unit comes from system_files, so skip the package
+# scripts, which would try to install one with `netbird service install`.
+cat > /etc/yum.repos.d/netbird.repo <<'REPO'
+[netbird]
+name=netbird
+baseurl=https://pkgs.netbird.io/yum/
+enabled=1
+gpgcheck=1
+gpgkey=https://pkgs.netbird.io/yum/repodata/repomd.xml.key
+repo_gpgcheck=1
+REPO
+dnf5 -y install --setopt=tsflags=noscripts netbird
+rm /etc/yum.repos.d/netbird.repo
 
 # COPRs are disabled again right after use so they don't end up enabled on the
 # final image
@@ -45,6 +69,8 @@ niri validate -c /usr/share/niri/surfacego3.kdl
 
 systemctl --global add-wants niri.service dms
 systemctl enable greetd
+systemctl enable surfacego3-flatpak-preinstall.service
+systemctl enable netbird.service
 # Applies /usr/share/user-tmpfiles.d (per-user niri config) at login
 systemctl --global enable systemd-tmpfiles-setup.service
 systemctl --global is-enabled systemd-tmpfiles-setup.service

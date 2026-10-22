@@ -1,0 +1,10 @@
+// Copied to ~/.config/niri/config.kdl on first login (see
+// /usr/share/user-tmpfiles.d/niri-config.conf) and never touched again.
+// The real config ships with the image in /usr/share/niri/surfacego3.kdl;
+// anything below that include overrides it. DMS appends its own includes
+// at the end of this file.
+include "/usr/share/niri/surfacego3.kdl"
+
+// DMS Include Configs
+include optional=true "dms/outputs.kdl"
+include optional=true "dms/input.kdl"

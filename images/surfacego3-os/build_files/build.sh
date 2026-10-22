@@ -5,7 +5,14 @@ set -ouex pipefail
 ### Install packages
 
 # Regular stuff
-dnf5 -y install helix fish nautilus papers
+dnf5 -y install helix fish nautilus papers alacritty chezmoi
+# French locale (/etc/locale.conf) and OCR language
+dnf5 -y install glibc-langpack-fr
+# quickCapture DMS plugin: recording, exports, OCR and QR scanning (ffmpeg
+# comes with the base image). Installed by command so package names don't
+# matter.
+dnf5 -y install wf-recorder /usr/bin/magick /usr/bin/img2pdf \
+    /usr/bin/tesseract tesseract-langpack-fra /usr/bin/zbarimg
 # For the tablet mode
 dnf5 -y install iio-sensor-proxy
 # Runtime libraries for wvkbd (built in its own stage, see Containerfile)
@@ -45,6 +52,7 @@ niri validate -c /usr/share/niri/surfacego3.kdl
 
 systemctl --global add-wants niri.service dms
 systemctl enable greetd
+systemctl enable surfacego3-flatpak-preinstall.service
 # Applies /usr/share/user-tmpfiles.d (per-user niri config) at login
 systemctl --global enable systemd-tmpfiles-setup.service
 systemctl --global is-enabled systemd-tmpfiles-setup.service

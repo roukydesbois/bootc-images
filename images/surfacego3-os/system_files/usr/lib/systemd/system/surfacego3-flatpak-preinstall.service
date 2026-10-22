@@ -1,0 +1,16 @@
+[Unit]
+Description=Install the Flatpaks listed in /usr/share/flatpak/preinstall.d
+# Fedora's flatpak ships the preinstall.d mechanism but leaves running it to
+# GNOME Software, which this image doesn't have
+Wants=network-online.target
+After=network-online.target flatpak-add-fedora-repos.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/flatpak preinstall --system --noninteractive -y
+# No network yet (e.g. first boot before Wi-Fi is set up): try again later
+Restart=on-failure
+RestartSec=5min
+
+[Install]
+WantedBy=multi-user.target

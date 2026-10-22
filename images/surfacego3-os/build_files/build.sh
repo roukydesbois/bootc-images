@@ -5,11 +5,9 @@ set -ouex pipefail
 ### Install packages
 
 # Regular stuff
-dnf5 -y install helix fish papers chezmoi
-# File chooser for the portals without Nautilus (see
-# /etc/xdg-desktop-portal/niri-portals.conf); file browsing is the
-# dmsfilemanager DMS plugin
-dnf5 -y install xdg-desktop-portal-gtk
+# Nautilus also provides the file chooser behind xdg-desktop-portal-gnome,
+# which niri's portal config uses for file dialogs
+dnf5 -y install helix fish nautilus papers chezmoi
 # French locale (/etc/locale.conf) and OCR language
 dnf5 -y install glibc-langpack-fr
 # quickCapture DMS plugin: recording, exports, OCR and QR scanning (ffmpeg
@@ -66,12 +64,6 @@ cp -avf "/ctx/system_files"/. /
 
 # Fail the build rather than ship a niri config that doesn't parse
 niri validate -c /usr/share/niri/surfacego3.kdl
-# Nautilus must not come back through a weak dependency without the portal
-# config above being revisited
-if rpm -q nautilus; then
-    echo "nautilus got pulled back in" >&2
-    exit 1
-fi
 
 ### Services
 

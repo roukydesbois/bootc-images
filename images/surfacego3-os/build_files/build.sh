@@ -38,6 +38,11 @@ dnf5 -y copr disable avengemedia/dms
 # instead of relying on RPM's %config(noreplace) handling
 cp -avf "/ctx/system_files"/. /
 
+# Fail the build rather than ship a niri config that doesn't parse
+niri validate -c /usr/share/niri/surfacego3.kdl
+# /usr/share/user-tmpfiles.d relies on the per-user tmpfiles service
+test -e /usr/lib/systemd/user/basic.target.wants/systemd-tmpfiles-setup.service
+
 ### Services
 
 systemctl --global add-wants niri.service dms

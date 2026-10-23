@@ -51,6 +51,11 @@ dnf5 -y copr disable varlad/zellij
 dnf5 -y copr enable avengemedia/dms
 dnf5 -y install niri dms dms-greeter dankcalendar-git
 dnf5 -y copr disable avengemedia/dms
+# Unlock the login keyring with the greetd login password. Fedora's
+# /etc/pam.d/greetd already calls pam_gnome_keyring, but as optional
+# ("-auth"), so it was silently skipped: gnome-keyring comes in as a weak
+# dependency, its PAM module doesn't.
+dnf5 -y install gnome-keyring-pam
 
 # Install linux-surface kernel - wait for PR https://github.com/linux-surface/linux-surface/pull/2092 to be merged and have fedora 44 support
 # dnf5 -y config-manager addrepo --from-repofile=https://pkg.surfacelinux.com/fedora/linux-surface.repo
@@ -64,6 +69,10 @@ cp -avf "/ctx/system_files"/. /
 
 # Fail the build rather than ship a niri config that doesn't parse
 niri validate -c /usr/share/niri/surfacego3.kdl
+# greetd only unlocks the keyring if the module is there and the PAM config
+# still calls it
+test -e /usr/lib64/security/pam_gnome_keyring.so
+grep -q pam_gnome_keyring /etc/pam.d/greetd
 
 ### Services
 

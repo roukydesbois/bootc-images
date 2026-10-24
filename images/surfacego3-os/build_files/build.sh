@@ -8,6 +8,9 @@ set -ouex pipefail
 # Nautilus also provides the file chooser behind xdg-desktop-portal-gnome,
 # which niri's portal config uses for file dialogs
 dnf5 -y install helix fish nautilus papers chezmoi
+# Phones and cameras in Nautilus: Android (MTP), iPhone (AFC, with the
+# base image's usbmuxd) and cameras/photo mode (PTP)
+dnf5 -y install gvfs-mtp gvfs-afc gvfs-gphoto2
 # French locale (/etc/locale.conf) and OCR language
 dnf5 -y install glibc-langpack-fr
 # quickCapture DMS plugin: recording, exports, OCR and QR scanning (ffmpeg
@@ -73,6 +76,7 @@ niri validate -c /usr/share/niri/surfacego3.kdl
 # still calls it
 test -e /usr/lib64/security/pam_gnome_keyring.so
 grep -q pam_gnome_keyring /etc/pam.d/greetd
+test -x /usr/libexec/gvfsd-mtp
 
 ### Services
 

@@ -21,11 +21,13 @@ Run `niri-session` and the RPI4 transforms into a regular computer (given a keyb
 
 ## kodi
 
-Kodi comes from RPM Fusion. `kodi.service` starts it fullscreen on tty1 at boot, without niri, as the `kodi` user (settings and library in `/var/lib/kodi/.kodi`):
+Kodi comes from RPM Fusion. `kodi.service` runs it fullscreen on tty1, without niri, as the `kodi` user (settings and library in `/var/lib/kodi/.kodi`). Which service gets the screen:
 
-- Quitting Kodi from its power menu brings back a login prompt on tty1, where you can log in and run `niri-session`.
-- If Kodi fails 3 times within 2 minutes (for example with no screen connected), the service gives up and tty1 shows a login prompt.
-- To stop Kodi from starting at boot: `sudo systemctl disable --now kodi.service`. Logs: `journalctl -u kodi`.
+- At boot, or when a screen is plugged in later, `screen-role.service` starts Kodi if an HDMI or DSI screen is connected and nobody is logged in on it. It does this at most once per boot.
+- Quitting Kodi from its power menu brings back the login prompt on tty1, where you can log in and run `niri-session`. The login prompt keeps the screen, even if the screen is unplugged or switched off and on again.
+- To get Kodi back, start or restart `kodi.service` from Cockpit (Services) or with `sudo systemctl start kodi.service`.
+- If Kodi fails 3 times within 2 minutes, it stops retrying and tty1 shows the login prompt.
+- Logs: `journalctl -u screen-role -u kodi`. Check whether a screen is detected with `/usr/libexec/my-private-os/has-screen; echo $?` (0 = connected).
 - Kodi can still be started as a regular application from niri.
 
 The image uses RPM Fusion's full `ffmpeg` instead of Fedora's `ffmpeg-free`, which can't decode HEVC, E-AC3 or VC-1 and only decodes H.264 through openh264.

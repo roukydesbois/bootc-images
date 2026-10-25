@@ -1,0 +1,10 @@
+[Unit]
+Description=Start Kodi if a screen is connected
+After=systemd-user-sessions.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/my-private-os/screen-role
+
+[Install]
+WantedBy=multi-user.target

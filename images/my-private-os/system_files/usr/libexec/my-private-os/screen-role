@@ -1,0 +1,32 @@
+#!/bin/bash
+# Decides whether Kodi takes the screen. Run by screen-role.service at boot and
+# when a screen is plugged in or out.
+#
+# Kodi starts on its own once per boot, when a screen is connected and nobody
+# is logged in on it. After it has been quit, the login prompt keeps the screen
+# until kodi.service is started again by hand (Cockpit or systemctl).
+
+set -euo pipefail
+
+autostarted=/run/my-private-os/kodi-autostarted
+
+if ! /usr/libexec/my-private-os/has-screen; then
+	echo "No screen connected"
+	exit 0
+fi
+if [ -e "$autostarted" ]; then
+	echo "Kodi was already started automatically this boot"
+	exit 0
+fi
+if systemctl is-active --quiet kodi.service; then
+	exit 0
+fi
+if [ -n "$(loginctl show-seat seat0 --property=ActiveSession --value 2>/dev/null)" ]; then
+	echo "Someone is logged in on the screen, leaving it alone"
+	exit 0
+fi
+
+echo "Screen connected, starting Kodi"
+mkdir -p "${autostarted%/*}"
+touch "$autostarted"
+systemctl start --no-block kodi.service

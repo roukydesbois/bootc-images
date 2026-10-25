@@ -60,4 +60,4 @@ systemctl enable podman.socket
 systemctl enable cockpit.socket
 systemctl enable argononed.service
 systemctl enable netbird.service
-systemctl enable kodi.service
+systemctl enable screen-role.service

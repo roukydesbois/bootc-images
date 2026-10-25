@@ -5,13 +5,13 @@
 Description=Kodi standalone (GBM)
 After=remote-fs.target systemd-user-sessions.service network-online.target nss-lookup.target sound.target bluetooth.target polkit.service plymouth-quit-wait.service
 Wants=network-online.target polkit.service
-Conflicts=getty@tty1.service
-# Quitting Kodi from its menu gives tty1 back to a login prompt
-OnSuccess=getty@tty1.service
+Conflicts=greetd.service getty@tty1.service
+# Quitting Kodi from its menu gives tty1 back to the greetd login prompt
+OnSuccess=greetd.service
 # Stop retrying (e.g. no screen connected) after 3 failures in 2 minutes
 StartLimitIntervalSec=120
 StartLimitBurst=3
-OnFailure=getty@tty1.service
+OnFailure=greetd.service
 
 [Service]
 User=kodi

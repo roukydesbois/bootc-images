@@ -5,6 +5,7 @@
 # Kodi starts on its own once per boot, when a screen is connected and nobody
 # is logged in on it. After it has been quit, the login prompt keeps the screen
 # until kodi.service is started again by hand (Cockpit or systemctl).
+# The greetd login prompt itself doesn't count as someone logged in.
 
 set -euo pipefail
 
@@ -21,7 +22,9 @@ fi
 if systemctl is-active --quiet kodi.service; then
 	exit 0
 fi
-if [ -n "$(loginctl show-seat seat0 --property=ActiveSession --value 2>/dev/null)" ]; then
+# The greetd login prompt is a session too, of class "greeter"
+session=$(loginctl show-seat seat0 --property=ActiveSession --value 2>/dev/null || true)
+if [ -n "$session" ] && [ "$(loginctl show-session "$session" --property=Class --value 2>/dev/null)" != greeter ]; then
 	echo "Someone is logged in on the screen, leaving it alone"
 	exit 0
 fi

@@ -34,16 +34,18 @@ While an access point is running, the Pi won't join a known Wi-Fi network on its
 
 ## Desktop - niri + dms
 
-Run `niri-session` and the RPI4 transforms into a regular computer (given a keyboard and mouse are connected). Installed niri and dms. Need to do what's in the [documentation](https://niri-wm.github.io/niri/Getting-Started.html#quick-start): `pkill waybar` and then comment the `spawn-at-startup "waybar"` line in `~/.config/niri/config.kdl`.
+greetd shows a tuigreet login prompt on tty1. Logging in starts niri with dms, and the RPI4 transforms into a regular computer (given a keyboard and mouse are connected). Press F3 at the prompt to pick another session (e.g. Kodi as your own user); tuigreet remembers the last user and session. Your systemd-homed home is unlocked by the password you type there, so there's no auto-login.
+
+On first login, do what's in the niri [documentation](https://niri-wm.github.io/niri/Getting-Started.html#quick-start): `pkill waybar` and then comment the `spawn-at-startup "waybar"` line in `~/.config/niri/config.kdl`.
 
 ## kodi
 
 Kodi comes from RPM Fusion. `kodi.service` runs it fullscreen on tty1, without niri, as the `kodi` user (settings and library in `/var/lib/kodi/.kodi`). Which service gets the screen:
 
-- At boot, or when a screen is plugged in later, `screen-role.service` starts Kodi if an HDMI or DSI screen is connected and nobody is logged in on it. It does this at most once per boot.
-- Quitting Kodi from its power menu brings back the login prompt on tty1, where you can log in and run `niri-session`. The login prompt keeps the screen, even if the screen is unplugged or switched off and on again.
-- To get Kodi back, start or restart `kodi.service` from Cockpit (Services) or with `sudo systemctl start kodi.service`.
-- If Kodi fails 3 times within 2 minutes, it stops retrying and tty1 shows the login prompt.
+- At boot, or when a screen is plugged in later, `screen-role.service` starts Kodi if an HDMI or DSI screen is connected and nobody is logged in on it (the greetd login prompt doesn't count). It does this at most once per boot.
+- Quitting Kodi from its power menu brings back the greetd login prompt on tty1, where you can log in to niri. The login prompt keeps the screen, even if the screen is unplugged or switched off and on again.
+- To get Kodi back, start or restart `kodi.service` from Cockpit (Services) or with `sudo systemctl start kodi.service`. This stops greetd, so it also ends a niri session running on the screen.
+- If Kodi fails 3 times within 2 minutes, it stops retrying and tty1 shows the greetd login prompt.
 - Logs: `journalctl -u screen-role -u kodi`. Check whether a screen is detected with `/usr/libexec/my-private-os/has-screen; echo $?` (0 = connected).
 - Kodi can still be started as a regular application from niri.
 

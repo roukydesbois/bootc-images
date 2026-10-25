@@ -21,7 +21,12 @@ Run `niri-session` and the RPI4 transforms into a regular computer (given a keyb
 
 ## kodi
 
-Kodi is installed as a regular application. Work in progress.
+Kodi comes from RPM Fusion and is installed as a regular application: start it from niri. The image uses RPM Fusion's full `ffmpeg` instead of Fedora's `ffmpeg-free`, which can't decode HEVC, E-AC3 or VC-1 and only decodes H.264 through openh264.
+
+Limitations:
+
+- **No hardware video decoding.** The Fedora kernel doesn't include the Raspberry Pi's H.264 and HEVC decoder drivers, so everything is decoded on the CPU. Expect 1080p H.264 to be fine and HEVC or 4K to stutter.
+- **Kodi version.** RPM Fusion's Fedora 44 updates currently ship a Kodi 22 beta, so some add-ons may not be compatible yet.
 
 ## "Manual" setup
 

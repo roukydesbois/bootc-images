@@ -40,8 +40,19 @@ dnf5 install -y fish helix git rsync
 # Install useful graphical applications
 dnf5 install -y firefox thunderbird
 
-# Install kodi
-dnf5 install -y kodi
+# Swap Fedora's ffmpeg-free (pulled in by niri/dms and firefox) for RPM Fusion's
+# full ffmpeg: ffmpeg-free has no HEVC, E-AC3 or VC-1 decoder and only decodes
+# H.264 through openh264, so Kodi couldn't play most video files
+dnf5 swap -y --allowerasing ffmpeg-free ffmpeg
+
+# Install kodi, inputstream-adaptive (needed by most streaming add-ons) and
+# game controller support
+dnf5 install -y kodi kodi-inputstream-adaptive kodi-peripheral-joystick
+# Fail the build if a later change pulls ffmpeg-free back in
+if rpm -q libavcodec-free; then
+    echo "libavcodec-free is installed, Kodi would lose codecs" >&2
+    exit 1
+fi
 
 systemctl enable podman.socket
 systemctl enable cockpit.socket

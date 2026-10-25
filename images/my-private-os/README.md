@@ -19,7 +19,7 @@ My RPI4 runs in an Argon40 ONE case. I took the scripts from argon40, modified t
 |---|---|
 | wlan0 connected to a Wi-Fi network as a client | none (wlan0 can't do both) |
 | Internet available, e.g. over Ethernet | `SecureAP`, SSID `cuidado_na_curva`, WPA2, shares the Pi's internet, clients can't see each other |
-| No internet | `OpenAP`, SSID `AllezViensOnEstBien`, no password, to reach the Pi itself (Cockpit, SSH) |
+| No internet | `OpenAP`, SSID `AllezViensOnEstBien`, no password, to reach the Pi itself (Cockpit, SSH), clients can't see each other |
 
 "Internet" means NetworkManager's connectivity check succeeds. A captive portal counts as no internet.
 

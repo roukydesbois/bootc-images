@@ -4,15 +4,17 @@ set -ouex pipefail
 
 # Copy the contents of system_files/ of the git repo to /
 cp -avf "/ctx/system_files"/. /
-# Required for NetworkManager to even consider it
-chmod 600 /etc/NetworkManager/system-connections/OpenAP.conf
+# Required for NetworkManager to even consider them
+chmod 600 /etc/NetworkManager/system-connections/OpenAP.conf /etc/NetworkManager/system-connections/SecureAP.nmconnection
 
 # Enable rpmfusion
 dnf5 install -y  https://download1.rpmfusion.org/free/fedora/rpmfusion-free-release-$(rpm -E %fedora).noarch.rpm
 dnf5 install -y  https://download1.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-$(rpm -E %fedora).noarch.rpm
 
 # Install packages for wifi
-dnf5 install -y NetworkManager-wifi wpa_supplicant wireless-regdb dnsmasq
+# NetworkManager-config-connectivity-fedora lets NetworkManager tell "has a
+# network" from "has internet", ap-role relies on it
+dnf5 install -y NetworkManager-wifi wpa_supplicant wireless-regdb dnsmasq NetworkManager-config-connectivity-fedora
 # Install packages for monitoring
 dnf5 install -y htop cockpit cockpit-podman cockpit-ostree cockpit-files
 # Install dependencies for argon one - libgpiod for the power button, smbus (python3-i2c-tools) for the fan
@@ -61,3 +63,4 @@ systemctl enable cockpit.socket
 systemctl enable argononed.service
 systemctl enable netbird.service
 systemctl enable screen-role.service
+systemctl enable ap-role.service

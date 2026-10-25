@@ -1,0 +1,31 @@
+# Access point used when the Pi has internet (e.g. over Ethernet), shared to
+# its clients. The password is not in the image, set it once on the Pi with:
+#   sudo nmcli connection modify SecureAP wifi-sec.psk '<PASTE_PASSWORD_HERE>'
+# ap-role.service chooses between this and OpenAP, don't autoconnect.
+[connection]
+id=SecureAP
+uuid=b708a5b0-902b-42a8-a9bf-c27b21b9e7ad
+type=wifi
+autoconnect=false
+interface-name=wlan0
+
+[wifi]
+band=a
+mode=ap
+ssid=AllezViensOnEstBien-WPA
+
+[wifi-security]
+key-mgmt=wpa-psk
+proto=rsn
+pairwise=ccmp
+group=ccmp
+
+[ipv4]
+address1=10.42.0.1/24
+method=shared
+
+[ipv6]
+addr-gen-mode=default
+method=auto
+
+[proxy]

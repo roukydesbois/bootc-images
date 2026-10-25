@@ -13,6 +13,8 @@ interface-name=wlan0
 band=a
 mode=ap
 ssid=cuidado_na_curva
+# Clients can't reach each other, only the Pi and the internet
+ap-isolation=1
 
 [wifi-security]
 key-mgmt=wpa-psk

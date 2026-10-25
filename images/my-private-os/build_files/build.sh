@@ -53,8 +53,11 @@ if rpm -q libavcodec-free; then
     echo "libavcodec-free is installed, Kodi would lose codecs" >&2
     exit 1
 fi
+# kodi.service runs the binary directly
+test -x /usr/lib64/kodi/kodi.bin
 
 systemctl enable podman.socket
 systemctl enable cockpit.socket
 systemctl enable argononed.service
 systemctl enable netbird.service
+systemctl enable kodi.service

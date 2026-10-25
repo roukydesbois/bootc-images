@@ -1,0 +1,29 @@
+# Starts Kodi fullscreen on tty1 without a compositor, adapted from
+# https://github.com/graysky2/kodi-standalone-service
+[Unit]
+Description=Kodi standalone (GBM)
+After=remote-fs.target systemd-user-sessions.service network-online.target nss-lookup.target sound.target bluetooth.target polkit.service plymouth-quit-wait.service
+Wants=network-online.target polkit.service
+Conflicts=getty@tty1.service
+# Quitting Kodi from its menu gives tty1 back to a login prompt
+OnSuccess=getty@tty1.service
+# Stop retrying (e.g. no screen connected) after 3 failures in 2 minutes
+StartLimitIntervalSec=120
+StartLimitBurst=3
+OnFailure=getty@tty1.service
+
+[Service]
+User=kodi
+Group=kodi
+SupplementaryGroups=audio video render input
+# A logind session on tty1 gives Kodi its runtime dir, PipeWire and device access
+PAMName=login
+TTYPath=/dev/tty1
+StandardInput=tty
+StandardOutput=journal
+ExecStart=/usr/lib64/kodi/kodi.bin --standalone --windowing=gbm
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

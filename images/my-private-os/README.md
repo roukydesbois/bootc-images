@@ -56,6 +56,87 @@ Limitations:
 - **No hardware video decoding.** The Fedora kernel doesn't include the Raspberry Pi's H.264 and HEVC decoder drivers, so everything is decoded on the CPU. Expect 1080p H.264 to be fine and HEVC or 4K to stutter.
 - **Kodi version.** RPM Fusion's Fedora 44 updates currently ship a Kodi 22 beta, so some add-ons may not be compatible yet.
 
+## How the services fit together
+
+### Units, targets and triggers
+
+Solid arrows start a unit (through a target's dependencies, `systemctl start`, or `OnSuccess=`/`OnFailure=`). Dotted lines are ordering or conflicts. Double-bordered boxes are event hooks.
+
+```mermaid
+flowchart TD
+    boot(["boot"]) --> graphical["graphical.target (default)"]
+    graphical --> multi["multi-user.target"]
+    graphical -->|"display-manager.service"| greetd["greetd.service<br/>tuigreet login on tty1"]
+
+    multi --> argon["argononed.service<br/>fan + power button"]
+    multi --> netbird["netbird.service"]
+    multi --> sockets["cockpit.socket, podman.socket"]
+    multi --> screenrole["screen-role.service<br/>oneshot"]
+    multi --> aprole["ap-role.service<br/>oneshot"]
+
+    udev[["udev rule: DRM card added<br/>or screen plugged in/out"]] --> screenrole
+    screenrole -->|"has-screen and nobody logged in"| kodi["kodi.service<br/>Kodi on tty1 as user kodi"]
+    manual(["Cockpit or systemctl start"]) --> kodi
+    kodi -.-|"Conflicts"| greetd
+    kodi -->|"OnSuccess / OnFailure"| greetd
+    greetd -->|"login"| niri["niri-session<br/>+ dms user service"]
+
+    nmwait["NetworkManager-wait-online.service"] -.->|"After"| aprole
+    dispatcher[["NetworkManager dispatcher:<br/>up, down, connectivity-change"]] --> aprole
+    aprole -->|"nmcli connection up/down"| aps[("OpenAP or SecureAP on wlan0")]
+
+    poweroff(["poweroff / halt"]) --> argonsd["argon-shutdown.sh<br/>fan off, case cuts power"]
+```
+
+### Who owns the screen (tty1)
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> greetd: boot
+    greetd --> kodi: screen-role, first time this boot
+    greetd --> kodi: kodi.service started by hand
+    kodi --> greetd: Kodi quit (OnSuccess)
+    kodi --> greetd: 3 failures in 2 min (OnFailure)
+    greetd --> niri: login
+    niri --> greetd: logout
+    niri --> kodi: kodi.service started by hand, ends niri
+```
+
+### screen-role: should Kodi take the screen?
+
+Runs at boot and on every DRM hotplug event.
+
+```mermaid
+flowchart TD
+    start(["screen-role"]) --> screen{"has-screen:<br/>HDMI or DSI connected?"}
+    screen -->|"no"| skip1(["do nothing"])
+    screen -->|"yes"| flag{"Kodi already started<br/>automatically this boot?"}
+    flag -->|"yes"| skip2(["do nothing:<br/>the login prompt keeps the screen"])
+    flag -->|"no"| running{"kodi.service running?"}
+    running -->|"yes"| skip3(["do nothing"])
+    running -->|"no"| session{"someone logged in on seat0?<br/>the greeter does not count"}
+    session -->|"yes"| skip4(["do nothing"])
+    session -->|"no"| startkodi["remember it in /run/my-private-os<br/>start kodi.service"]
+```
+
+### ap-role: which access point?
+
+Runs at boot after NetworkManager-wait-online and on every NetworkManager dispatcher event. After switching, it checks again (up to 3 times) until nothing changes.
+
+```mermaid
+flowchart TD
+    start(["ap-role"]) --> client{"wlan0 connected to a<br/>Wi-Fi network as a client?"}
+    client -->|"yes"| none1(["no access point"])
+    client -->|"no"| internet{"has-internet:<br/>connectivity check is full?"}
+    internet -->|"no"| open["OpenAP<br/>AllezViensOnEstBien, no password"]
+    internet -->|"yes"| psk{"SecureAP password set?"}
+    psk -->|"no"| none2(["no access point:<br/>never share internet openly"])
+    psk -->|"yes"| secure["SecureAP<br/>cuidado_na_curva, WPA2, shares internet"]
+```
+
+Both access points isolate their clients from each other. "No access point" also stops one that's running.
+
 ## "Manual" setup
 
 ### systemd-homed

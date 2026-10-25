@@ -13,7 +13,24 @@ My RPI4 runs in an Argon40 ONE case. I took the scripts from argon40, modified t
 
 ## Wifi Hotspot
 
-The image ships with a file that creates an open hotspot on wlan0. For now it's deactivated at boot. 
+`ap-role.service` picks the access point on wlan0 at boot (after NetworkManager has tried known Wi-Fi networks) and again whenever a connection goes up or down or internet connectivity changes:
+
+| Situation | Access point |
+|---|---|
+| wlan0 connected to a Wi-Fi network as a client | none (wlan0 can't do both) |
+| Internet available, e.g. over Ethernet | `SecureAP`, SSID `cuidado_na_curva`, WPA2, shares the Pi's internet, clients can't see each other |
+| No internet | `OpenAP`, SSID `AllezViensOnEstBien`, no password, to reach the Pi itself (Cockpit, SSH), clients can't see each other |
+
+"Internet" means NetworkManager's connectivity check succeeds. A captive portal counts as no internet.
+
+The `SecureAP` password isn't in the image. Set it once on the Pi; until then, no access point runs while there's internet:
+
+```bash
+sudo nmcli connection modify SecureAP wifi-sec.psk '<PASTE_PASSWORD_HERE>'
+sudo systemctl start ap-role.service
+```
+
+While an access point is running, the Pi won't join a known Wi-Fi network on its own. Logs: `journalctl -u ap-role`.
 
 ## Desktop - niri + dms
 

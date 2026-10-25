@@ -1,0 +1,56 @@
+#!/bin/bash
+# Decides which Wi-Fi access point runs on wlan0. Run by ap-role.service at
+# boot and, through a NetworkManager dispatcher script, whenever a connection
+# goes up or down or connectivity changes.
+#
+# - wlan0 connected to a Wi-Fi network as a client: no access point, the Pi
+#   can't do both on wlan0.
+# - Internet available (Ethernet, USB tethering...): SecureAP (WPA2), so
+#   clients share the Pi's internet. Not started if its password isn't set.
+# - No internet: OpenAP (no password), to reach the Pi itself.
+
+set -euo pipefail
+
+dev=wlan0
+open_ap=OpenAP
+secure_ap=SecureAP
+
+wanted_ap() {
+	local active=$1
+	if [ -n "$active" ] && [ "$active" != "$open_ap" ] && [ "$active" != "$secure_ap" ]; then
+		echo "$dev is connected to '$active' as a client, no access point" >&2
+		return
+	fi
+	if /usr/libexec/my-private-os/has-internet; then
+		if [ -z "$(nmcli --show-secrets --get-values 802-11-wireless-security.psk connection show "$secure_ap" 2>/dev/null)" ]; then
+			echo "Internet available but $secure_ap has no password, no access point." >&2
+			echo "Set it with: nmcli connection modify $secure_ap wifi-sec.psk '<password>'" >&2
+			return
+		fi
+		echo "$secure_ap"
+	else
+		echo "$open_ap"
+	fi
+}
+
+# Switching the access point fires dispatcher events that can't start this
+# service again while it runs, so check again until nothing changes.
+for _ in 1 2 3; do
+	active=$(nmcli --get-values GENERAL.CONNECTION device show "$dev" 2>/dev/null || true)
+	wanted=$(wanted_ap "$active")
+	if [ "$active" = "$wanted" ]; then
+		echo "Access point: ${wanted:-none}"
+		exit 0
+	fi
+	if [ -z "$wanted" ]; then
+		if [ "$active" = "$open_ap" ] || [ "$active" = "$secure_ap" ]; then
+			echo "Stopping $active"
+			nmcli connection down "$active"
+		else
+			exit 0
+		fi
+	else
+		echo "Starting $wanted"
+		nmcli connection up "$wanted"
+	fi
+done

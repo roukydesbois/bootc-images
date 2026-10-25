@@ -36,6 +36,10 @@ dnf5 install -y niri dms
 systemctl --global add-wants niri.service dms
 dnf5 -y copr disable avengemedia/dms
 
+# Install greetd with the tuigreet login prompt, it starts niri (see
+# /usr/share/my-private-os/greetd.toml)
+dnf5 install -y greetd tuigreet
+
 # Install cli tools
 dnf5 install -y fish helix git rsync
 
@@ -64,3 +68,6 @@ systemctl enable argononed.service
 systemctl enable netbird.service
 systemctl enable screen-role.service
 systemctl enable ap-role.service
+# greetd is display-manager.service, which graphical.target pulls in
+systemctl enable greetd.service
+systemctl set-default graphical.target

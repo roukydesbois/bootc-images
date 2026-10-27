@@ -74,11 +74,12 @@ Nobody can register an account themselves. You create accounts as the IRC operat
 1. Once, set the operator password on the Pi. The hash stays in `/etc/ergo/ergo.env`, outside this public repo:
 
    ```bash
-   podman run --rm -it --entrypoint /ircd-bin/ergo ghcr.io/ergochat/ergo:stable genpasswd
-   # type the password twice, then put the printed hash in the env file:
-   echo "ERGO__OPERS__ADMIN__PASSWORD='<PASTE_HASH_HERE>'" | sudo tee /etc/ergo/ergo.env
-   sudo systemctl restart ergo.service
+   set-irc-oper-password
    ```
+
+   It asks for the password twice, hashes it with the Ergo image's `genpasswd` (as root: rootless
+   podman doesn't work for systemd-homed users, who get no `/etc/subuid` ranges), writes the env
+   file and restarts `ergo.service`.
 
 2. From the hotspot (no account needed there), in gamja or any IRC client:
 

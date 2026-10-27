@@ -56,6 +56,39 @@ Limitations:
 - **No hardware video decoding.** The Fedora kernel doesn't include the Raspberry Pi's H.264 and HEVC decoder drivers, so everything is decoded on the CPU. Expect 1080p H.264 to be fine and HEVC or 4K to stutter.
 - **Kodi version.** RPM Fusion's Fedora 44 updates currently ship a Kodi 22 beta, so some add-ons may not be compatible yet.
 
+## IRC server and web client
+
+The Pi hosts an IRC network (`portocovo`, server `irc.thomelab.net`):
+
+- **[Ergo](https://ergo.chat)** runs as a Podman quadlet (`ergo.service`, image `ghcr.io/ergochat/ergo:stable`, updated by `podman-auto-update.timer`). Its config is `/usr/share/my-private-os/ergo/ircd.yaml`, and accounts and channels are stored in `/var/lib/ergo`. Chat history is kept in memory, so it's lost on restart.
+- **[gamja](https://git.sr.ht/~emersion/gamja)**, a web IRC client, is served by **Caddy** on port 80, which also passes `/socket` to Ergo's WebSocket.
+
+| From | URL | Account needed? |
+|---|---|---|
+| The hotspot (either access point) | http://chat.lan, or IRC on `10.42.0.1:6667` | No, pick any nickname (or log in) |
+| The internet, when the Pi has a connection | https://irc.thomelab.net (NetBird reverse proxy, personal-ops `tofu/netbird`) | Yes |
+| NetBird peers | IRC on the Pi's NetBird address, port 6667 | Yes |
+
+Nobody can register an account themselves. You create accounts as the IRC operator:
+
+1. Once, set the operator password on the Pi. The hash stays in `/etc/ergo/ergo.env`, outside this public repo:
+
+   ```bash
+   podman run --rm -it --entrypoint /ircd-bin/ergo ghcr.io/ergochat/ergo:stable genpasswd
+   # type the password twice, then put the printed hash in the env file:
+   echo "ERGO__OPERS__ADMIN__PASSWORD='<PASTE_HASH_HERE>'" | sudo tee /etc/ergo/ergo.env
+   sudo systemctl restart ergo.service
+   ```
+
+2. From the hotspot (no account needed there), in gamja or any IRC client:
+
+   ```
+   /OPER admin <operator password>
+   /msg NickServ SAREGISTER <account> <password>
+   ```
+
+The account then logs in from anywhere with SASL (gamja asks for a password when connecting). Logs: `journalctl -u ergo -u caddy`.
+
 ## "Manual" setup
 
 ### systemd-homed

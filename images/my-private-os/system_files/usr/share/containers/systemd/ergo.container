@@ -1,0 +1,29 @@
+# Ergo IRC server (https://ergo.chat). Config: /usr/share/my-private-os/ergo,
+# copied into /var/lib/ergo on every start. The oper password hash comes from
+# /etc/ergo/ergo.env on the Pi (ERGO__OPERS__ADMIN__PASSWORD=...).
+[Unit]
+Description=Ergo IRC server
+Wants=network-online.target
+After=network-online.target
+
+[Container]
+Image=ghcr.io/ergochat/ergo:stable
+# podman-auto-update.timer pulls new :stable images
+AutoUpdate=registry
+# :6667 for IRC clients, 127.0.0.1:8097 for the WebSocket behind Caddy
+Network=host
+# Root in the container is an unprivileged user on the host
+UserNS=auto
+Volume=/var/lib/ergo:/ircd:Z,U
+EnvironmentFile=/etc/ergo/ergo.env
+# Skip the image's run.sh, which writes its own config with a random oper
+# password and ignores arguments
+Entrypoint=/ircd-bin/ergo
+Exec=run --conf /ircd/ircd.yaml
+
+[Service]
+ExecStartPre=/usr/bin/install -m 0644 /usr/share/my-private-os/ergo/ircd.yaml /usr/share/my-private-os/ergo/ergo.motd /var/lib/ergo/
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

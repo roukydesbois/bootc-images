@@ -12,8 +12,11 @@ Image=ghcr.io/ergochat/ergo:stable
 AutoUpdate=registry
 # :6667 for IRC clients, 127.0.0.1:8097 for the WebSocket behind Caddy
 Network=host
-# Root in the container is an unprivileged user on the host
-UserNS=auto
+# Root in the container is an unprivileged user on the host. Explicit maps,
+# not UserNS=auto: in rootful mode that needs a `containers` entry in
+# /etc/subuid and /etc/subgid, which Fedora doesn't create.
+UIDMap=0:2147483647:65536
+GIDMap=0:2147483647:65536
 Volume=/var/lib/ergo:/ircd:Z,U
 EnvironmentFile=/etc/ergo/ergo.env
 # Skip the image's run.sh, which writes its own config with a random oper

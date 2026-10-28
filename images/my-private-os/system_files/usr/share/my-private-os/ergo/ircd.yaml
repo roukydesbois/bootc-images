@@ -5,7 +5,7 @@
 #   (through Caddy); no TLS listener
 # - websockets.allowed-origins: the hotspot and irc.thomelab.net
 # - accounts: no self-registration, and an account (SASL) is required except
-#   from the hotspot (10.42.0.0/24)
+#   from the hotspot (10.42.0.0/24) and the Pi itself (localhost)
 # - paths for the container: config in /ircd, languages in /ircd-bin
 # The oper password is set on the Pi, outside the repo, in /etc/ergo/ergo.env:
 #   ERGO__OPERS__ADMIN__PASSWORD='<hash from `ergo genpasswd`>'
@@ -509,10 +509,13 @@ accounts:
         enabled: true
 
         # IPs/CIDRs which are exempted from the account requirement: the
-        # hotspot. Not localhost: every web client connects through Caddy on
-        # 127.0.0.1, and Ergo reads their real address from X-Forwarded-For.
+        # hotspot, and the Pi itself (irc-register-account). Web clients all
+        # reach Ergo through Caddy on 127.0.0.1, but Ergo checks the address
+        # from X-Forwarded-For (see proxy-allowed-from), which Caddy always
+        # overwrites, so localhost only covers connections made on the Pi.
         exempted:
             - "10.42.0.0/24"
+            - "localhost"
 
     # nick-reservation controls how, and whether, nicknames are linked to accounts
     nick-reservation:

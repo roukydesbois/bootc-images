@@ -3,6 +3,13 @@ FROM scratch AS ctx
 COPY build_files /
 COPY system_files /system_files
 
+# gamja web IRC client (https://git.sr.ht/~emersion/gamja), built to static
+# files served by Caddy from /usr/share/gamja
+FROM docker.io/library/node:22-alpine AS gamja
+ARG GAMJA_VERSION=v1.0.0-beta.9
+RUN wget -qO- "https://git.sr.ht/~emersion/gamja/archive/${GAMJA_VERSION}.tar.gz" | tar xz -C /tmp && \
+    cd /tmp/gamja-* && npm ci && npm run build && mv dist /gamja
+
 # Base Image
 FROM quay.io/fedora/fedora-bootc:44
 ## Other possible base images include:
@@ -25,6 +32,8 @@ FROM quay.io/fedora/fedora-bootc:44
 ## by the package manager.
 
 # RUN rm /opt && mkdir /opt
+
+COPY --from=gamja /gamja /usr/share/gamja
 
 ### MODIFICATIONS
 ## make modifications desired in your image and install packages by modifying the build.sh script

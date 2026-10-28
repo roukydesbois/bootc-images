@@ -137,6 +137,48 @@ flowchart TD
 
 Both access points isolate their clients from each other. "No access point" also stops one that's running.
 
+
+## IRC server and web client
+
+The Pi hosts an IRC network (`portocovo`, server `irc.thomelab.net`):
+
+- **[Ergo](https://ergo.chat)** runs as a Podman quadlet (`ergo.service`, image `ghcr.io/ergochat/ergo:stable`, updated by `podman-auto-update.timer`). Its config is `/usr/share/my-private-os/ergo/ircd.yaml`, and accounts and channels are stored in `/var/lib/ergo`. Chat history is kept in memory, so it's lost on restart.
+- **[gamja](https://git.sr.ht/~emersion/gamja)**, a web IRC client, is served by **Caddy** on port 80, which also passes `/socket` to Ergo's WebSocket.
+
+| From | URL | Account needed? |
+|---|---|---|
+| The hotspot (either access point) | http://chat.lan, or IRC on `10.42.0.1:6667` | No, pick any nickname (or log in) |
+| The internet, when the Pi has a connection | https://irc.thomelab.net (NetBird reverse proxy, personal-ops `tofu/netbird`) | Yes |
+| NetBird peers | IRC on the Pi's NetBird address, port 6667 | Yes |
+| The Pi itself (e.g. over SSH) | IRC on `127.0.0.1:6667` | No |
+
+The account check uses each client's real address. Web clients all reach Ergo through Caddy on 127.0.0.1, but Caddy always overwrites `X-Forwarded-For` and Ergo reads the address from it, so the localhost exemption only covers connections made on the Pi.
+
+Nobody can register an account themselves. You create accounts as the IRC operator:
+
+1. Once, set the operator password on the Pi. The hash stays in `/etc/ergo/ergo.env`, outside this public repo:
+
+   ```bash
+   set-irc-oper-password
+   ```
+
+   It asks for the password twice, hashes it with the Ergo image's `genpasswd` (as root: rootless
+   podman doesn't work for systemd-homed users, who get no `/etc/subuid` ranges), writes the env
+   file and restarts `ergo.service`.
+
+2. Create accounts on the Pi (e.g. over SSH), including your own:
+
+   ```bash
+   irc-register-account <account>
+   ```
+
+   It asks for the operator password and the new account's password (twice), then connects to
+   Ergo locally, opers up and runs `NickServ SAREGISTER`. From the hotspot, you can do the same by
+   hand in any client: `/OPER admin <operator password>`, then
+   `/msg NickServ SAREGISTER <account> <password>`.
+
+The account then logs in from anywhere with SASL (gamja asks for a password when connecting). To administer the server from https://irc.thomelab.net, log in with your own account, then `/OPER admin <operator password>`. Logs: `journalctl -u ergo -u caddy`.
+
 ## "Manual" setup
 
 ### systemd-homed

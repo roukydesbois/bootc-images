@@ -40,6 +40,10 @@ dnf5 -y copr disable avengemedia/dms
 # /usr/share/my-private-os/greetd.toml)
 dnf5 install -y greetd tuigreet
 
+# Caddy serves the gamja web IRC client, Ergo itself runs as a quadlet
+# (/usr/share/containers/systemd/ergo.container)
+dnf5 install -y caddy
+
 # Install cli tools
 dnf5 install -y fish helix git rsync
 
@@ -71,3 +75,6 @@ systemctl enable ap-role.service
 # greetd is display-manager.service, which graphical.target pulls in
 systemctl enable greetd.service
 systemctl set-default graphical.target
+# IRC: ergo.service is generated from its quadlet, enabled by its [Install]
+systemctl enable caddy.service
+systemctl enable podman-auto-update.timer

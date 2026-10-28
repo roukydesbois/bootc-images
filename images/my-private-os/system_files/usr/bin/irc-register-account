@@ -1,0 +1,58 @@
+#!/bin/bash
+# Creates an account on the Pi's IRC server (Ergo): connects to it locally
+# (connections from the Pi itself need no account), opers up as "admin" and
+# runs NickServ SAREGISTER. The new account can then log in with SASL from
+# anywhere, e.g. https://irc.thomelab.net, and /OPER from there.
+
+set -euo pipefail
+
+account=${1:-}
+if [ -z "$account" ] || [ $# -ne 1 ]; then
+	echo "Usage: irc-register-account <account>" >&2
+	exit 2
+fi
+
+read -rsp "IRC operator password: " oper_password
+echo
+read -rsp "Password for $account: " password
+echo
+read -rsp "Again: " again
+echo
+if [ "$password" != "$again" ]; then
+	echo "The passwords don't match" >&2
+	exit 1
+fi
+if [[ $password == *" "* || -z $password ]]; then
+	echo "The password can't be empty or contain spaces" >&2
+	exit 1
+fi
+
+exec 3<>"/dev/tcp/127.0.0.1/${IRC_PORT:-6667}"
+
+# Reads server lines until one matches $1 (success) or $2 (failure), and
+# prints the message text of that line
+expect() {
+	local line
+	while IFS= read -r -t 15 line <&3; do
+		line=${line%$'\r'}
+		if [[ $line == PING* ]]; then
+			printf 'PONG%s\r\n' "${line#PING}" >&3
+		elif [[ $line =~ $1 ]]; then
+			echo "${line#* :}"
+			return 0
+		elif [[ $line =~ $2 ]]; then
+			echo "${line#* :}" >&2
+			return 1
+		fi
+	done
+	echo "No answer from the IRC server" >&2
+	return 1
+}
+
+printf 'NICK register-%s\r\nUSER register 0 * :irc-register-account\r\n' "$$" >&3
+expect ' 001 ' '^ERROR|FAIL ' >/dev/null
+printf 'OPER admin :%s\r\n' "$oper_password" >&3
+expect ' 381 ' ' (464|491) '
+printf 'PRIVMSG NickServ :SAREGISTER %s %s\r\n' "$account" "$password" >&3
+expect 'NOTICE [^ ]+ :Successfully registered' 'NOTICE '
+printf 'QUIT\r\n' >&3

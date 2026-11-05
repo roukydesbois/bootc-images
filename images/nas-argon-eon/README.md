@@ -58,6 +58,12 @@ Each disk is mounted whole (top-level subvolume) under `/var/srv/<disk>`, and it
 
 [Garage](https://garagehq.deuxfleurs.fr/) runs as a Podman Quadlet (`/usr/share/containers/systemd/garage.container`), with its config and metadata on the 1 TB SSD and its data on the 4 TB HDD. `garage.toml` holds secrets, so it stays on the data disk: `/var/srv/ssd1tb/compose-files/garage/garage.toml`.
 
+### Cockpit
+
+[Cockpit](https://cockpit-project.org/) listens on port 9090 (`cockpit.socket`), with the system, storage (disks, LUKS, btrfs), networking, SELinux, Podman (the Garage container), files and bootc deployments pages. From outside the LAN it's reached through the NetBird reverse proxy, for NetBird admins only.
+
+Cockpit logs in with a password, but the user created by Ignition has none (SSH is key-only). Set one once: `sudo passwd roukydesbois`. SSH stays key-only (`PasswordAuthentication no`). Administrative access in Cockpit goes through `sudo`.
+
 ### Updates
 
 Automatic updates are off (`bootc-fetch-apply-updates.timer` is masked): a reboot takes NFS and Garage down. Update by hand when convenient:

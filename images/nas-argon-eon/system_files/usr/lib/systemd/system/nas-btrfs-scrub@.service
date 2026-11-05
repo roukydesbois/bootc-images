@@ -1,0 +1,13 @@
+[Unit]
+Description=btrfs scrub of /var/srv/%i
+RequiresMountsFor=/var/srv/%i
+OnFailure=nas-notify-failure@%n.service
+
+[Service]
+Type=oneshot
+Nice=19
+IOSchedulingClass=idle
+# -B: stay in the foreground so the unit lasts as long as the scrub
+ExecStart=/usr/sbin/btrfs scrub start -B /var/srv/%i
+# Errors found (and repaired or not) show up in the device stats
+ExecStartPost=/usr/libexec/nas-argon-eon/btrfs-check-errors

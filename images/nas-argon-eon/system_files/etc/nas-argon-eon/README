@@ -1,0 +1,9 @@
+Notifications (disk health, btrfs errors, failed scrubs, image updates) go to ntfy.
+Create /etc/nas-argon-eon/ntfy.env on the machine (not in the image: the token is a
+secret), mode 0600:
+
+NTFY_URL=https://ntfy.thomelab.net
+NTFY_TOPIC=<topic>
+NTFY_TOKEN=<token>
+
+Test with: sudo /usr/libexec/nas-argon-eon/notify test "hello from $(hostname)"

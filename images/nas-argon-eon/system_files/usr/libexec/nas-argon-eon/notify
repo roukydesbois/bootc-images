@@ -1,0 +1,21 @@
+#!/bin/bash
+# Send a notification to ntfy: notify <title> <message> [priority] [tags]
+# Server, topic and token come from /etc/nas-argon-eon/ntfy.env (not in the image,
+# the token is a secret), see /etc/nas-argon-eon/README.
+set -euo pipefail
+
+env_file=/etc/nas-argon-eon/ntfy.env
+if [ ! -r "$env_file" ]; then
+	echo "notify: $env_file missing, can't send: $1: $2" >&2
+	exit 1
+fi
+# shellcheck source=/dev/null
+. "$env_file"
+
+curl -fsS --max-time 30 \
+	-H "Authorization: Bearer ${NTFY_TOKEN}" \
+	-H "Title: $(hostname): $1" \
+	-H "Priority: ${3:-default}" \
+	-H "Tags: ${4:-floppy_disk}" \
+	-d "$2" \
+	"${NTFY_URL%/}/${NTFY_TOPIC}" >/dev/null

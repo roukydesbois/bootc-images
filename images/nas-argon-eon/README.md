@@ -64,9 +64,25 @@ Each disk is mounted whole (top-level subvolume) under `/var/srv/<disk>`, and it
 
 Cockpit logs in with a password, but the user created by Ignition has none (SSH is key-only). Set one once: `sudo passwd roukydesbois`. SSH stays key-only (`PasswordAuthentication no`). Administrative access in Cockpit goes through `sudo`.
 
+### Notifications and disk health
+
+Alerts go to ntfy through `/usr/libexec/nas-argon-eon/notify`. Its server, topic and token live in `/etc/nas-argon-eon/ntfy.env`, created on the machine (see `/etc/nas-argon-eon/README`). Without it, the checks still run and log, but nothing is sent.
+
+| What | When | Alerts when |
+|---|---|---|
+| `smartd` | short self-test daily 03:00, long test on the 1st 04:00 | (logs only, see below) |
+| `nas-smart-check.timer` | daily 07:15 | SMART health fails, reallocated/pending/uncorrectable sectors, ≥ 55 °C, failed self-test. Only when that list changes, not every day |
+| `nas-btrfs-errors.timer` | daily 07:00 | any btrfs error counter is non-zero, or a disk isn't mounted |
+| `nas-btrfs-scrub-<disk>.timer` | monthly: SSD 1 TB on the 1st, SSD 2 TB on the 8th, HDD on the 15th, 02:00 | the scrub fails or finds errors |
+| `nas-check-update.timer` | Mondays 09:00 | a new image is available (once per image) |
+
+smartd runs confined (SELinux `fsdaemon_t`, dropped capabilities), so it only runs the self-tests; the daily check reads the results with `smartctl`. A failed check or scrub sends the end of its journal (`nas-notify-failure@.service`).
+
+The journal is capped at 200 MB (SD card).
+
 ### Updates
 
-Automatic updates are off (`bootc-fetch-apply-updates.timer` is masked): a reboot takes NFS and Garage down. Update by hand when convenient:
+Automatic updates are off (`bootc-fetch-apply-updates.timer` is masked): a reboot takes NFS and Garage down. `nas-check-update.timer` sends a ntfy notification when a new image is available. Update by hand when convenient:
 
 ```bash
 sudo bootc upgrade   # downloads and stages the new image

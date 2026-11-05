@@ -80,6 +80,24 @@ smartd runs confined (SELinux `fsdaemon_t`, dropped capabilities), so it only ru
 
 The journal is capped at 200 MB (SD card).
 
+### Backups
+
+Daily at 03:30 (`nas-backup.timer`), [borgmatic](https://torsion.org/borgmatic/) sends each job in `/etc/borgmatic.d/` to a BorgBase repository. There's one file per job, and each keeps its own archive names and retention (7 daily, 4 weekly, 3 monthly):
+
+| Job | Source | Not backed up |
+|---|---|---|
+| `immich-pictures` | Immich library | thumbnails, transcoded videos |
+| `nextcloud-data` | Nextcloud data | `appdata_*` (previews, caches) |
+| `paperless` | Paperless media | |
+| `cryptpad-files` | CryptPad blobs | |
+| `composePlugin` | Garage config + metadata, old OMV compose backups | |
+
+- Each source's btrfs subvolume is snapshotted first, so the backup is consistent while the apps keep writing.
+- `compact` runs after `prune`, so pruned archives actually free space.
+- The repository is checked every 2 weeks, archive data every 3 months (it reads the data back from BorgBase).
+- A failed run sends a ntfy notification.
+- The repository URL, passphrase and SSH key live on the machine, in `/etc/nas-argon-eon/` (see its README).
+
 ### Updates
 
 Automatic updates are off (`bootc-fetch-apply-updates.timer` is masked): a reboot takes NFS and Garage down. `nas-check-update.timer` sends a ntfy notification when a new image is available. Update by hand when convenient:

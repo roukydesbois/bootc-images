@@ -1,0 +1,14 @@
+#!/bin/bash
+# Fail (and so notify through OnFailure) if any data disk has btrfs I/O,
+# corruption or generation errors recorded.
+set -uo pipefail
+status=0
+for fs in /var/srv/hdd4tb /var/srv/ssd2tb /var/srv/ssd1tb; do
+	if ! mountpoint -q "$fs"; then
+		echo "$fs is not mounted"
+		status=1
+	elif ! btrfs device stats --check "$fs"; then
+		status=1
+	fi
+done
+exit $status

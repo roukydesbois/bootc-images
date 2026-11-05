@@ -1,0 +1,6 @@
+#!/bin/bash
+# OnFailure= handler: report a failed unit with the end of its journal.
+set -euo pipefail
+unit="$1"
+log="$(journalctl -u "$unit" -n 15 --no-pager -o cat 2>&1 || true)"
+exec /usr/libexec/nas-argon-eon/notify "$unit failed" "$log" high warning

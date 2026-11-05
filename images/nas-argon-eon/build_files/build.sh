@@ -35,6 +35,10 @@ mkdir -p /export/thomelab-dynamic-4tb-hdd /export/thomelab-dynamic-2tb-ssd /expo
 
 systemctl enable podman.socket
 systemctl enable cockpit.socket
+# Disk health and update notifications (ntfy, see /etc/nas-argon-eon/README)
+systemctl enable smartd.service
+systemctl enable nas-smart-check.timer nas-btrfs-errors.timer nas-check-update.timer
+systemctl enable nas-btrfs-scrub-ssd1tb.timer nas-btrfs-scrub-ssd2tb.timer nas-btrfs-scrub-hdd4tb.timer
 systemctl enable argononed.service
 systemctl enable argoneond.service
 systemctl enable argon-enable-i2c.service

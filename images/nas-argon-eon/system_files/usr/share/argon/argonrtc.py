@@ -238,6 +238,11 @@ def getLocaltimeOffset():
 
 # Sync Time to RTC Time (for Daemon use)
 def updateSystemTime(rtctime):
+	# nas-argon-eon: never move the clock backwards. An unreadable RTC reads as
+	# 2000-01-01 and used to override NTP; an RTC behind the system clock is
+	# never better than what the system (NTP, or systemd's build-time floor) has.
+	if rtctime <= datetime.datetime.now():
+		return
 	os.system("date -s '"+rtctime.isoformat()+"' >/dev/null 2>&1")
 
 

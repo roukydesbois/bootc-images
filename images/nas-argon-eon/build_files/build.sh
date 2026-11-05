@@ -7,9 +7,17 @@ cp -avf "/ctx/system_files"/. /
 
 # Install dependencies for the Argon EON scripts (fan, power button, OLED, RTC, HDD temperature)
 dnf5 install -y python3-libgpiod python3-i2c-tools i2c-tools smartmontools
+# Fedora 45's python3-libgpiod (2.3.1, 2.3.2 in testing) installs gpiod's Python files under
+# /usr/lib but its compiled _ext under /usr/lib64, so `import gpiod` fails (related to
+# rhbz#2559419). Link _ext next to the Python files; no-op once both live in one place.
+for ext in /usr/lib64/python3*/site-packages/gpiod/_ext*.so; do
+	pure="/usr/lib/${ext#/usr/lib64/}"
+	if [ -d "$(dirname "$pure")" ] && [ ! -e "$pure" ]; then
+		ln -s "$ext" "$pure"
+	fi
+done
 # Fail the build if the Argon scripts can't import their libraries on this Fedora/Python
-rpm -ql python3-libgpiod | grep -E 'gpiod/(__init__\.py|_ext.*\.so)$'
-python3 -c 'import gpiod, smbus; print("gpiod", gpiod.__version__)'
+python3 -c 'import gpiod, smbus'
 
 # Install packages for the data disks (LUKS unlocked through Tang) and the NFS exports
 dnf5 install -y cryptsetup clevis clevis-luks clevis-systemd btrfs-progs nfs-utils
@@ -22,6 +30,7 @@ mkdir -p /export/thomelab-dynamic-4tb-hdd /export/thomelab-dynamic-2tb-ssd /expo
 systemctl enable podman.socket
 systemctl enable argononed.service
 systemctl enable argoneond.service
+systemctl enable argon-enable-i2c.service
 # _netdev crypttab entries only start through this target
 systemctl enable remote-cryptsetup.target
 systemctl enable clevis-luks-askpass.path

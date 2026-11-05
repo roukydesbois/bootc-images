@@ -19,7 +19,15 @@ Services:
 - `argoneond.service`: RTC (system time sync and power schedules),
 - `/usr/lib/systemd/system-shutdown/argon-shutdown.sh`: turns the fan off and tells the case to cut power on poweroff.
 
-The `i2c-dev` module is loaded at boot (`/usr/lib/modules-load.d/argon-i2c.conf`) since the fan, OLED and RTC are all on the I2C bus. The power button uses the libgpiod flavour of Argon's script, which supports libgpiod v2 as shipped by Fedora.
+The fan, OLED and RTC are all on the Pi's I2C bus (`/dev/i2c-1`):
+
+- Fedora IoT boots with the Raspberry Pi firmware's device tree, where that bus is off by default. `argon-enable-i2c.service` adds `dtparam=i2c_arm=on` to `/boot/efi/config.txt` (a backup is kept next to it) if it's missing. bootc doesn't manage the EFI partition, so this runs on the machine, and the bus appears after the **next reboot**.
+- The `i2c-dev` module is loaded at boot (`/usr/lib/modules-load.d/argon-i2c.conf`).
+
+Changes from Argon's scripts:
+
+- The power button uses the libgpiod flavour of Argon's script, which supports libgpiod v2 as shipped by Fedora. Fedora 45's `python3-libgpiod` installs its compiled `_ext` in the wrong directory, so the build links it back into place and checks that `import gpiod, smbus` works.
+- `argoneond` only sets the system clock from the RTC when the RTC is *ahead* of it. Upstream always copied it, so an unreadable RTC (read as 2000-01-01) set the clock back to 2000 over NTP.
 
 Status of the machine can be checked with `python3 /usr/share/argon/argonstatus.py` or `python3 /usr/share/argon/argondashboard.py`.
 
@@ -63,14 +71,21 @@ sudo systemctl reboot
 
 ### Installation
 
-On a Raspberry Pi 4, install Fedora IoT first (with an SSH public key for the user), then rebase to this image:
+On a Raspberry Pi 4, install Fedora IoT first (with an SSH public key for the user, see [`ignition/`](ignition/README.md)), then switch to this image.
 
-```bash
-sudo rpm-ostree rebase ostree-unverified-registry:ghcr.io/roukydesbois/nas-argon-eon:latest
-sudo systemctl reboot
-```
+1. Check that the root filesystem fills the SD card: `df -h /sysroot`. If it's still the image's ~3.5 GB (`--resizefs` not used), grow the partition first: the switch downloads more than that and fails.
+2. Switch and reboot:
+   ```bash
+   sudo bootc switch ghcr.io/roukydesbois/nas-argon-eon:latest
+   sudo systemctl reboot
+   ```
+3. After the reboot:
+   - `diff /usr/etc/crypttab /etc/crypttab` is empty: `/etc` files changed locally are kept over the image's.
+   - Reboot once more so the I2C bus is on (see [Argon EON case](#argon-eon-case)).
 
-SSH only accepts public keys. After the first boot, check that `/etc/crypttab` matches the image (`diff /usr/etc/crypttab /etc/crypttab`): `/etc` files changed locally are kept over the image's.
+SSH only accepts public keys. Ignition writes them to `~/.ssh/authorized_keys.d/ignition`, which sshd reads next to `~/.ssh/authorized_keys` (`/etc/ssh/sshd_config.d/40-authorized-keys-ignition.conf`).
+
+After choosing an older entry by hand in the boot menu, check `sudo bootc status`: during the evora install that made the old Fedora IoT deployment the default. `sudo bootc rollback` switches back.
 
 # image-template
 

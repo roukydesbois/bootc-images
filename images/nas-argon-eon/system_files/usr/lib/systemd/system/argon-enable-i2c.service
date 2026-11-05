@@ -1,0 +1,12 @@
+[Unit]
+Description=Enable the Raspberry Pi I2C bus for the Argon EON
+RequiresMountsFor=/boot/efi
+ConditionPathExists=/boot/efi/config.txt
+Before=argononed.service argoneond.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/nas-argon-eon/enable-i2c
+
+[Install]
+WantedBy=multi-user.target

@@ -23,11 +23,18 @@ python3 -c 'import gpiod, smbus'
 dnf5 install -y cryptsetup clevis clevis-luks clevis-systemd btrfs-progs nfs-utils
 # Compressed swap in RAM, the OS lives on an SD card
 dnf5 install -y zram-generator-defaults
+# Cockpit web console: system, storage (LUKS/btrfs/disks), network, SELinux, the
+# Garage container, files, and bootc deployments (cockpit-ostree). No weak deps:
+# they'd pull cockpit-packagekit + PackageKit, which can't do anything on bootc.
+dnf5 install -y --setopt=install_weak_deps=False \
+	cockpit-ws cockpit-bridge cockpit-system cockpit-storaged udisks2-btrfs \
+	cockpit-networkmanager cockpit-selinux cockpit-podman cockpit-ostree cockpit-files
 
 # / is read-only once deployed, so the NFS mount points have to exist in the image
 mkdir -p /export/thomelab-dynamic-4tb-hdd /export/thomelab-dynamic-2tb-ssd /export/thomelab-dynamic-1tb-ssd
 
 systemctl enable podman.socket
+systemctl enable cockpit.socket
 systemctl enable argononed.service
 systemctl enable argoneond.service
 systemctl enable argon-enable-i2c.service

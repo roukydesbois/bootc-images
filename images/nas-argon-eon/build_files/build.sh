@@ -7,6 +7,9 @@ cp -avf "/ctx/system_files"/. /
 
 # Install dependencies for the Argon EON scripts (fan, power button, OLED, RTC, HDD temperature)
 dnf5 install -y python3-libgpiod python3-i2c-tools i2c-tools smartmontools
+# Fail the build if the Argon scripts can't import their libraries on this Fedora/Python
+rpm -ql python3-libgpiod | grep -E 'gpiod/(__init__\.py|_ext.*\.so)$'
+python3 -c 'import gpiod, smbus; print("gpiod", gpiod.__version__)'
 
 # Install packages for the data disks (LUKS unlocked through Tang) and the NFS exports
 dnf5 install -y cryptsetup clevis clevis-luks clevis-systemd btrfs-progs nfs-utils

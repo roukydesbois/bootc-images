@@ -309,9 +309,12 @@ def getRTCdatetime():
 	bus.write_byte(ADDR_RTC,2)
 
 	out = bus.read_byte(ADDR_RTC)
-	out = numBCDtoDEC(out & 0x7f)
-	second = out
-	#warningflag = (out & 0x80)>>7
+	# nas-argon-eon: VL ("voltage low") flag, bit 7 of the seconds register: the chip
+	# says its time isn't valid (never set, or lost power). Upstream ignored it, and an
+	# unset RTC read as 2090 on evora. Same sentinel as an unreadable RTC.
+	if out & 0x80:
+		return datetime.datetime(2000, 1, 1, 0, 0, 0)
+	second = numBCDtoDEC(out & 0x7f)
 
 	out = bus.read_byte(ADDR_RTC)
 	minute = numBCDtoDEC(out & 0x7f)

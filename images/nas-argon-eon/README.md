@@ -1,6 +1,6 @@
 # nas-argon-eon
 
-This repository, a copy of Universal Blue's image template, builds a bootc image (Fedora bootc 44, arm64) meant to run a NAS on a RPI4 inside an Argon40 EON case.
+This repository, a copy of Universal Blue's image template, builds a bootc image (Fedora bootc 45, arm64) meant to run a NAS on a RPI4 inside an Argon40 EON case.
 
 ## Argon EON case
 

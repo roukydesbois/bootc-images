@@ -13,7 +13,7 @@ butane --strict --pretty ignition/nas-argon-eon.bu > ignition/nas-argon-eon.ign
 Write the image with `arm-image-installer` and pass the config URL as a kernel argument:
 
 ```bash
-sudo arm-image-installer --image=Fedora-IoT-raw-44-<date>.aarch64.raw.xz --target=rpi4 \
+sudo arm-image-installer --image=Fedora-IoT-raw-45-<date>.aarch64.raw.xz --target=rpi4 \
   --media=/dev/<sd-card> --resizefs \
   --args "ignition.config.url=https://raw.githubusercontent.com/roukydesbois/nas-argon-eon/main/ignition/nas-argon-eon.ign rd.neednet=1"
 ```

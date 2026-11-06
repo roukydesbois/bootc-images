@@ -23,6 +23,11 @@ TTYPath=/dev/tty1
 StandardInput=tty
 StandardOutput=journal
 ExecCondition=/usr/libexec/my-private-os/has-screen
-ExecStart=/usr/lib64/kodi/kodi.bin --standalone --windowing=gbm
+# Through the /usr/bin/kodi launcher (bin_t), not kodi.bin: the PAM login
+# session switches to the user's SELinux domain when it execs ExecStart, and
+# kodi.bin (lib_t, in /usr/lib64) isn't allowed as an entrypoint, so the
+# start failed with 203/EXEC. The launcher passes the arguments and Kodi's
+# exit code through, and writes crash logs to ~/.kodi/temp.
+ExecStart=/usr/bin/kodi --standalone --windowing=gbm
 Restart=on-failure
 RestartSec=10

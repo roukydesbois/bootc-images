@@ -1,6 +1,10 @@
 [Unit]
 Description=Start Kodi if a screen is connected
 After=systemd-user-sessions.service
+# A quick check that DRM hotplug events can trigger many times in a row (e.g.
+# while Kodi sets a mode); without this it hits the start limit and misses
+# later events
+StartLimitIntervalSec=0
 
 [Service]
 Type=oneshot

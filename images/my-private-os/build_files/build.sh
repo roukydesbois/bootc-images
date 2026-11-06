@@ -84,6 +84,10 @@ if rpm -q libavcodec-free; then
 fi
 # kodi.service runs the binary directly
 test -x /usr/lib64/kodi/kodi.bin
+# The package's Kodi login session runs it in GBM mode as the logged-in user,
+# who can't read keyboards and mice (only the input group can), so Kodi froze.
+# /usr/share/wayland-sessions/kodi-user.desktop runs it in cage instead.
+rm -f /usr/share/wayland-sessions/kodi-gbm.desktop
 
 systemctl enable podman.socket
 systemctl enable cockpit.socket

@@ -34,7 +34,7 @@ While an access point is running, the Pi won't join a known Wi-Fi network on its
 
 ## Desktop - niri + dms
 
-greetd shows a tuigreet login prompt on tty1. Logging in starts niri with dms, and the RPI4 transforms into a regular computer (given a keyboard and mouse are connected). Press F3 at the prompt to pick another session (RetroArch, or Kodi as your own user); tuigreet remembers the last user and session. Your systemd-homed home is unlocked by the password you type there, so there's no auto-login.
+greetd shows a tuigreet login prompt on tty1. Logging in starts niri with dms, and the RPI4 transforms into a regular computer (given a keyboard and mouse are connected). Press F3 at the prompt to pick another session (RetroArch, or "Kodi (your user)", which runs in `cage` with your own Kodi profile); tuigreet remembers the last user and session. Your systemd-homed home is unlocked by the password you type there, so there's no auto-login.
 
 On first login, do what's in the niri [documentation](https://niri-wm.github.io/niri/Getting-Started.html#quick-start): `pkill waybar` and then comment the `spawn-at-startup "waybar"` line in `~/.config/niri/config.kdl`.
 

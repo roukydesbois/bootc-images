@@ -82,8 +82,8 @@ if rpm -q libavcodec-free; then
     echo "libavcodec-free is installed, Kodi would lose codecs" >&2
     exit 1
 fi
-# kodi.service runs the binary directly
-test -x /usr/lib64/kodi/kodi.bin
+# kodi.service runs Kodi through its launcher
+test -x /usr/bin/kodi
 # The package's Kodi login session runs it in GBM mode as the logged-in user,
 # who can't read keyboards and mice (only the input group can), so Kodi froze.
 # /usr/share/wayland-sessions/kodi-user.desktop runs it in cage instead.

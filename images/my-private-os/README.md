@@ -49,7 +49,19 @@ Once wlan0 is connected as a client, `ap-role` leaves it alone, and NetworkManag
 
 greetd shows a tuigreet login prompt on tty1. Logging in starts niri with dms, and the RPI4 transforms into a regular computer (given a keyboard and mouse are connected). Press F3 at the prompt to pick another session (RetroArch, or "Kodi (your user)", which runs in `cage` with your own Kodi profile); tuigreet remembers the last user and session. Your systemd-homed home is unlocked by the password you type there, so there's no auto-login.
 
-On first login, do what's in the niri [documentation](https://niri-wm.github.io/niri/Getting-Started.html#quick-start): `pkill waybar` and then comment the `spawn-at-startup "waybar"` line in `~/.config/niri/config.kdl`.
+The desktop is set up like the [surfacego3-os](https://github.com/roukydesbois/surfacego3-os) tablet, minus its tablet-only parts (touch mapping, autorotate, on-screen keyboard):
+
+- **niri config:** `/usr/share/niri/portocovo.kdl` ships with the image (keybindings, layout, alacritty on Mod+T, DMS launcher on Mod+D, lock on Super+Alt+L). On first login, `~/.config/niri/config.kdl` is created from `/usr/share/niri/user-config.kdl`: it includes the image's config, then DMS's own files, and anything you add below the include overrides it.
+- **DMS plugins:** the ones pinned in `dms/plugins.lock.json`, installed system-wide in `/etc/xdg/quickshell/dms-plugins`. They're switched on in DMS's settings, and those come from chezmoi on the tablet.
+- **Locale and keyboard:** French (`/etc/locale.conf`, and `fr` `oss` for niri through `/etc/X11/xorg.conf.d/00-keyboard.conf`).
+- **Login keyring:** unlocked by the greetd login password (`gnome-keyring-pam`).
+
+An account that already had a `~/.config/niri/config.kdl` keeps it. To switch to the image's config once (your old file is kept as `config.kdl.old`):
+
+```bash
+mv ~/.config/niri/config.kdl ~/.config/niri/config.kdl.old
+cp /usr/share/niri/user-config.kdl ~/.config/niri/config.kdl
+```
 
 ## kodi
 

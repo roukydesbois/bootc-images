@@ -1,0 +1,38 @@
+{
+  "lockfileVersion": 1,
+  "plugins": {
+    "dankActions": {
+      "repo": "https://github.com/AvengeMedia/dms-plugins",
+      "path": "DankActions",
+      "commit": "b827c2296cd45a73bf9318f16a261c9edeec8339"
+    },
+    "dankDesktopWeather": {
+      "repo": "https://github.com/AvengeMedia/dms-plugins",
+      "path": "DankDesktopWeather",
+      "commit": "b827c2296cd45a73bf9318f16a261c9edeec8339"
+    },
+    "dankGifSearch": {
+      "repo": "https://github.com/AvengeMedia/dms-plugins",
+      "path": "DankGifSearch",
+      "commit": "b827c2296cd45a73bf9318f16a261c9edeec8339"
+    },
+    "dmsfilemanager": {
+      "repo": "https://github.com/suruibin/dms-filemanager",
+      "commit": "eabc76e12af00443d32b7067d9855d2fcce1b61a"
+    },
+    "emojiLauncher": {
+      "repo": "https://github.com/devnullvoid/dms-emoji-launcher",
+      "commit": "35ea4d653417840b9045c77a9adb0188a4900086"
+    },
+    "netbirdStatus": {
+      "repo": "https://github.com/Dadangdut33/dms-plugins",
+      "path": "NetbirdStatus",
+      "commit": "63fe6b87c497f1f7c2ea61432716817db1c5c3a4"
+    },
+    "quickCapture": {
+      "repo": "https://github.com/hthienloc/dms-plugins",
+      "path": "quickCapture",
+      "commit": "193ececfed4a15128be0ff815ca50867e88f3307"
+    }
+  }
+}

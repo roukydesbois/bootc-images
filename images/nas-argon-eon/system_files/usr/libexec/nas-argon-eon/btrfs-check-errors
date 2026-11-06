@@ -1,9 +1,20 @@
 #!/bin/bash
 # Fail (and so notify through OnFailure) if any data disk has btrfs I/O,
-# corruption or generation errors recorded.
+# corruption or generation errors recorded, or isn't mounted.
 set -uo pipefail
+disks=(/var/srv/hdd4tb /var/srv/ssd2tb /var/srv/ssd1tb)
+
+# Right after a boot (Persistent= timers catch up then), the disks wait for the
+# Tang unlock: give them up to 30 minutes before calling one missing.
+deadline=$((SECONDS + 1800))
+for fs in "${disks[@]}"; do
+	while ! mountpoint -q "$fs" && [ $SECONDS -lt $deadline ]; do
+		sleep 30
+	done
+done
+
 status=0
-for fs in /var/srv/hdd4tb /var/srv/ssd2tb /var/srv/ssd1tb; do
+for fs in "${disks[@]}"; do
 	if ! mountpoint -q "$fs"; then
 		echo "$fs is not mounted"
 		status=1

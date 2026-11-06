@@ -58,6 +58,11 @@ dnf5 install -y greetd tuigreet
 # (/usr/share/containers/systemd/ergo.container)
 dnf5 install -y caddy
 
+# Retro gaming: RetroArch comes from Flathub (installed on the Pi by
+# retroarch-install.service), cage runs it fullscreen as a greetd session
+# (/usr/share/wayland-sessions/retroarch.desktop)
+dnf5 install -y flatpak cage
+
 # Install cli tools
 dnf5 install -y fish helix git rsync
 
@@ -92,3 +97,5 @@ systemctl set-default graphical.target
 # IRC: ergo.service is generated from its quadlet, enabled by its [Install]
 systemctl enable caddy.service
 systemctl enable podman-auto-update.timer
+systemctl enable retroarch-install.service
+systemctl enable flatpak-system-update.timer

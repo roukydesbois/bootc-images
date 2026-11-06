@@ -34,7 +34,7 @@ While an access point is running, the Pi won't join a known Wi-Fi network on its
 
 ## Desktop - niri + dms
 
-greetd shows a tuigreet login prompt on tty1. Logging in starts niri with dms, and the RPI4 transforms into a regular computer (given a keyboard and mouse are connected). Press F3 at the prompt to pick another session (e.g. Kodi as your own user); tuigreet remembers the last user and session. Your systemd-homed home is unlocked by the password you type there, so there's no auto-login.
+greetd shows a tuigreet login prompt on tty1. Logging in starts niri with dms, and the RPI4 transforms into a regular computer (given a keyboard and mouse are connected). Press F3 at the prompt to pick another session (RetroArch, or Kodi as your own user); tuigreet remembers the last user and session. Your systemd-homed home is unlocked by the password you type there, so there's no auto-login.
 
 On first login, do what's in the niri [documentation](https://niri-wm.github.io/niri/Getting-Started.html#quick-start): `pkill waybar` and then comment the `spawn-at-startup "waybar"` line in `~/.config/niri/config.kdl`.
 
@@ -55,6 +55,17 @@ Limitations:
 
 - **No hardware video decoding.** The Fedora kernel doesn't include the Raspberry Pi's H.264 and HEVC decoder drivers, so everything is decoded on the CPU. Expect 1080p H.264 to be fine and HEVC or 4K to stutter.
 - **Kodi version.** RPM Fusion's Fedora 45 ships Kodi 22.0 RC1, a release candidate, so some add-ons may not be compatible yet.
+
+## Retro gaming - RetroArch
+
+[RetroArch](https://www.retroarch.com) comes from Flathub (`org.libretro.RetroArch`), so it can download any emulator core with its built-in core downloader, including Mega Drive and N64 cores that Fedora doesn't package:
+
+- `retroarch-install.service` installs it on the first boot with internet, into `/var/lib/flatpak`. Without internet it retries every 10 minutes. Flathub is preconfigured in `/usr/share/flatpak/remotes.d/`.
+- `flatpak-system-update.timer` updates it daily.
+- To play on the TV: quit Kodi (or boot without Kodi taking the screen), then at the greetd login prompt press F3, pick **RetroArch** and log in. It runs fullscreen in `cage`. Quitting RetroArch brings back the login prompt, and tuigreet remembers the session for next time. It's also in niri's app launcher.
+- Kodi stays the default when a screen is connected. Starting `kodi.service` (Cockpit, `systemctl`) takes the screen back from RetroArch.
+
+What a Pi 4 handles: up to PlayStation 1 well (8/16-bit consoles, Game Boy/GBA, PC Engine, PS1 with `pcsx_rearmed`), some N64/DS/PSP, nothing from PS2/GameCube onwards. USB controllers work as they are, Bluetooth ones pair with `bluetoothctl` or the dms panel. Put your own game dumps in e.g. `~/ROMs` (Cockpit's file manager, `rsync` or a USB stick), and point RetroArch's "Import Content" at it. PlayStation 1 games work best with a BIOS dump from your own console in RetroArch's `system` directory.
 
 ## How the services fit together
 
@@ -101,6 +112,9 @@ stateDiagram-v2
     greetd --> niri: login
     niri --> greetd: logout
     niri --> kodi: kodi.service started by hand, ends niri
+    greetd --> retroarch: login, RetroArch session (F3)
+    retroarch --> greetd: RetroArch quit
+    retroarch --> kodi: kodi.service started by hand, ends RetroArch
 ```
 
 ### screen-role: should Kodi take the screen?

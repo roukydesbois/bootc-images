@@ -125,7 +125,11 @@ systemctl set-default graphical.target
 # unlock, fails the build
 niri validate -c /usr/share/niri/portocovo.kdl
 test -e /usr/lib64/security/pam_gnome_keyring.so
-grep -q pam_gnome_keyring /etc/pam.d/greetd
+# Fedora 45 ships greetd's PAM config in /usr/lib/pam.d; one in /etc/pam.d
+# would take precedence
+greetd_pam=/etc/pam.d/greetd
+[ -e "$greetd_pam" ] || greetd_pam=/usr/lib/pam.d/greetd
+grep -q pam_gnome_keyring "$greetd_pam"
 # Applies /usr/share/user-tmpfiles.d (per-user niri config) at login
 systemctl --global enable systemd-tmpfiles-setup.service
 systemctl --global is-enabled systemd-tmpfiles-setup.service

@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Kodi (your user)
+Comment=Kodi fullscreen in the cage kiosk compositor, as the logged-in user
+# Replaces the kodi package's kodi-gbm.desktop (removed in build.sh): in GBM
+# mode Kodi opens /dev/input itself, which only the input group can read, so
+# keyboard and mouse never worked from a login session. cage gets input
+# through logind. kodi.service (the default when a screen is connected) is
+# separate and unaffected.
+Exec=cage -s -- kodi --windowing=wayland
+Type=Application
+DesktopNames=Kodi

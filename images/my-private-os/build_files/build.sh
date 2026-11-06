@@ -46,9 +46,32 @@ dnf5 -y copr disable varlad/zellij
 
 # Install niri and dms from copr
 dnf5 -y copr enable avengemedia/dms
-dnf5 install -y niri dms
+dnf5 install -y niri dms dankcalendar-git
 systemctl --global add-wants niri.service dms
 dnf5 -y copr disable avengemedia/dms
+
+# Same desktop as the surfacego3-os tablet image (niri config in
+# /usr/share/niri/portocovo.kdl, DMS plugins in /etc/xdg/quickshell/dms-plugins
+# from dms/plugins.lock.json, French locale and keyboard):
+# - alacritty for Mod+T, Nautilus and Papers (Nautilus also provides the file
+#   chooser behind xdg-desktop-portal-gnome), chezmoi for the DMS settings
+dnf5 install -y alacritty nautilus papers chezmoi brightnessctl playerctl
+# - phones and cameras in Nautilus: Android (MTP), iPhone (AFC), PTP
+dnf5 install -y gvfs-mtp gvfs-afc gvfs-gphoto2
+# - French locale (/etc/locale.conf) and OCR language
+dnf5 install -y glibc-langpack-fr
+# - quickCapture DMS plugin: recording, exports, OCR and QR scanning, by
+#   command so package names don't matter
+dnf5 install -y wf-recorder /usr/bin/magick /usr/bin/img2pdf \
+    /usr/bin/tesseract tesseract-langpack-fra /usr/bin/zbarimg
+# - unlock the login keyring with the greetd login password. Fedora's
+#   /etc/pam.d/greetd calls pam_gnome_keyring as optional ("-auth"), and
+#   gnome-keyring comes in as a weak dependency without its PAM module.
+dnf5 install -y gnome-keyring-pam
+# - lazygit, as on the tablet
+dnf5 -y copr enable dejan/lazygit
+dnf5 install -y lazygit
+dnf5 -y copr disable dejan/lazygit
 
 # Install greetd with the tuigreet login prompt, it starts niri (see
 # /usr/share/my-private-os/greetd.toml)
@@ -98,6 +121,18 @@ systemctl enable ap-role.service
 # greetd is display-manager.service, which graphical.target pulls in
 systemctl enable greetd.service
 systemctl set-default graphical.target
+# Desktop checks: a niri config that doesn't parse, or a keyring greetd can't
+# unlock, fails the build
+niri validate -c /usr/share/niri/portocovo.kdl
+test -e /usr/lib64/security/pam_gnome_keyring.so
+# Fedora 45 ships greetd's PAM config in /usr/lib/pam.d; one in /etc/pam.d
+# would take precedence
+greetd_pam=/etc/pam.d/greetd
+[ -e "$greetd_pam" ] || greetd_pam=/usr/lib/pam.d/greetd
+grep -q pam_gnome_keyring "$greetd_pam"
+# Applies /usr/share/user-tmpfiles.d (per-user niri config) at login
+systemctl --global enable systemd-tmpfiles-setup.service
+systemctl --global is-enabled systemd-tmpfiles-setup.service
 # IRC: ergo.service is generated from its quadlet, enabled by its [Install]
 systemctl enable caddy.service
 systemctl enable podman-auto-update.timer

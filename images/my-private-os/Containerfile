@@ -10,6 +10,12 @@ ARG GAMJA_VERSION=v1.0.0-beta.9
 RUN wget -qO- "https://git.sr.ht/~emersion/gamja/archive/${GAMJA_VERSION}.tar.gz" | tar xz -C /tmp && \
     cd /tmp/gamja-* && npm ci && npm run build && mv dist /gamja
 
+# DMS plugins pinned in dms/plugins.lock.json (the same list as the
+# surfacego3-os image), installed where DMS looks for system-wide plugins
+FROM quay.io/fedora/fedora-bootc:45 AS dms-plugins
+COPY build_files/dms-plugins.sh dms/plugins.lock.json /tmp/
+RUN dnf5 -y install git python3 && /tmp/dms-plugins.sh /tmp/plugins.lock.json /out
+
 # Base Image
 FROM quay.io/fedora/fedora-bootc:45
 ## Other possible base images include:
@@ -34,6 +40,7 @@ FROM quay.io/fedora/fedora-bootc:45
 # RUN rm /opt && mkdir /opt
 
 COPY --from=gamja /gamja /usr/share/gamja
+COPY --from=dms-plugins /out/ /etc/xdg/quickshell/dms-plugins/
 
 ### MODIFICATIONS
 ## make modifications desired in your image and install packages by modifying the build.sh script

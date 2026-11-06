@@ -8,17 +8,26 @@
 # - Internet available (Ethernet, USB tethering...): SecureAP (WPA2), so
 #   clients share the Pi's internet. Not started if its password isn't set.
 # - No internet: OpenAP (no password), to reach the Pi itself.
+#
+# It never interrupts wlan0 while it's connecting to another network (e.g.
+# one picked in niri), and `hotspot off` keeps both access points down until
+# the next reboot (or `hotspot auto`).
 
 set -euo pipefail
 
 dev=wlan0
 open_ap=OpenAP
 secure_ap=SecureAP
+off_flag=/run/my-private-os/hotspot-off
 
 wanted_ap() {
 	local active=$1
 	if [ -n "$active" ] && [ "$active" != "$open_ap" ] && [ "$active" != "$secure_ap" ]; then
 		echo "$dev is connected to '$active' as a client, no access point" >&2
+		return
+	fi
+	if [ -e "$off_flag" ]; then
+		echo "Hotspot switched off (hotspot auto to turn it back on)" >&2
 		return
 	fi
 	if /usr/libexec/my-private-os/has-internet; then
@@ -37,6 +46,15 @@ wanted_ap() {
 # service again while it runs, so check again until nothing changes.
 for _ in 1 2 3; do
 	active=$(nmcli --get-values GENERAL.CONNECTION device show "$dev" 2>/dev/null || true)
+	# NetworkManager device states 40-90 are the steps of connecting (prepare,
+	# config, need-auth, ip-config, ip-check, secondaries)
+	state=$(nmcli --get-values GENERAL.STATE device show "$dev" 2>/dev/null || true)
+	state=${state%% *}
+	if [[ $state =~ ^[0-9]+$ ]] && ((state >= 40 && state <= 90)) &&
+		[ "$active" != "$open_ap" ] && [ "$active" != "$secure_ap" ]; then
+		echo "$dev is connecting to ${active:-a network}, leaving it alone"
+		exit 0
+	fi
 	wanted=$(wanted_ap "$active")
 	if [ "$active" = "$wanted" ]; then
 		echo "Access point: ${wanted:-none}"

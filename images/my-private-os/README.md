@@ -30,7 +30,20 @@ sudo nmcli connection modify SecureAP wifi-sec.psk '<PASTE_PASSWORD_HERE>'
 sudo systemctl start ap-role.service
 ```
 
-While an access point is running, the Pi won't join a known Wi-Fi network on its own. Logs: `journalctl -u ap-role`.
+### Joining a Wi-Fi network
+
+While an access point is running, the Pi won't join a known Wi-Fi network on its own, because wlan0 can't be an access point and a client at the same time. To join a network:
+
+- **From niri:** pick the network in the dms panel. `ap-role` leaves wlan0 alone while NetworkManager is connecting it, including while it waits for the password. If the connection fails, the hotspot comes back.
+- **From a shell:**
+
+  ```bash
+  hotspot off                                   # until the next reboot, or `hotspot auto`
+  nmcli device wifi list
+  sudo nmcli --ask device wifi connect '<NETWORK_NAME_HERE>'
+  ```
+
+Once wlan0 is connected as a client, `ap-role` leaves it alone, and NetworkManager rejoins the saved network at the next boot before `ap-role` runs. `hotspot off` is cleared at reboot on purpose: if the network you joined isn't around anymore, the hotspot comes back, so you can still reach the Pi. `hotspot status` shows the mode and what wlan0 is doing. Logs: `journalctl -u ap-role`.
 
 ## Desktop - niri + dms
 
@@ -140,9 +153,13 @@ Runs at boot after NetworkManager-wait-online and on every NetworkManager dispat
 
 ```mermaid
 flowchart TD
-    start(["ap-role"]) --> client{"wlan0 connected to a<br/>Wi-Fi network as a client?"}
+    start(["ap-role"]) --> connecting{"wlan0 connecting to<br/>another network?"}
+    connecting -->|"yes"| leave(["leave wlan0 alone"])
+    connecting -->|"no"| client{"wlan0 connected to a<br/>Wi-Fi network as a client?"}
     client -->|"yes"| none1(["no access point"])
-    client -->|"no"| internet{"has-internet:<br/>connectivity check is full?"}
+    client -->|"no"| off{"hotspot off<br/>(until reboot)?"}
+    off -->|"yes"| none3(["no access point"])
+    off -->|"no"| internet{"has-internet:<br/>connectivity check is full?"}
     internet -->|"no"| open["OpenAP<br/>AllezViensOnEstBien, no password"]
     internet -->|"yes"| psk{"SecureAP password set?"}
     psk -->|"no"| none2(["no access point:<br/>never share internet openly"])

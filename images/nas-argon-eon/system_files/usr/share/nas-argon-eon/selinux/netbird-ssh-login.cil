@@ -1,0 +1,4 @@
+; NetBird's SSH server starts the session with login, which SELinux blocks with a
+; misleading "<user>: no shell: Permission denied" (netbirdio/netbird#4931). Allow
+; just that transition, from the NetBird daemon's domain to the user's.
+(allow unconfined_service_t unconfined_t (process (transition)))

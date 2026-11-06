@@ -23,6 +23,11 @@ python3 -c 'import gpiod, smbus'
 dnf5 install -y cryptsetup clevis clevis-luks clevis-systemd btrfs-progs nfs-utils
 # Compressed swap in RAM, the OS lives on an SD card
 dnf5 install -y zram-generator-defaults
+# NetBird client (repo and service come from system_files), for NetBird SSH from
+# admins. The peer is enrolled on the machine with a setup key (README).
+dnf5 install -y --setopt=tsflags=noscripts netbird
+semodule -i /usr/share/nas-argon-eon/selinux/netbird-ssh-login.cil
+
 # Backups to BorgBase (see /etc/borgmatic.d)
 dnf5 install -y borgmatic borgbackup
 
@@ -42,6 +47,7 @@ systemctl enable cockpit.socket
 systemctl enable smartd.service
 systemctl enable nas-smart-check.timer nas-btrfs-errors.timer nas-check-update.timer
 systemctl enable nas-backup.timer
+systemctl enable netbird.service
 systemctl enable nas-btrfs-scrub-ssd1tb.timer nas-btrfs-scrub-ssd2tb.timer nas-btrfs-scrub-hdd4tb.timer
 systemctl enable argononed.service
 systemctl enable argoneond.service

@@ -54,7 +54,7 @@ The image uses RPM Fusion's full `ffmpeg` instead of Fedora's `ffmpeg-free`, whi
 Limitations:
 
 - **No hardware video decoding.** The Fedora kernel doesn't include the Raspberry Pi's H.264 and HEVC decoder drivers, so everything is decoded on the CPU. Expect 1080p H.264 to be fine and HEVC or 4K to stutter.
-- **Kodi version.** RPM Fusion's Fedora 44 updates currently ship a Kodi 22 beta, so some add-ons may not be compatible yet.
+- **Kodi version.** RPM Fusion's Fedora 45 ships Kodi 22.0 RC1, a release candidate, so some add-ons may not be compatible yet.
 
 ## How the services fit together
 
@@ -187,7 +187,7 @@ systemd-homed is already in the image, and in order to use it you need to run th
 
 # Building and installing
 
-The image is built for arm64 only and is based on `quay.io/fedora/fedora-bootc:44` (see [Containerfile](./Containerfile)). Packages and services are set up in [build_files/build.sh](./build_files/build.sh), and everything under `system_files/` is copied as-is to `/`.
+The image is built for arm64 only and is based on `quay.io/fedora/fedora-bootc:45` (see [Containerfile](./Containerfile)). Packages and services are set up in [build_files/build.sh](./build_files/build.sh), and everything under `system_files/` is copied as-is to `/`.
 
 [build.yml](./.github/workflows/build.yml) builds the image on every push to `main` and once a day, then pushes and signs it as `ghcr.io/roukydesbois/my-private-os:latest`. Pull requests only build it.
 

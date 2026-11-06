@@ -98,6 +98,17 @@ Daily at 03:30 (`nas-backup.timer`), [borgmatic](https://torsion.org/borgmatic/)
 - A failed run sends a ntfy notification.
 - The repository URL, passphrase and SSH key live on the machine, in `/etc/nas-argon-eon/` (see its README).
 
+### NetBird SSH
+
+The NetBird client is installed so admins can use NetBird SSH (`netbird ssh roukydesbois@evora.internal.thomelab`), independently of the LAN path through the router. The peer, its setup key and the SSH policy are managed in thomelab-ops (`tofu/netbird`). Enroll once on the machine:
+
+```bash
+sudo netbird up --management-url https://netbird.thomelab.net --setup-key <setup key> --hostname evora --allow-server-ssh
+sudo netbird status -d | grep -i ssh    # SSH Server: Enabled
+```
+
+NetBird's SSH server starts sessions through `login`, which SELinux blocks by default (netbirdio/netbird#4931). The image ships a one-rule policy module allowing just that transition (`/usr/share/nas-argon-eon/selinux/netbird-ssh-login.cil`).
+
 ### Updates
 
 Automatic updates are off (`bootc-fetch-apply-updates.timer` is masked): a reboot takes NFS and Garage down. `nas-check-update.timer` sends a ntfy notification when a new image is available. Update by hand when convenient:

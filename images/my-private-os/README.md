@@ -217,6 +217,12 @@ sudo bootc switch ghcr.io/roukydesbois/my-private-os:latest
 ```
 
 3. Reboot. From then on, `bootc upgrade` keeps the system up to date.
+4. Remove the `modprobe.blacklist=vc4` kernel argument that Fedora IoT adds, which keeps the Pi's display driver from loading (the image also loads `vc4` explicitly, see `/usr/lib/modules-load.d/vc4.conf`):
+
+   ```bash
+   sudo rpm-ostree kargs --delete=modprobe.blacklist=vc4
+   systemctl reboot
+   ```
 
 `bootc upgrade` only updates the OS. It doesn't touch the Pi firmware and U-Boot in the boot partition, so they stay at the versions that came with the Fedora IoT install.
 

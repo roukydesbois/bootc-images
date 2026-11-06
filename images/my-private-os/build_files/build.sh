@@ -19,6 +19,20 @@ dnf5 install -y NetworkManager-wifi wpa_supplicant wireless-regdb dnsmasq Networ
 dnf5 install -y htop cockpit cockpit-podman cockpit-ostree cockpit-files
 # Install dependencies for argon one - libgpiod for the power button, smbus (python3-i2c-tools) for the fan
 dnf5 install -y python3-libgpiod i2c-tools python3-i2c-tools smartmontools
+# Fedora 45's python3-libgpiod puts gpiod/__init__.py in /usr/lib/python3.*
+# but its compiled _ext module in /usr/lib64/python3.*, so `import gpiod` fails
+# ("cannot import name '_ext'") and argononed with it. Link _ext next to
+# __init__.py; does nothing once the package ships them together again.
+for ext in /usr/lib64/python3.*/site-packages/gpiod/_ext.*.so; do
+    [ -e "$ext" ] || continue
+    pkg="/usr/lib/${ext#/usr/lib64/}"
+    pkg="${pkg%/*}"
+    if [ -e "$pkg/__init__.py" ] && [ ! -e "$pkg/${ext##*/}" ]; then
+        ln -s "$ext" "$pkg/"
+    fi
+done
+# argononed needs both, fail the build if either can't be imported
+python3 -c 'import gpiod, smbus; print("gpiod", gpiod.__version__)'
 # Install dnf5-plugins to be able to use copr repos
 dnf5 install -y dnf5-plugins
 

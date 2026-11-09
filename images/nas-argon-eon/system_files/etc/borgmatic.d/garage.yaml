@@ -17,14 +17,19 @@ keep_daily: 7
 keep_weekly: 4
 keep_monthly: 3
 compression: lz4
-archive_name_format: "composePlugin-{now:%Y-%m-%d_%H-%M-%S}"
-match_archives: "sh:composePlugin-*"
-# Garage's config and metadata (compose-files, compose-data) and the old OMV
-# compose backups
-source_directories:
-  - /var/srv/ssd1tb/compose-backup
-  - /var/srv/ssd1tb/compose-files
-  - /var/srv/ssd1tb/compose-data
+archive_name_format: "garage-{now:%Y-%m-%d_%H-%M-%S}"
+match_archives: "sh:garage-*"
+# Garage's config (compose-files/garage/garage.toml) and metadata (LMDB in
+# compose-data/garage/meta). Not Garage's own metadata snapshots: they're full
+# copies of the database (GBs of new data each night), and the btrfs snapshot
+# borgmatic takes is already a consistent copy of the live LMDB database.
+# Was "composePlugin" (OMV's compose plugin) until 2026-11; the old
+# composePlugin-* archives are no longer pruned by this file, delete them once
+# this one has some history (README).
+patterns:
+  - R /var/srv/ssd1tb/compose-files
+  - R /var/srv/ssd1tb/compose-data
+  - '- fm:/var/srv/ssd1tb/compose-data/garage/meta/snapshots'
 # The repository check runs from nextcloud-data.yaml only (same repo for all jobs)
 checks:
   - name: disabled

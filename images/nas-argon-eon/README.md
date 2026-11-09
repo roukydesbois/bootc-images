@@ -90,12 +90,17 @@ Daily at 03:30 (`nas-backup.timer`), [borgmatic](https://torsion.org/borgmatic/)
 | `nextcloud-data` | Nextcloud data | `appdata_*` (previews, caches) |
 | `paperless` | Paperless media | |
 | `cryptpad-files` | CryptPad blobs | |
-| `composePlugin` | Garage config + metadata, old OMV compose backups | |
+| `garage` | Garage config + metadata | Garage's own metadata snapshots (`meta/snapshots`) |
 
 - Each source's btrfs subvolume is snapshotted first, so the backup is consistent while the apps keep writing.
 - `compact` runs after `prune`, so pruned archives actually free space.
 - The repository is checked every 2 weeks, archive data every 3 months (it reads the data back from BorgBase).
 - A failed run sends a ntfy notification.
+- The `garage` job was called `composePlugin` (OMV's compose plugin) until November 2026. Its old `composePlugin-*` archives aren't pruned anymore; delete them once the `garage` archives have some history:
+  ```bash
+  sudo systemd-run --wait --pipe -p EnvironmentFile=/etc/nas-argon-eon/borg.env borgmatic delete --match-archives 'sh:composePlugin-*' -c /etc/borgmatic.d/garage.yaml
+  sudo systemd-run --wait --pipe -p EnvironmentFile=/etc/nas-argon-eon/borg.env borgmatic compact -c /etc/borgmatic.d/garage.yaml
+  ```
 - The repository URL, passphrase and SSH key live on the machine, in `/etc/nas-argon-eon/` (see its README).
 
 ### NetBird SSH

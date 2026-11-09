@@ -9,6 +9,11 @@ ssh_command: ssh -i /etc/nas-argon-eon/borgbase-ssh-key -o StrictHostKeyChecking
 # the night's backup: retry after 1, 2 then 3 minutes
 retries: 3
 retry_wait: 60
+# A missing source path is a failure, not a warning: on 2026-11-09 a run that
+# couldn't read its sources still created an (empty) archive and reported success
+borg_exit_codes:
+  - code: 107
+    treat_as: error
 # Snapshot the btrfs subvolume holding each source first: a consistent copy
 # while the apps keep writing
 btrfs:
@@ -25,5 +30,5 @@ patterns:
   - '- fm:/export/thomelab-dynamic-1tb-ssd/immich-immich-library/thumbs'
   - '- fm:/export/thomelab-dynamic-1tb-ssd/immich-immich-library/encoded-video'
 # The repository check runs from nextcloud-data.yaml only (same repo for all jobs)
-checks:
-  - name: disabled
+skip_actions:
+  - check

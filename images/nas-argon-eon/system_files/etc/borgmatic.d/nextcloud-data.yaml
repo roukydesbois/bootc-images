@@ -5,6 +5,10 @@ repositories:
     label: borgbase
 encryption_passcommand: cat /etc/nas-argon-eon/borg-passphrase
 ssh_command: ssh -i /etc/nas-argon-eon/borgbase-ssh-key -o StrictHostKeyChecking=accept-new
+# A dropped connection mid-transfer (borg exit 87, 2026-11-09) shouldn't cost
+# the night's backup: retry after 1, 2 then 3 minutes
+retries: 3
+retry_wait: 60
 # Snapshot the btrfs subvolume holding each source first: a consistent copy
 # while the apps keep writing
 btrfs:

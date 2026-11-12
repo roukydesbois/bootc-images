@@ -1,0 +1,6 @@
+[Unit]
+Description=Send a ntfy notification about the failure of %i
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/nas-argon-eon/notify-unit-failure %i

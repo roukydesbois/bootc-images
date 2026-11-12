@@ -1,0 +1,16 @@
+#!/bin/bash
+# Turn on the Pi's I2C bus (i2c-1), which the Argon EON fan, OLED and RTC sit on.
+# Fedora IoT boots with the firmware device tree, so this is a config.txt
+# setting on the EFI partition, which bootc doesn't manage. Applies after a reboot.
+set -euo pipefail
+
+config=/boot/efi/config.txt
+
+if grep -qx 'dtparam=i2c_arm=on' "$config"; then
+	exit 0
+fi
+
+cp -n "$config" "$config.bak-nas-argon-eon"
+# Under [all], whatever section the file ends with
+printf '\n[all]\n# Argon EON fan, OLED and RTC (nas-argon-eon)\ndtparam=i2c_arm=on\n' >>"$config"
+echo "Enabled dtparam=i2c_arm=on in $config, reboot to apply"

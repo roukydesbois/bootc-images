@@ -1,0 +1,31 @@
+---
+name: Check Ignition config
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'images/nas-argon-eon/ignition/**'
+      - '.github/workflows/ignition.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'images/nas-argon-eon/ignition/**'
+
+jobs:
+  butane:
+    name: Butane source and Ignition file match
+    runs-on: ubuntu-26.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+
+      # Fails on any Butane warning, and when the committed .ign wasn't regenerated
+      - name: Transpile and compare
+        run: |
+          docker run --rm -i quay.io/coreos/butane:v0.29.0 --strict --pretty \
+            < images/nas-argon-eon/ignition/nas-argon-eon.bu > /tmp/nas-argon-eon.ign
+          diff -u images/nas-argon-eon/ignition/nas-argon-eon.ign /tmp/nas-argon-eon.ign

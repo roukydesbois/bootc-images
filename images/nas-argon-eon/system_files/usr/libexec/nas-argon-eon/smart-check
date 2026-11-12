@@ -1,0 +1,39 @@
+#!/bin/bash
+# Daily SMART check of the data disks (behind the EON's USB-SATA bridge, hence -d sat).
+# Alerts through ntfy only when a disk's problems change (new or worse), not every day.
+# smartd itself only runs the self-tests (see /etc/smartmontools/smartd.conf): it runs
+# confined (SELinux fsdaemon_t, dropped capabilities), so it doesn't call ntfy itself.
+set -euo pipefail
+state=/var/lib/nas-argon-eon/smart-state.json
+
+problems="$(
+	for dev in $(lsblk -dnpo NAME,TRAN | awk '$2 == "usb" { print $1 }'); do
+		smartctl -d sat -j -H -A -l selftest "$dev" || true
+	done | python3 -I -c '
+import json, sys
+dec = json.JSONDecoder(); s = sys.stdin.read(); i = 0; out = {}
+while i < len(s):
+    while i < len(s) and s[i].isspace(): i += 1
+    if i >= len(s): break
+    d, i = dec.raw_decode(s, i)
+    name = d.get("model_name", "?") + " " + d.get("serial_number", "?")
+    p = []
+    if not d.get("smart_status", {}).get("passed", True): p.append("overall health FAILED")
+    for a in d.get("ata_smart_attributes", {}).get("table", []):
+        if a["id"] in (5, 197, 198) and a["raw"]["value"] > 0:
+            p.append(a["name"] + "=" + str(a["raw"]["value"]))
+    t = d.get("temperature", {}).get("current")
+    if t is not None and t >= 55: p.append("temperature " + str(t) + " C")
+    tests = d.get("ata_smart_self_test_log", {}).get("standard", {}).get("table", [])
+    if tests and not tests[0].get("status", {}).get("passed", True): p.append("last self-test failed")
+    if p: out[name] = p
+print(json.dumps(out, sort_keys=True))'
+)"
+
+previous="$(cat "$state" 2>/dev/null || echo '{}')"
+if [ "$problems" != "$previous" ] && [ "$problems" != "{}" ]; then
+	/usr/libexec/nas-argon-eon/notify "SMART problems on a data disk" \
+		"$(python3 -I -c 'import json,sys; [print(k + ": " + ", ".join(v)) for k, v in json.loads(sys.argv[1]).items()]' "$problems")" \
+		urgent rotating_light
+fi
+echo "$problems" >"$state"

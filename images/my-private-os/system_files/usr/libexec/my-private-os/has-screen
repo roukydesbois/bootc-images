@@ -1,0 +1,11 @@
+#!/bin/bash
+# Exits 0 if an HDMI or DSI screen is connected, 1 otherwise.
+# Some TVs still report "connected" while switched off.
+
+for status in /sys/class/drm/card*-HDMI-A-*/status /sys/class/drm/card*-DSI-*/status; do
+	[ -r "$status" ] || continue
+	if [ "$(cat "$status")" = connected ]; then
+		exit 0
+	fi
+done
+exit 1

@@ -1,0 +1,8 @@
+# Data disks, unlocked through Tang by clevis-luks-askpass once the network is up
+# (each LUKS header holds a Tang binding, the passphrase slot stays as a fallback).
+# _netdev hangs them off remote-cryptsetup.target; nofail keeps boot and SSH from
+# waiting on them, the mounts, NFS and Garage wait instead (see the mount units).
+# <name>  <device>                                    <key>  <options>
+hdd4tb    UUID=1611bf5a-aeb7-4264-89e3-c9d8cd29e01b   none   luks,_netdev,nofail,tries=0,x-systemd.device-timeout=0
+ssd2tb    UUID=88d7a7aa-8621-4f66-a967-c1d02b1a574d   none   luks,_netdev,nofail,tries=0,x-systemd.device-timeout=0
+ssd1tb    UUID=4f7f96b9-2579-4962-8358-ee0a509fc2f1   none   luks,_netdev,nofail,tries=0,x-systemd.device-timeout=0

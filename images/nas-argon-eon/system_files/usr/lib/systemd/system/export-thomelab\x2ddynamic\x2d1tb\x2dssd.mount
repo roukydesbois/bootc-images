@@ -1,0 +1,11 @@
+[Unit]
+Description=NFS export for thomelab's nfs-csi-1tb StorageClass
+
+[Mount]
+What=/dev/mapper/ssd1tb
+Where=/export/thomelab-dynamic-1tb-ssd
+Type=btrfs
+Options=subvol=thomelab-dynamic-1tb-ssd,noatime,nofail
+
+[Install]
+WantedBy=multi-user.target

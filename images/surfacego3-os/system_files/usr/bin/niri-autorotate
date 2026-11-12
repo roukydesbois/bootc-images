@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+OUTPUT=eDP-1     # check with: niri msg outputs
+FLAG="$XDG_RUNTIME_DIR/tablet-mode"
+monitor-sensor | while read -r line; do
+  case "$line" in
+    *orientation*bottom-up*) t=180 ;;
+    *orientation*left-up*)   t=90 ;;
+    *orientation*right-up*)  t=270 ;;
+    *orientation*normal*)    t=normal ;;
+    *) continue ;;
+  esac
+  [ -e "$FLAG" ] || t=normal
+  niri msg output "$OUTPUT" transform "$t"
+done

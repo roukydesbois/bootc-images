@@ -1,0 +1,9 @@
+[Unit]
+Description=Daily SMART check of the data disks
+
+[Timer]
+OnCalendar=*-*-* 07:15
+Persistent=true
+
+[Install]
+WantedBy=timers.target

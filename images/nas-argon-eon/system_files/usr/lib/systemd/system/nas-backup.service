@@ -1,0 +1,16 @@
+[Unit]
+Description=Backups to BorgBase (borgmatic, /etc/borgmatic.d)
+Wants=network-online.target
+After=network-online.target
+RequiresMountsFor=/export/thomelab-dynamic-1tb-ssd /export/thomelab-dynamic-2tb-ssd /var/srv/ssd1tb
+OnFailure=nas-notify-failure@%n.service
+
+[Service]
+Type=oneshot
+# BORGBASE_REPO, host-local (see /etc/nas-argon-eon/README)
+EnvironmentFile=/etc/nas-argon-eon/borg.env
+# create, prune, compact (frees the pruned space) and the checks, for each job
+ExecStart=/usr/bin/borgmatic --verbosity 1 --stats
+Nice=19
+IOSchedulingClass=idle
+LogRateLimitIntervalSec=0

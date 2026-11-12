@@ -1,0 +1,7 @@
+[Unit]
+Description=Check the data disks' btrfs error counters
+OnFailure=nas-notify-failure@%n.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/nas-argon-eon/btrfs-check-errors

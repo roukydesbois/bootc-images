@@ -1,0 +1,9 @@
+#!/bin/bash
+# Re-check which access point to run when a connection goes up or down or
+# internet connectivity changes
+
+case "$2" in
+up | down | connectivity-change)
+	systemctl start --no-block ap-role.service
+	;;
+esac

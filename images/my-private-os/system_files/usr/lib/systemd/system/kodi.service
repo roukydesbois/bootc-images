@@ -1,0 +1,33 @@
+# Starts Kodi fullscreen on tty1 without a compositor, adapted from
+# https://github.com/graysky2/kodi-standalone-service
+# Not enabled: screen-role.service starts it when a screen is connected.
+[Unit]
+Description=Kodi standalone (GBM)
+After=remote-fs.target systemd-user-sessions.service network-online.target nss-lookup.target sound.target bluetooth.target polkit.service plymouth-quit-wait.service
+Wants=network-online.target polkit.service
+Conflicts=greetd.service getty@tty1.service
+# Quitting Kodi from its menu gives tty1 back to the greetd login prompt
+OnSuccess=greetd.service
+# Stop retrying (e.g. no screen connected) after 3 failures in 2 minutes
+StartLimitIntervalSec=120
+StartLimitBurst=3
+OnFailure=greetd.service
+
+[Service]
+User=kodi
+Group=kodi
+SupplementaryGroups=audio video render input
+# A logind session on tty1 gives Kodi its runtime dir, PipeWire and device access
+PAMName=login
+TTYPath=/dev/tty1
+StandardInput=tty
+StandardOutput=journal
+ExecCondition=/usr/libexec/my-private-os/has-screen
+# Through the /usr/bin/kodi launcher (bin_t), not kodi.bin: the PAM login
+# session switches to the user's SELinux domain when it execs ExecStart, and
+# kodi.bin (lib_t, in /usr/lib64) isn't allowed as an entrypoint, so the
+# start failed with 203/EXEC. The launcher passes the arguments and Kodi's
+# exit code through, and writes crash logs to ~/.kodi/temp.
+ExecStart=/usr/bin/kodi --standalone --windowing=gbm
+Restart=on-failure
+RestartSec=10

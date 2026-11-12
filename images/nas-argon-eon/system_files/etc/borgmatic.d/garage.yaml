@@ -1,0 +1,40 @@
+# One file per backup job (the OMV borg plugin's jobs), all to the same BorgBase repo.
+# Repo URL, passphrase and SSH key are host-local (see /etc/nas-argon-eon/README).
+repositories:
+  - path: ${BORGBASE_REPO}
+    label: borgbase
+encryption_passcommand: cat /etc/nas-argon-eon/borg-passphrase
+ssh_command: ssh -i /etc/nas-argon-eon/borgbase-ssh-key -o StrictHostKeyChecking=accept-new
+# A dropped connection mid-transfer (borg exit 87, 2026-11-09) shouldn't cost
+# the night's backup: retry after 1, 2 then 3 minutes
+retries: 3
+retry_wait: 60
+# A missing source path is a failure, not a warning: on 2026-11-09 a run that
+# couldn't read its sources still created an (empty) archive and reported success
+borg_exit_codes:
+  - code: 107
+    treat_as: error
+# Snapshot the btrfs subvolume holding each source first: a consistent copy
+# while the apps keep writing
+btrfs:
+exclude_caches: true
+keep_daily: 7
+keep_weekly: 4
+keep_monthly: 3
+compression: lz4
+archive_name_format: "garage-{now:%Y-%m-%d_%H-%M-%S}"
+match_archives: "sh:garage-*"
+# Garage's config (compose-files/garage/garage.toml) and metadata (LMDB in
+# compose-data/garage/meta). Not Garage's own metadata snapshots: they're full
+# copies of the database (GBs of new data each night), and the btrfs snapshot
+# borgmatic takes is already a consistent copy of the live LMDB database.
+# Was "composePlugin" (OMV's compose plugin) until 2026-11; the old
+# composePlugin-* archives are no longer pruned by this file, delete them once
+# this one has some history (README).
+patterns:
+  - R /var/srv/ssd1tb/compose-files
+  - R /var/srv/ssd1tb/compose-data
+  - '- fm:/var/srv/ssd1tb/compose-data/garage/meta/snapshots'
+# The repository check runs from nextcloud-data.yaml only (same repo for all jobs)
+skip_actions:
+  - check

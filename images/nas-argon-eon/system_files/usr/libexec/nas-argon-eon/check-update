@@ -1,0 +1,22 @@
+#!/bin/bash
+# Automatic updates are off (a reboot takes NFS and Garage down): tell ntfy once
+# per new image that an update is waiting, so applying it by hand isn't forgotten.
+set -euo pipefail
+state=/var/lib/nas-argon-eon/notified-update
+
+bootc upgrade --check >/dev/null
+read -r booted cached < <(bootc status --format=json | python3 -c '
+import json, sys
+b = json.load(sys.stdin)["status"]["booted"]
+print((b.get("image") or {}).get("imageDigest", "-"), (b.get("cachedUpdate") or {}).get("imageDigest", "-"))')
+
+if [ "$cached" = "-" ] || [ "$cached" = "$booted" ]; then
+	exit 0
+fi
+if [ "$(cat "$state" 2>/dev/null)" = "$cached" ]; then
+	exit 0
+fi
+/usr/libexec/nas-argon-eon/notify "image update available" \
+	"New nas-argon-eon image ${cached}. Apply when NFS/Garage can go down for a few minutes: sudo bootc upgrade && sudo systemctl reboot" \
+	default arrow_up
+echo "$cached" >"$state"

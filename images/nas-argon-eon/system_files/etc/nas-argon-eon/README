@@ -1,0 +1,17 @@
+Notifications (disk health, btrfs errors, failed scrubs, image updates) go to ntfy.
+Create /etc/nas-argon-eon/ntfy.env on the machine (not in the image: the token is a
+secret), mode 0600:
+
+NTFY_URL=https://ntfy.thomelab.net
+NTFY_TOPIC=<topic>
+NTFY_TOKEN=<token>
+
+Test with: sudo /usr/libexec/nas-argon-eon/notify test "hello from $(hostname)"
+
+Backups (nas-backup.timer, borgmatic with /etc/borgmatic.d) need, all mode 0600:
+
+/etc/nas-argon-eon/borg.env          BORGBASE_REPO=ssh://<id>@<id>.repo.borgbase.com/./repo
+/etc/nas-argon-eon/borg-passphrase   the repository passphrase, alone on one line
+/etc/nas-argon-eon/borgbase-ssh-key  the private SSH key registered in BorgBase
+
+Test with: sudo systemd-run --wait --pipe -p EnvironmentFile=/etc/nas-argon-eon/borg.env borgmatic list --last 3

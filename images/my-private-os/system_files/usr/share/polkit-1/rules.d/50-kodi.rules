@@ -1,0 +1,22 @@
+// Let the kodi user power off, reboot and suspend from Kodi's menu, and mount
+// USB drives
+polkit.addRule(function(action, subject) {
+    if (subject.user != "kodi") {
+        return polkit.Result.NOT_HANDLED;
+    }
+    var allowed = [
+        "org.freedesktop.login1.power-off",
+        "org.freedesktop.login1.reboot",
+        "org.freedesktop.login1.suspend",
+        "org.freedesktop.login1.hibernate",
+        "org.freedesktop.udisks2.filesystem-mount",
+        "org.freedesktop.udisks2.eject-media",
+        "org.freedesktop.udisks2.power-off-drive",
+    ];
+    for (var i = 0; i < allowed.length; i++) {
+        if (action.id.indexOf(allowed[i]) == 0) {
+            return polkit.Result.YES;
+        }
+    }
+    return polkit.Result.NOT_HANDLED;
+});

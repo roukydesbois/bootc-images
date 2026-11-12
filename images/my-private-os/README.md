@@ -1,0 +1,275 @@
+# my-private-os
+
+This repository, a copy of Universal Blue's image template, is originally meant to be run on my RPI4 that I can travel with. It serves multiple roles and has multiple functionalities.
+
+## Argon case fan
+
+My RPI4 runs in an Argon40 ONE case. I took the scripts from argon40, modified them slightly (the path in which they are stored) in order to work properly. 
+
+- code in `/usr/share/argon/`, config in `/etc/argon/` (fan curves in `argononed.conf` and `argononed-hdd.conf`)
+- `argononed.service` handles the fan and the power button (double press reboots, long press shuts down)
+- `/usr/lib/systemd/system-shutdown/argon-shutdown.sh` turns the fan off and tells the case to cut power on poweroff
+- the `i2c-dev` module is loaded at boot (`/usr/lib/modules-load.d/argon-i2c.conf`) since the fan is driven over I2C
+
+## Wifi Hotspot
+
+`ap-role.service` picks the access point on wlan0 at boot (after NetworkManager has tried known Wi-Fi networks) and again whenever a connection goes up or down or internet connectivity changes:
+
+| Situation | Access point |
+|---|---|
+| wlan0 connected to a Wi-Fi network as a client | none (wlan0 can't do both) |
+| Internet available, e.g. over Ethernet | `SecureAP`, SSID `cuidado_na_curva`, WPA2, shares the Pi's internet, clients can't see each other |
+| No internet | `OpenAP`, SSID `AllezViensOnEstBien`, no password, to reach the Pi itself (Cockpit, SSH), clients can't see each other |
+
+"Internet" means NetworkManager's connectivity check succeeds. A captive portal counts as no internet.
+
+The `SecureAP` password isn't in the image. Set it once on the Pi; until then, no access point runs while there's internet:
+
+```bash
+sudo nmcli connection modify SecureAP wifi-sec.psk '<PASTE_PASSWORD_HERE>'
+sudo systemctl start ap-role.service
+```
+
+### Joining a Wi-Fi network
+
+While an access point is running, the Pi won't join a known Wi-Fi network on its own, because wlan0 can't be an access point and a client at the same time. To join a network:
+
+- **From niri:** pick the network in the dms panel. `ap-role` leaves wlan0 alone while NetworkManager is connecting it, including while it waits for the password. If the connection fails, the hotspot comes back.
+- **From a shell:**
+
+  ```bash
+  hotspot off                                   # until the next reboot, or `hotspot auto`
+  nmcli device wifi list
+  sudo nmcli --ask device wifi connect '<NETWORK_NAME_HERE>'
+  ```
+
+Once wlan0 is connected as a client, `ap-role` leaves it alone, and NetworkManager rejoins the saved network at the next boot before `ap-role` runs. `hotspot off` is cleared at reboot on purpose: if the network you joined isn't around anymore, the hotspot comes back, so you can still reach the Pi. `hotspot status` shows the mode and what wlan0 is doing. Logs: `journalctl -u ap-role`.
+
+## Desktop - niri + dms
+
+greetd shows a tuigreet login prompt on tty1. Logging in starts niri with dms, and the RPI4 transforms into a regular computer (given a keyboard and mouse are connected). Press F3 at the prompt to pick another session (RetroArch, or "Kodi (your user)", which runs in `cage` with your own Kodi profile); tuigreet remembers the last user and session. Your systemd-homed home is unlocked by the password you type there, so there's no auto-login.
+
+The desktop is set up like the [surfacego3-os](../surfacego3-os/) tablet, minus its tablet-only parts (touch mapping, autorotate, on-screen keyboard):
+
+- **niri config:** `/usr/share/niri/portocovo.kdl` ships with the image (keybindings, layout, alacritty on Mod+T, DMS launcher on Mod+D, lock on Super+Alt+L). On first login, `~/.config/niri/config.kdl` is created from `/usr/share/niri/user-config.kdl`: it includes the image's config, then DMS's own files, and anything you add below the include overrides it.
+- **DMS plugins:** the ones pinned in `dms/plugins.lock.json`, installed system-wide in `/etc/xdg/quickshell/dms-plugins`. They're switched on in DMS's settings, and those come from chezmoi on the tablet.
+- **Locale and keyboard:** French (`/etc/locale.conf`, and `fr` `oss` for niri through `/etc/X11/xorg.conf.d/00-keyboard.conf`).
+- **Login keyring:** unlocked by the greetd login password (`gnome-keyring-pam`).
+
+An account that already had a `~/.config/niri/config.kdl` keeps it. To switch to the image's config once (your old file is kept as `config.kdl.old`):
+
+```bash
+mv ~/.config/niri/config.kdl ~/.config/niri/config.kdl.old
+cp /usr/share/niri/user-config.kdl ~/.config/niri/config.kdl
+```
+
+## kodi
+
+Kodi comes from RPM Fusion. `kodi.service` runs it fullscreen on tty1, without niri, as the `kodi` user (settings and library in `/var/lib/kodi/.kodi`). Which service gets the screen:
+
+- At boot, or when a screen is plugged in later, `screen-role.service` starts Kodi if an HDMI or DSI screen is connected and nobody is logged in on it (the greetd login prompt doesn't count). It does this at most once per boot.
+- Quitting Kodi from its power menu brings back the greetd login prompt on tty1, where you can log in to niri. The login prompt keeps the screen, even if the screen is unplugged or switched off and on again.
+- To get Kodi back, start or restart `kodi.service` from Cockpit (Services) or with `sudo systemctl start kodi.service`. This stops greetd, so it also ends a niri session running on the screen.
+- If Kodi fails 3 times within 2 minutes, it stops retrying and tty1 shows the greetd login prompt.
+- Logs: `journalctl -u screen-role -u kodi`. Check whether a screen is detected with `/usr/libexec/my-private-os/has-screen; echo $?` (0 = connected).
+- Kodi can still be started as a regular application from niri.
+
+The image uses RPM Fusion's full `ffmpeg` instead of Fedora's `ffmpeg-free`, which can't decode HEVC, E-AC3 or VC-1 and only decodes H.264 through openh264.
+
+Limitations:
+
+- **No hardware video decoding.** The Fedora kernel doesn't include the Raspberry Pi's H.264 and HEVC decoder drivers, so everything is decoded on the CPU. Expect 1080p H.264 to be fine and HEVC or 4K to stutter.
+- **Kodi version.** RPM Fusion's Fedora 45 ships Kodi 22.0 RC1, a release candidate, so some add-ons may not be compatible yet.
+
+## Retro gaming - RetroArch
+
+[RetroArch](https://www.retroarch.com) comes from Flathub (`org.libretro.RetroArch`), so it can download any emulator core with its built-in core downloader, including Mega Drive and N64 cores that Fedora doesn't package:
+
+- `retroarch-install.service` installs it on the first boot with internet, into `/var/lib/flatpak`. Without internet it retries every 10 minutes. Flathub is preconfigured in `/usr/share/flatpak/remotes.d/`.
+- `flatpak-system-update.timer` updates it daily.
+- To play on the TV: quit Kodi (or boot without Kodi taking the screen), then at the greetd login prompt press F3, pick **RetroArch** and log in. It runs fullscreen in `cage`. Quitting RetroArch brings back the login prompt, and tuigreet remembers the session for next time. It's also in niri's app launcher.
+- Kodi stays the default when a screen is connected. Starting `kodi.service` (Cockpit, `systemctl`) takes the screen back from RetroArch.
+
+What a Pi 4 handles: up to PlayStation 1 well (8/16-bit consoles, Game Boy/GBA, PC Engine, PS1 with `pcsx_rearmed`), some N64/DS/PSP, nothing from PS2/GameCube onwards. USB controllers work as they are, Bluetooth ones pair with `bluetoothctl` or the dms panel. Put your own game dumps in e.g. `~/ROMs` (Cockpit's file manager, `rsync` or a USB stick), and point RetroArch's "Import Content" at it. PlayStation 1 games work best with a BIOS dump from your own console in RetroArch's `system` directory.
+
+## How the services fit together
+
+### Units, targets and triggers
+
+Solid arrows start a unit (through a target's dependencies, `systemctl start`, or `OnSuccess=`/`OnFailure=`). Dotted lines are ordering or conflicts. Double-bordered boxes are event hooks.
+
+```mermaid
+flowchart TD
+    boot(["boot"]) --> graphical["graphical.target (default)"]
+    graphical --> multi["multi-user.target"]
+    graphical -->|"display-manager.service"| greetd["greetd.service<br/>tuigreet login on tty1"]
+
+    multi --> argon["argononed.service<br/>fan + power button"]
+    multi --> netbird["netbird.service"]
+    multi --> sockets["cockpit.socket, podman.socket"]
+    multi --> screenrole["screen-role.service<br/>oneshot"]
+    multi --> aprole["ap-role.service<br/>oneshot"]
+
+    udev[["udev rule: DRM card added<br/>or screen plugged in/out"]] --> screenrole
+    screenrole -->|"has-screen and nobody logged in"| kodi["kodi.service<br/>Kodi on tty1 as user kodi"]
+    manual(["Cockpit or systemctl start"]) --> kodi
+    kodi -.-|"Conflicts"| greetd
+    kodi -->|"OnSuccess / OnFailure"| greetd
+    greetd -->|"login"| niri["niri-session<br/>+ dms user service"]
+
+    nmwait["NetworkManager-wait-online.service"] -.->|"After"| aprole
+    dispatcher[["NetworkManager dispatcher:<br/>up, down, connectivity-change"]] --> aprole
+    aprole -->|"nmcli connection up/down"| aps[("OpenAP or SecureAP on wlan0")]
+
+    poweroff(["poweroff / halt"]) --> argonsd["argon-shutdown.sh<br/>fan off, case cuts power"]
+```
+
+### Who owns the screen (tty1)
+
+```mermaid
+stateDiagram-v2
+    direction LR
+    [*] --> greetd: boot
+    greetd --> kodi: screen-role, first time this boot
+    greetd --> kodi: kodi.service started by hand
+    kodi --> greetd: Kodi quit (OnSuccess)
+    kodi --> greetd: 3 failures in 2 min (OnFailure)
+    greetd --> niri: login
+    niri --> greetd: logout
+    niri --> kodi: kodi.service started by hand, ends niri
+    greetd --> retroarch: login, RetroArch session (F3)
+    retroarch --> greetd: RetroArch quit
+    retroarch --> kodi: kodi.service started by hand, ends RetroArch
+```
+
+### screen-role: should Kodi take the screen?
+
+Runs at boot and on every DRM hotplug event.
+
+```mermaid
+flowchart TD
+    start(["screen-role"]) --> screen{"has-screen:<br/>HDMI or DSI connected?"}
+    screen -->|"no"| skip1(["do nothing"])
+    screen -->|"yes"| flag{"Kodi already started<br/>automatically this boot?"}
+    flag -->|"yes"| skip2(["do nothing:<br/>the login prompt keeps the screen"])
+    flag -->|"no"| running{"kodi.service running?"}
+    running -->|"yes"| skip3(["do nothing"])
+    running -->|"no"| session{"someone logged in on seat0?<br/>the greeter does not count"}
+    session -->|"yes"| skip4(["do nothing"])
+    session -->|"no"| startkodi["remember it in /run/my-private-os<br/>start kodi.service"]
+```
+
+### ap-role: which access point?
+
+Runs at boot after NetworkManager-wait-online and on every NetworkManager dispatcher event. After switching, it checks again (up to 3 times) until nothing changes.
+
+```mermaid
+flowchart TD
+    start(["ap-role"]) --> connecting{"wlan0 connecting to<br/>another network?"}
+    connecting -->|"yes"| leave(["leave wlan0 alone"])
+    connecting -->|"no"| client{"wlan0 connected to a<br/>Wi-Fi network as a client?"}
+    client -->|"yes"| none1(["no access point"])
+    client -->|"no"| off{"hotspot off<br/>(until reboot)?"}
+    off -->|"yes"| none3(["no access point"])
+    off -->|"no"| internet{"has-internet:<br/>connectivity check is full?"}
+    internet -->|"no"| open["OpenAP<br/>AllezViensOnEstBien, no password"]
+    internet -->|"yes"| psk{"SecureAP password set?"}
+    psk -->|"no"| none2(["no access point:<br/>never share internet openly"])
+    psk -->|"yes"| secure["SecureAP<br/>cuidado_na_curva, WPA2, shares internet"]
+```
+
+Both access points isolate their clients from each other. "No access point" also stops one that's running.
+
+
+## IRC server and web client
+
+The Pi hosts an IRC network (`portocovo`, server `irc.thomelab.net`):
+
+- **[Ergo](https://ergo.chat)** runs as a Podman quadlet (`ergo.service`, image `ghcr.io/ergochat/ergo:stable`, updated by `podman-auto-update.timer`). Its config is `/usr/share/my-private-os/ergo/ircd.yaml`, and accounts and channels are stored in `/var/lib/ergo`. Chat history is kept in memory, so it's lost on restart.
+- **[gamja](https://git.sr.ht/~emersion/gamja)**, a web IRC client, is served by **Caddy** on port 80, which also passes `/socket` to Ergo's WebSocket.
+
+| From | URL | Account needed? |
+|---|---|---|
+| The hotspot (either access point) | http://chat.lan, or IRC on `10.42.0.1:6667` | No, pick any nickname (or log in) |
+| The internet, when the Pi has a connection | https://irc.thomelab.net (NetBird reverse proxy, personal-ops `tofu/netbird`) | Yes |
+| NetBird peers | IRC on the Pi's NetBird address, port 6667 | Yes |
+| The Pi itself (e.g. over SSH) | IRC on `127.0.0.1:6667` | No |
+
+The account check uses each client's real address. Web clients all reach Ergo through Caddy on 127.0.0.1, but Caddy always overwrites `X-Forwarded-For` and Ergo reads the address from it, so the localhost exemption only covers connections made on the Pi.
+
+Nobody can register an account themselves. You create accounts as the IRC operator:
+
+1. Once, set the operator password on the Pi. The hash stays in `/etc/ergo/ergo.env`, outside this public repo:
+
+   ```bash
+   set-irc-oper-password
+   ```
+
+   It asks for the password twice, hashes it with the Ergo image's `genpasswd` (as root: rootless
+   podman doesn't work for systemd-homed users, who get no `/etc/subuid` ranges), writes the env
+   file and restarts `ergo.service`.
+
+2. Create accounts on the Pi (e.g. over SSH), including your own:
+
+   ```bash
+   irc-register-account <account>
+   ```
+
+   It asks for the operator password and the new account's password (twice), then connects to
+   Ergo locally, opers up and runs `NickServ SAREGISTER`. From the hotspot, you can do the same by
+   hand in any client: `/OPER admin <operator password>`, then
+   `/msg NickServ SAREGISTER <account> <password>`.
+
+The account then logs in from anywhere with SASL (gamja asks for a password when connecting). To administer the server from https://irc.thomelab.net, log in with your own account, then `/OPER admin <operator password>`. Logs: `journalctl -u ergo -u caddy`.
+
+## "Manual" setup
+
+### systemd-homed
+
+systemd-homed is already in the image, and in order to use it you need to run the `sudo authselect enable-feature with-systemd-homed` command so that it works at login and cockpit and ssh. Also, for each user, run `homectl update [user] --ssh-authorized-keys=@/path/to/.ssh/authorized_keys`.
+
+# Building and installing
+
+The image is built for arm64 only and is based on `quay.io/fedora/fedora-bootc:45` (see [Containerfile](./Containerfile)). Packages and services are set up in [build_files/build.sh](./build_files/build.sh), and everything under `system_files/` is copied as-is to `/`.
+
+[build.yml](../../.github/workflows/build.yml) builds the image on every push to `main` and once a day, then pushes and signs it as `ghcr.io/roukydesbois/bootc-images/my-private-os:latest`. Pull requests only build it.
+
+## Installing on the Raspberry Pi 4
+
+This repository doesn't build disk images: bootc-image-builder doesn't add the Raspberry Pi firmware or U-Boot to the boot partition, so its images don't boot on the Pi. Instead:
+
+1. Flash a Fedora IoT aarch64 image of the same Fedora release as the base image. It includes everything the Pi needs to boot.
+2. Boot it and switch to this image:
+
+```bash
+sudo bootc switch ghcr.io/roukydesbois/bootc-images/my-private-os:latest
+```
+
+3. Reboot. From then on, `bootc upgrade` keeps the system up to date.
+4. Remove the `modprobe.blacklist=vc4` kernel argument that Fedora IoT adds, which keeps the Pi's display driver from loading (the image also loads `vc4` explicitly, see `/usr/lib/modules-load.d/vc4.conf`):
+
+   ```bash
+   sudo rpm-ostree kargs --delete=modprobe.blacklist=vc4
+   systemctl reboot
+   ```
+
+`bootc upgrade` only updates the OS. It doesn't touch the Pi firmware and U-Boot in the boot partition, so they stay at the versions that came with the Fedora IoT install.
+
+## Local builds
+
+Run `just` to see the available recipes. The ones used most:
+
+- `just build`: build the container image with podman
+- `just lint` / `just format`: run shellcheck / shfmt on the shell scripts
+
+To test a local build on a bootc system, the image has to be in root's container storage (`sudo just build` puts it there):
+
+```bash
+sudo bootc switch --transport containers-storage localhost/my-private-os:latest
+```
+
+## Signing
+
+Images are signed with cosign in CI using the `SIGNING_SECRET` repository secret. The matching public key is [cosign.pub](./cosign.pub). Never commit `cosign.key`.
+
+This repository started from Universal Blue's [image-template](https://github.com/ublue-os/image-template).

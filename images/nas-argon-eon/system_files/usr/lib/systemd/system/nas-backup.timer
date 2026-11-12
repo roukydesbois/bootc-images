@@ -1,0 +1,10 @@
+[Unit]
+Description=Daily backups to BorgBase
+
+[Timer]
+OnCalendar=*-*-* 03:30
+RandomizedDelaySec=15min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

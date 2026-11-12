@@ -1,0 +1,10 @@
+[Unit]
+Description=Monthly btrfs scrub of /var/srv/hdd4tb
+
+[Timer]
+OnCalendar=*-*-15 02:00
+Persistent=true
+Unit=nas-btrfs-scrub@hdd4tb.service
+
+[Install]
+WantedBy=timers.target

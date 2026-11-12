@@ -1,0 +1,9 @@
+[Unit]
+Description=Notify when a new nas-argon-eon image is available
+Wants=network-online.target
+After=network-online.target
+OnFailure=nas-notify-failure@%n.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/nas-argon-eon/check-update

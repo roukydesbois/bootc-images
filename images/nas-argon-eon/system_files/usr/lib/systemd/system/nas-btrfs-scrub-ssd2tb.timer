@@ -1,0 +1,10 @@
+[Unit]
+Description=Monthly btrfs scrub of /var/srv/ssd2tb
+
+[Timer]
+OnCalendar=*-*-08 02:00
+Persistent=true
+Unit=nas-btrfs-scrub@ssd2tb.service
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,18 @@
+input {
+    touch {
+        map-to-output "eDP-1"
+    }
+    tablet {
+        map-to-output "eDP-1"
+    }
+}
+spawn-at-startup "niri-autorotate"
+spawn-at-startup "wvkbd-mobintl" "--hidden" "-L" "280" "-H" "400"
+switch-events {
+    tablet-mode-on {
+        spawn "sh" "-c" "touch \"$XDG_RUNTIME_DIR/tablet-mode\"";
+    }
+    tablet-mode-off {
+        spawn "sh" "-c" "rm -f \"$XDG_RUNTIME_DIR/tablet-mode\"; pkill -USR1 wvkbd-mobintl; niri msg output eDP-1 transform normal";
+    }
+}

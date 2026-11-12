@@ -132,7 +132,7 @@ On a Raspberry Pi 4, install Fedora IoT first (with an SSH public key for the us
 1. Check that the root filesystem fills the SD card: `df -h /sysroot`. If it's still the image's ~3.5 GB (`--resizefs` not used), grow the partition first: the switch downloads more than that and fails.
 2. Switch and reboot:
    ```bash
-   sudo bootc switch ghcr.io/roukydesbois/nas-argon-eon:latest
+   sudo bootc switch ghcr.io/roukydesbois/bootc-images/nas-argon-eon:latest
    sudo systemctl reboot
    ```
 3. After the reboot:

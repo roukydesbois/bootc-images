@@ -49,7 +49,7 @@ Once wlan0 is connected as a client, `ap-role` leaves it alone, and NetworkManag
 
 greetd shows a tuigreet login prompt on tty1. Logging in starts niri with dms, and the RPI4 transforms into a regular computer (given a keyboard and mouse are connected). Press F3 at the prompt to pick another session (RetroArch, or "Kodi (your user)", which runs in `cage` with your own Kodi profile); tuigreet remembers the last user and session. Your systemd-homed home is unlocked by the password you type there, so there's no auto-login.
 
-The desktop is set up like the [surfacego3-os](https://github.com/roukydesbois/surfacego3-os) tablet, minus its tablet-only parts (touch mapping, autorotate, on-screen keyboard):
+The desktop is set up like the [surfacego3-os](../surfacego3-os/) tablet, minus its tablet-only parts (touch mapping, autorotate, on-screen keyboard):
 
 - **niri config:** `/usr/share/niri/portocovo.kdl` ships with the image (keybindings, layout, alacritty on Mod+T, DMS launcher on Mod+D, lock on Super+Alt+L). On first login, `~/.config/niri/config.kdl` is created from `/usr/share/niri/user-config.kdl`: it includes the image's config, then DMS's own files, and anything you add below the include overrides it.
 - **DMS plugins:** the ones pinned in `dms/plugins.lock.json`, installed system-wide in `/etc/xdg/quickshell/dms-plugins`. They're switched on in DMS's settings, and those come from chezmoi on the tablet.
@@ -232,7 +232,7 @@ systemd-homed is already in the image, and in order to use it you need to run th
 
 The image is built for arm64 only and is based on `quay.io/fedora/fedora-bootc:45` (see [Containerfile](./Containerfile)). Packages and services are set up in [build_files/build.sh](./build_files/build.sh), and everything under `system_files/` is copied as-is to `/`.
 
-[build.yml](./.github/workflows/build.yml) builds the image on every push to `main` and once a day, then pushes and signs it as `ghcr.io/roukydesbois/my-private-os:latest`. Pull requests only build it.
+[build.yml](../../.github/workflows/build.yml) builds the image on every push to `main` and once a day, then pushes and signs it as `ghcr.io/roukydesbois/bootc-images/my-private-os:latest`. Pull requests only build it.
 
 ## Installing on the Raspberry Pi 4
 
@@ -242,7 +242,7 @@ This repository doesn't build disk images: bootc-image-builder doesn't add the R
 2. Boot it and switch to this image:
 
 ```bash
-sudo bootc switch ghcr.io/roukydesbois/my-private-os:latest
+sudo bootc switch ghcr.io/roukydesbois/bootc-images/my-private-os:latest
 ```
 
 3. Reboot. From then on, `bootc upgrade` keeps the system up to date.

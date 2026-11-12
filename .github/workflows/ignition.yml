@@ -5,12 +5,13 @@ on:
     branches:
       - main
     paths:
-      - 'ignition/**'
+      - 'images/nas-argon-eon/ignition/**'
+      - '.github/workflows/ignition.yml'
   push:
     branches:
       - main
     paths:
-      - 'ignition/**'
+      - 'images/nas-argon-eon/ignition/**'
 
 jobs:
   butane:
@@ -26,5 +27,5 @@ jobs:
       - name: Transpile and compare
         run: |
           docker run --rm -i quay.io/coreos/butane:v0.29.0 --strict --pretty \
-            < ignition/nas-argon-eon.bu > /tmp/nas-argon-eon.ign
-          diff -u ignition/nas-argon-eon.ign /tmp/nas-argon-eon.ign
+            < images/nas-argon-eon/ignition/nas-argon-eon.bu > /tmp/nas-argon-eon.ign
+          diff -u images/nas-argon-eon/ignition/nas-argon-eon.ign /tmp/nas-argon-eon.ign

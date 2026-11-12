@@ -8,6 +8,12 @@
 
   "packageRules": [
     {
+      // One PR per base image bump, covering every image built on it
+      "groupName": "Fedora bootc base image",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["quay.io/fedora/fedora-bootc"]
+    },
+    {
       "automerge": true,
       "matchUpdateTypes": ["pin", "pinDigest"]
     },

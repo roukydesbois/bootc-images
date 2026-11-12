@@ -1,5 +1,5 @@
 ---
-name: Build container image
+name: Build container images
 on:
   pull_request:
     branches:
@@ -14,27 +14,90 @@ on:
   workflow_dispatch:
 
 env:
-  IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}"  # do not edit
+  # Images are pushed as ghcr.io/<owner>/bootc-images/<image>
+  IMAGE_REGISTRY: "ghcr.io/${{ github.repository_owner }}/${{ github.event.repository.name }}"
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}-${{ inputs.brand_name}}-${{ inputs.stream_name }}
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
   cancel-in-progress: true
 
 jobs:
-  build_push:
-    name: Build and push image
-    runs-on: ubuntu-26.04-arm
+  # Picks the images to build: the ones whose folder changed, or all of them
+  # for scheduled/manual runs and changes to this workflow.
+  changes:
+    name: Select images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      matrix: ${{ steps.select.outputs.matrix }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
 
+      - name: Select images
+        id: select
+        env:
+          EVENT: ${{ github.event_name }}
+          PR_BASE: ${{ github.event.pull_request.base.sha }}
+          PUSH_BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          # Runner per image: the Pis are arm64, the Surface is amd64.
+          declare -A RUNNERS=(
+            [nas-argon-eon]=ubuntu-26.04-arm
+            [my-private-os]=ubuntu-26.04-arm
+            [surfacego3-os]=ubuntu-26.04
+          )
+          case "$EVENT" in
+            pull_request) base=$PR_BASE ;;
+            push) base=$PUSH_BEFORE ;;
+            *) base= ;;
+          esac
+          all=false
+          if [[ -z "$base" || "$base" =~ ^0+$ ]] || ! git cat-file -e "$base^{commit}" 2>/dev/null; then
+            all=true
+            changed=
+          else
+            changed=$(git diff --name-only "$base" HEAD)
+            grep -qx '.github/workflows/build.yml' <<<"$changed" && all=true
+          fi
+          include=()
+          for image in "${!RUNNERS[@]}"; do
+            if $all || grep -q "^images/${image}/" <<<"$changed"; then
+              # Secret names can't contain '-': nas-argon-eon -> SIGNING_SECRET_NAS_ARGON_EON
+              secret="SIGNING_SECRET_$(tr 'a-z-' 'A-Z_' <<<"$image")"
+              include+=("$(jq -nc --arg image "$image" --arg runner "${RUNNERS[$image]}" \
+                --arg secret "$secret" '{image: $image, runner: $runner, secret: $secret}')")
+            fi
+          done
+          matrix=$(printf '%s\n' "${include[@]}" | jq -sc '{include: map(select(. != null and . != ""))}')
+          echo "matrix=${matrix}" >> "$GITHUB_OUTPUT"
+          echo "Images to build: ${matrix}"
+
+  build_push:
+    name: Build and push ${{ matrix.image }}
+    needs: changes
+    if: fromJSON(needs.changes.outputs.matrix).include[0] != null
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.changes.outputs.matrix) }}
     permissions:
       contents: read
       packages: write
       id-token: write
+    defaults:
+      run:
+        working-directory: images/${{ matrix.image }}
 
     steps:
-      # These stage versions are pinned by https://github.com/renovatebot/renovate
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
 
+      # This is optional, but if you see that your builds are way too big for the runners, you can enable this by uncommenting the following lines:
       - name: Maximize build space
         uses: ublue-os/remove-unwanted-software@695eb75bc387dbcd9685a8e72d23439d8686cba6
 
@@ -50,23 +113,20 @@ jobs:
         id: image-name
         run: |
           IMAGE_NAME=$(just image_name)
-
           echo "IMAGE_NAME=${IMAGE_NAME}" >> $GITHUB_ENV
 
       - name: Default Tag
         id: gen-default-tag
         run: |
           DEFAULT_TAG=$(just generate-default-tag)
-
           echo "DEFAULT_TAG=${DEFAULT_TAG}" >> $GITHUB_ENV
 
+      # Registry must be lowercase
       - name: Prepare environment
         run: |
-          # Lowercase the image uri https://github.com/macbre/push-to-ghcr/issues/12
           echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> ${GITHUB_ENV}
           echo "IMAGE_NAME=${IMAGE_NAME,,}" >> ${GITHUB_ENV}
 
-      # This actually builds the container image
       - name: Build Image
         id: build-image
         run: |
@@ -74,23 +134,12 @@ jobs:
             ${IMAGE_NAME} \
             ${DEFAULT_TAG}
 
-      # This is optional, this provides smaller delta updates
       - name: Rechunk with rpm-ostree
         id: rechunk
         run: |
           just ostree-rechunk \
             ${IMAGE_NAME} \
             ${DEFAULT_TAG}
-
-      # If you are feeling adventurous, use the new distro agnostic rechunker
-      # https://github.com/coreos/chunkah
-      # You can delete the Rechunk with rpm-ostree portion then if you use this
-      #- name: Rechunk with Chunkah
-      #  id: rechunk
-      #  run: |
-      #    just rechunk \
-      #      ${IMAGE_NAME} \
-      #      ${DEFAULT_TAG}
 
       - name: Generate Build Tags
         id: gen-build-tags
@@ -101,6 +150,7 @@ jobs:
 
           echo "Tags for this Action..."
           echo "${alias_tags}"
+
           echo "alias_tags=${alias_tags}" >> $GITHUB_OUTPUT
 
       - name: Tag Image
@@ -113,8 +163,6 @@ jobs:
             "${DEFAULT_TAG}" \
             "${ALIAS_TAGS}"
 
-      # These `if` statements are so that pull requests for your custom images do not make it publish any packages under your name without you knowing
-      # They also check if the runner is on the default branch so that things like the merge queue (if you enable it), are going to work
       - name: Login to GitHub Container Registry
         uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
@@ -130,35 +178,28 @@ jobs:
           ALIAS_TAGS: ${{ steps.gen-build-tags.outputs.alias_tags }}
         run: |
           set -euox pipefail
+
           for tag in ${ALIAS_TAGS}; do
             podman push --digestfile=/tmp/digestfile ${IMAGE_NAME}:${tag} ${IMAGE_REGISTRY}/${IMAGE_NAME}:${tag}
           done
 
           digest=$(< /tmp/digestfile)
-
           echo "digest=${digest}" >> $GITHUB_OUTPUT
 
-      # This section is optional and only needs to be enabled if you plan on distributing
-      # your project for others to consume. You will need to create a public and private key
-      # using Cosign and save the private key as a repository secret in Github for this workflow
-      # to consume. For more details, review the image signing section of the README.
       - name: Install Cosign
         uses: sigstore/cosign-installer@756fe2d284c7292c4e9b62c8a28f1e5629c59532 # v4.1.3
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         with:
-          # be careful when upgrading major versions
           cosign-release: 'v3.1.2'
 
+      # One key per image: SIGNING_SECRET_NAS_ARGON_EON, SIGNING_SECRET_MY_PRIVATE_OS, ...
+      # Each matches images/<image>/cosign.pub.
       - name: Sign container image
         id: sign-image
         if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
         env:
           COSIGN_EXPERIMENTAL: false
-          COSIGN_PRIVATE_KEY: ${{ secrets.SIGNING_SECRET }}
+          COSIGN_PRIVATE_KEY: ${{ secrets[matrix.secret] }}
           DIGEST: ${{ steps.push-image.outputs.digest }}
         run: |
-          # https://github.com/containers/container-libs/issues/388
-          # https://github.com/coreos/rpm-ostree/issues/5509
-          # use old bundle format, so we can use newer cosign 3.X.X instead of 2.X.X
           cosign sign -y --new-bundle-format=false --use-signing-config=false --key env://COSIGN_PRIVATE_KEY ${IMAGE_REGISTRY}/${IMAGE_NAME}@${DIGEST}
-

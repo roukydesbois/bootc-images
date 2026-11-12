@@ -16,8 +16,15 @@ concurrency:
 
 jobs:
   cleanup:
-    name: Delete old image versions from ghcr.io
+    name: Delete old ${{ matrix.image }} versions from ghcr.io
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [nas-argon-eon, my-private-os, surfacego3-os]
+    # A package only exists once main has pushed it: don't fail a PR's
+    # dry-run on a package that isn't there yet.
+    continue-on-error: ${{ github.event_name == 'pull_request' }}
 
     permissions:
       packages: write
@@ -30,6 +37,7 @@ jobs:
       - name: Clean up ghcr.io package
         uses: dataaxiom/ghcr-cleanup-action@d52806a0dc70b430571a37da1fde39733ffd640f # v1.2.2
         with:
+          package: ${{ github.event.repository.name }}/${{ matrix.image }}
           older-than: 30 days
           exclude-tags: latest
           keep-n-tagged: 5

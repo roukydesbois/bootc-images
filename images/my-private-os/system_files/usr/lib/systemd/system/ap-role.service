@@ -1,0 +1,12 @@
+[Unit]
+Description=Start the Wi-Fi access point that matches the uplink
+# Give NetworkManager time to join a known Wi-Fi network first
+After=NetworkManager-wait-online.service
+Wants=NetworkManager-wait-online.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/my-private-os/ap-role
+
+[Install]
+WantedBy=multi-user.target

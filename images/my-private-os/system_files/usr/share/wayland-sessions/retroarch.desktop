@@ -1,0 +1,8 @@
+[Desktop Entry]
+Name=RetroArch
+Comment=Retro games, fullscreen in the cage kiosk compositor
+# -s: allow switching VTs (Ctrl+Alt+F<n>). Quitting RetroArch ends the session
+# and brings back the greetd login prompt.
+Exec=cage -s -- flatpak run org.libretro.RetroArch --fullscreen
+Type=Application
+DesktopNames=RetroArch

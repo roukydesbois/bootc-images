@@ -1,0 +1,3 @@
+# Re-run screen-role when a GPU appears (it can probe after screen-role ran at
+# boot) or a screen is plugged in or out
+SUBSYSTEM=="drm", KERNEL=="card[0-9]*", ACTION=="add|change", RUN+="/usr/bin/systemctl start --no-block screen-role.service"

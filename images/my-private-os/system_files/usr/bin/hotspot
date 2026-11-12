@@ -1,0 +1,42 @@
+#!/bin/bash
+# Controls the Wi-Fi hotspot that ap-role picks on wlan0 (README "Wifi Hotspot"):
+#   hotspot status   whether it's automatic or off, and what wlan0 is doing
+#   hotspot off      take it down and keep it down until the next reboot, so
+#                    wlan0 is free to join a Wi-Fi network
+#   hotspot auto     let ap-role pick again (the default after every boot)
+
+set -euo pipefail
+
+flag=/run/my-private-os/hotspot-off
+command=${1:-status}
+
+case "$command" in
+off | auto)
+	if [ "$(id -u)" -ne 0 ]; then
+		exec sudo "$0" "$@"
+	fi
+	if [ "$command" = off ]; then
+		mkdir -p "${flag%/*}"
+		touch "$flag"
+	else
+		rm -f "$flag"
+	fi
+	systemctl start ap-role.service
+	journalctl -u ap-role.service -n 1 -o cat --no-pager
+	if [ "$command" = off ]; then
+		echo "wlan0 is free: nmcli device wifi list, then sudo nmcli --ask device wifi connect '<network>'"
+	fi
+	;;
+status)
+	if [ -e "$flag" ]; then
+		echo "Hotspot: off until reboot (hotspot auto to turn it back on)"
+	else
+		echo "Hotspot: automatic"
+	fi
+	echo "wlan0: $(nmcli --get-values GENERAL.STATE,GENERAL.CONNECTION device show wlan0 | paste -sd ' ')"
+	;;
+*)
+	echo "Usage: hotspot [status|off|auto]" >&2
+	exit 2
+	;;
+esac

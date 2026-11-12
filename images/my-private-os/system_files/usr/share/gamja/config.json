@@ -1,0 +1,8 @@
+{
+	"server": {
+		"url": "/socket",
+		"autojoin": "#general",
+		"auth": "optional",
+		"nick": "guest-*"
+	}
+}

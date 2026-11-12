@@ -1,0 +1,10 @@
+# greetd config, used through greetd.service.d/10-my-private-os.conf instead of
+# /etc/greetd/config.toml so that image updates reach the Pi
+[terminal]
+vt = 1
+
+# tuigreet login prompt on tty1. niri is the default session, F3 lists the
+# other Wayland sessions in /usr/share/wayland-sessions.
+[default_session]
+command = "tuigreet --time --remember --remember-session --asterisks --cmd niri-session --power-shutdown 'systemctl poweroff' --power-reboot 'systemctl reboot'"
+user = "greetd"

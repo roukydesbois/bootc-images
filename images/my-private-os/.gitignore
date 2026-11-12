@@ -1,0 +1,4 @@
+cosign.key
+_build_*
+*_chunkah_*
+*_rpm-ostree_*

@@ -1,0 +1,17 @@
+# gamja web IRC client and its WebSocket to Ergo, used through
+# caddy.service.d/10-my-private-os.conf. Plain HTTP on port 80: on the hotspot
+# (http://chat.lan), and behind the NetBird reverse proxy, which serves
+# https://irc.thomelab.net.
+{
+	auto_https off
+}
+
+:80 {
+	# Caddy ignores X-Forwarded-For from clients and sets it to the address
+	# it sees: 10.42.0.x on the hotspot, the NetBird proxy's mesh address
+	# otherwise. Ergo only lets the hotspot in without an account.
+	reverse_proxy /socket 127.0.0.1:8097
+
+	root * /usr/share/gamja
+	file_server
+}

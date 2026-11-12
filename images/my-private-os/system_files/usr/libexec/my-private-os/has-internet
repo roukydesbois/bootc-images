@@ -1,0 +1,5 @@
+#!/bin/bash
+# Exits 0 if NetworkManager's connectivity check reaches the internet, 1
+# otherwise (no uplink, or a captive portal).
+
+[ "$(nmcli networking connectivity check)" = full ]

@@ -230,11 +230,13 @@ jobs:
           podman run --rm -e REF="$ref" -e DIGEST="$DIGEST" "${IMAGE_NAME}:${DEFAULT_TAG}" sh -c '
               jq -e --arg ref "$REF" ".transports.docker[\$ref][0].keyPath = \"/nonexistent.pub\"" \
                 /etc/containers/policy.json >/tmp/policy.json || exit 3
-              skopeo copy --quiet --policy /tmp/policy.json "docker://$REF@$DIGEST" oci:/var/tmp/policy-check' || rc=$?
+              skopeo copy --quiet --remove-signatures --policy /tmp/policy.json "docker://$REF@$DIGEST" oci:/var/tmp/policy-check' || rc=$?
           # 1 = skopeo refused the image; 0 = not checked; anything else = the test itself broke
           if [ "$rc" -ne 1 ]; then
             echo "::error::the signature policy doesn't apply to ${ref} (exit ${rc})"
             exit 1
           fi
+          # --remove-signatures: the source is still verified, but an oci:
+          # directory can't store the signatures it would otherwise copy.
           podman run --rm "${IMAGE_NAME}:${DEFAULT_TAG}" \
-            skopeo copy --quiet "docker://${ref}@${DIGEST}" oci:/var/tmp/policy-check
+            skopeo copy --quiet --remove-signatures "docker://${ref}@${DIGEST}" oci:/var/tmp/policy-check

@@ -62,3 +62,32 @@ systemctl enable nfs-server.service
 # Updates are applied by hand (bootc upgrade + reboot): an unplanned reboot takes
 # down NFS for thomelab and Garage, which has no replica
 systemctl mask bootc-fetch-apply-updates.timer
+
+### Image signature check
+# bootc only accepts updates of this image signed with its cosign key
+# (images/nas-argon-eon/cosign.pub): a sigstoreSigned scope for this repository in
+# containers-policy.json, with the signatures read from the registry
+# (use-sigstore-attachments). The default policy stays as it is, so other
+# images (quadlets, flatpak runtimes, ...) aren't affected. This also works
+# with a plain `bootc switch` (no --enforce-container-sigpolicy, which
+# refuses a policy whose default is insecureAcceptAnything).
+image=ghcr.io/roukydesbois/bootc-images/nas-argon-eon
+key=/etc/pki/containers/nas-argon-eon.pub
+install -Dm0644 /ctx/cosign.pub "$key"
+command -v jq >/dev/null || dnf5 -y install jq
+# Fedora ships the default policy in /usr/share/containers (read when /etc
+# has none); ublue's base images have their own in /etc. Start from the one
+# in effect and write the result to /etc, which takes precedence.
+current=/etc/containers/policy.json
+[ -f "$current" ] || current=/usr/share/containers/policy.json
+policy=$(jq --arg image "$image" --arg key "$key" \
+    '.transports.docker[$image] = [{type: "sigstoreSigned", keyPath: $key, signedIdentity: {type: "matchRepository"}}]' \
+    "$current")
+mkdir -p /etc/containers/registries.d
+printf '%s\n' "$policy" >/etc/containers/policy.json
+cat >/etc/containers/registries.d/bootc-images-nas-argon-eon.yaml <<YAML
+docker:
+  $image:
+    use-sigstore-attachments: true
+YAML
+jq -e --arg image "$image" '.transports.docker[$image][0].type == "sigstoreSigned"' /etc/containers/policy.json

@@ -203,3 +203,38 @@ jobs:
           DIGEST: ${{ steps.push-image.outputs.digest }}
         run: |
           cosign sign -y --new-bundle-format=false --use-signing-config=false --key env://COSIGN_PRIVATE_KEY ${IMAGE_REGISTRY}/${IMAGE_NAME}@${DIGEST}
+
+      # Devices check the signature against the key in the image only
+      # (sigstoreSigned + keyPath, no transparency log), so do the same here.
+      - name: Verify signature with the committed key
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        env:
+          DIGEST: ${{ steps.push-image.outputs.digest }}
+        run: |
+          cosign verify --key cosign.pub --insecure-ignore-tlog=true \
+            ${IMAGE_REGISTRY}/${IMAGE_NAME}@${DIGEST} >/dev/null
+
+      # Pull the pushed image the way `bootc upgrade` will on the device: with
+      # the policy.json and registries.d shipped in the image. If this fails,
+      # devices would silently stop updating.
+      - name: Pull with the image's own signature policy
+        if: github.event_name != 'pull_request' && github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+        env:
+          DIGEST: ${{ steps.push-image.outputs.digest }}
+        run: |
+          ref="${IMAGE_REGISTRY}/${IMAGE_NAME}"
+          # The policy entry must apply to this image: with its key swapped
+          # for a missing one, the pull has to fail. Otherwise the default
+          # (insecureAcceptAnything) would let the check below pass unchecked.
+          rc=0
+          podman run --rm -e REF="$ref" -e DIGEST="$DIGEST" "${IMAGE_NAME}:${DEFAULT_TAG}" sh -c '
+              jq -e --arg ref "$REF" ".transports.docker[\$ref][0].keyPath = \"/nonexistent.pub\"" \
+                /etc/containers/policy.json >/tmp/policy.json || exit 3
+              skopeo copy --quiet --policy /tmp/policy.json "docker://$REF@$DIGEST" oci:/var/tmp/policy-check' || rc=$?
+          # 1 = skopeo refused the image; 0 = not checked; anything else = the test itself broke
+          if [ "$rc" -ne 1 ]; then
+            echo "::error::the signature policy doesn't apply to ${ref} (exit ${rc})"
+            exit 1
+          fi
+          podman run --rm "${IMAGE_NAME}:${DEFAULT_TAG}" \
+            skopeo copy --quiet "docker://${ref}@${DIGEST}" oci:/var/tmp/policy-check

@@ -1,0 +1,40 @@
+#!/usr/sbin/nft -f
+# Host firewall (public-node-firewall.service). Inbound only, stateful:
+# replies to our own traffic come back, new connections only on the ports
+# below. Only this table is touched: NetBird, Tailscale and podman keep
+# their own tables (the stock nftables.service would `flush ruleset` them).
+#
+# Container ports published by podman are DNAT'ed in prerouting and never
+# reach this input chain: quadlets publish on 127.0.0.1 only, except the
+# reverse proxy.
+
+table inet public_node
+delete table inet public_node
+
+table inet public_node {
+	chain input {
+		type filter hook input priority filter; policy drop;
+
+		ct state established,related accept
+		ct state invalid drop
+		iif lo accept
+
+		# ICMP, and ICMPv6 which IPv6 needs to work at all (neighbour
+		# discovery, router advertisements, path MTU)
+		meta l4proto icmp accept
+		meta l4proto ipv6-icmp accept
+		# DHCPv6 replies (DHCPv4 uses a raw socket and doesn't pass here)
+		ip6 saddr fe80::/10 udp dport 546 accept
+
+		# The mesh: NetBird's and Tailscale's own ACLs decide what gets in.
+		# SSH is only reachable this way.
+		iifname { "wt0", "tailscale0" } accept
+
+		# Web: reverse proxy (HTTPS, and HTTP for redirects and ACME)
+		tcp dport { 80, 443 } accept
+		# NetBird: STUN of the relay, and the WireGuard port of this peer
+		udp dport { 3478, 51820 } accept
+		# Tailscale direct connections (it falls back to DERP without)
+		udp dport 41641 accept
+	}
+}

@@ -7,6 +7,7 @@
 | [`nas-argon-eon`](images/nas-argon-eon/) | NAS, Raspberry Pi 4 in an Argon EON case | Fedora bootc | arm64 |
 | [`my-private-os`](images/my-private-os/) | Travel Pi 4 in an Argon ONE case (niri/DMS, Kodi, hotspot) | Fedora bootc | arm64 |
 | [`surfacego3-os`](images/surfacego3-os/) | Surface Go 3 tablet (niri/DMS) | Universal Blue base-main | amd64 |
+| [`public-node`](images/public-node/) | Public entry point: NetBird and always-on apps (Dedibox) | CentOS Stream 10 bootc | amd64 |
 
 Each folder was its own repository until 2026-11; the history was imported, so `git log` and `git blame` work on the new paths.
 

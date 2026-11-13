@@ -45,11 +45,12 @@ jobs:
           PUSH_BEFORE: ${{ github.event.before }}
         run: |
           set -euo pipefail
-          # Runner per image: the Pis are arm64, the Surface is amd64.
+          # Runner per image: the Pis are arm64, the Surface and the server amd64.
           declare -A RUNNERS=(
             [nas-argon-eon]=ubuntu-26.04-arm
             [my-private-os]=ubuntu-26.04-arm
             [surfacego3-os]=ubuntu-26.04
+            [public-node]=ubuntu-26.04
           )
           case "$EVENT" in
             pull_request) base=$PR_BASE ;;
@@ -133,6 +134,14 @@ jobs:
           just build \
             ${IMAGE_NAME} \
             ${DEFAULT_TAG}
+
+      # Image-specific checks that need a running container (e.g. nft,
+      # which needs netlink and can't run during the build)
+      - name: Image checks
+        run: |
+          if [ -x ci-check.sh ]; then
+            ./ci-check.sh "${IMAGE_NAME}:${DEFAULT_TAG}"
+          fi
 
       - name: Rechunk with rpm-ostree
         id: rechunk

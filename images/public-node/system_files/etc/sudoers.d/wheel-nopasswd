@@ -1,0 +1,2 @@
+# The admin user has no password: SSH keys are the only way in
+%wheel ALL=(ALL) NOPASSWD: ALL

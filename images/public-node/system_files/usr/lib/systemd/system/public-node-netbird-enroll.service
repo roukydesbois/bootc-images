@@ -1,0 +1,22 @@
+# First boot: join NetBird with the one-off setup key placed on the disk at
+# install time (README, "Installation"). SSH is only reachable over the mesh,
+# so this is how the box becomes reachable at all. The key file is deleted
+# once the peer is registered.
+[Unit]
+Description=Join NetBird with the setup key placed at install
+ConditionPathExists=/etc/netbird/setup-key
+Requires=netbird.service
+After=netbird.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# Files written from the rescue system have no SELinux label
+ExecStartPre=/usr/sbin/restorecon -R /etc/netbird
+ExecStart=/bin/sh -c 'exec /usr/bin/netbird up --daemon-addr unix:///var/run/netbird.sock --management-url "$(cat /etc/netbird/management-url)" --setup-key-file /etc/netbird/setup-key'
+ExecStartPost=/usr/bin/rm -f /etc/netbird/setup-key
+Restart=on-failure
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target

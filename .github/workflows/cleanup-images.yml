@@ -21,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        image: [nas-argon-eon, my-private-os, surfacego3-os]
+        image: [nas-argon-eon, my-private-os, surfacego3-os, public-node]
     # A package only exists once main has pushed it: don't fail a PR's
     # dry-run on a package that isn't there yet.
     continue-on-error: ${{ github.event_name == 'pull_request' }}

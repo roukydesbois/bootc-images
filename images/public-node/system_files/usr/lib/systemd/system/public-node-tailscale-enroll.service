@@ -1,0 +1,19 @@
+# First boot: join Tailscale (the emergency path) with the auth key placed on
+# the disk at install time (README, "Installation"), then delete it.
+[Unit]
+Description=Join Tailscale with the auth key placed at install
+ConditionPathExists=/etc/tailscale/authkey
+Requires=tailscaled.service
+After=tailscaled.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStartPre=/usr/sbin/restorecon -R /etc/tailscale
+ExecStart=/usr/bin/tailscale up --netfilter-mode=off --ssh=false --auth-key=file:/etc/tailscale/authkey
+ExecStartPost=/usr/bin/rm -f /etc/tailscale/authkey
+Restart=on-failure
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target

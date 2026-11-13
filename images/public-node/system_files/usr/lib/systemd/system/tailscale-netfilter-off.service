@@ -1,0 +1,15 @@
+# Tailscale is the emergency path only. Its netfilter rules drop
+# 100.64.0.0/10 traffic not coming from tailscale0, which is also NetBird's
+# range: NetBird's DNS and the SSH server break. Our firewall.nft accepts
+# tailscale0 already, so Tailscale doesn't need its own rules.
+[Unit]
+Description=Keep Tailscale's netfilter rules off (they break NetBird)
+After=tailscaled.service
+Requires=tailscaled.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/tailscale set --netfilter-mode=off
+
+[Install]
+WantedBy=tailscaled.service

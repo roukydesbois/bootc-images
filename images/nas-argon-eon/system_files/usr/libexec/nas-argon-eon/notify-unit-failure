@@ -1,6 +1,12 @@
 #!/bin/bash
 # OnFailure= handler: report a failed unit with the end of its journal.
+# The journal is capped at 200 MB (SD card) and rotates within days, so a
+# longer excerpt is also kept in /var/log/nas-argon-eon/failures (cleaned up
+# after 90 days, see tmpfiles.d/nas-argon-eon.conf).
 set -euo pipefail
 unit="$1"
+saved="/var/log/nas-argon-eon/failures/$(date -u +%Y%m%dT%H%M%SZ)-${unit}.log"
+journalctl -u "$unit" -n 200 --no-pager -o short-iso >"$saved" 2>&1 || true
 log="$(journalctl -u "$unit" -n 15 --no-pager -o cat 2>&1 || true)"
-exec /usr/libexec/nas-argon-eon/notify "$unit failed" "$log" high warning
+exec /usr/libexec/nas-argon-eon/notify "$unit failed" "$log
+(full log on $(hostname): $saved)" high warning

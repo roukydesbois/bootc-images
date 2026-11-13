@@ -138,3 +138,27 @@ systemctl enable caddy.service
 systemctl enable podman-auto-update.timer
 systemctl enable retroarch-install.service
 systemctl enable flatpak-system-update.timer
+
+### Image signature check
+# bootc only accepts updates of this image signed with its cosign key
+# (images/my-private-os/cosign.pub): a sigstoreSigned scope for this repository in
+# containers-policy.json, with the signatures read from the registry
+# (use-sigstore-attachments). The default policy stays as it is, so other
+# images (quadlets, flatpak runtimes, ...) aren't affected. This also works
+# with a plain `bootc switch` (no --enforce-container-sigpolicy, which
+# refuses a policy whose default is insecureAcceptAnything).
+image=ghcr.io/roukydesbois/bootc-images/my-private-os
+key=/etc/pki/containers/my-private-os.pub
+install -Dm0644 /ctx/cosign.pub "$key"
+command -v jq >/dev/null || dnf5 -y install jq
+policy=$(jq --arg image "$image" --arg key "$key" \
+    '.transports.docker[$image] = [{type: "sigstoreSigned", keyPath: $key, signedIdentity: {type: "matchRepository"}}]' \
+    /etc/containers/policy.json)
+printf '%s\n' "$policy" >/etc/containers/policy.json
+mkdir -p /etc/containers/registries.d
+cat >/etc/containers/registries.d/bootc-images-my-private-os.yaml <<YAML
+docker:
+  $image:
+    use-sigstore-attachments: true
+YAML
+jq -e --arg image "$image" '.transports.docker[$image][0].type == "sigstoreSigned"' /etc/containers/policy.json

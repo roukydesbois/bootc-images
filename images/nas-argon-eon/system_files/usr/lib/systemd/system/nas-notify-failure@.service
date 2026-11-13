@@ -3,4 +3,6 @@ Description=Send a ntfy notification about the failure of %i
 
 [Service]
 Type=oneshot
+# notify retries for up to ~10 minutes
+TimeoutStartSec=15min
 ExecStart=/usr/libexec/nas-argon-eon/notify-unit-failure %i

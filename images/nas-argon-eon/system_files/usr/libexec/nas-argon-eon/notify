@@ -12,7 +12,9 @@ fi
 # shellcheck source=/dev/null
 . "$env_file"
 
-curl -fsS --max-time 30 \
+# Retries ride out a short network or ntfy outage (2026-11-12: a failed
+# backup's alert was lost to a single timeout): 10 tries, 30 s apart.
+curl -fsS --max-time 30 --retry 10 --retry-delay 30 --retry-all-errors \
 	-H "Authorization: Bearer ${NTFY_TOKEN}" \
 	-H "Title: $(hostname): $1" \
 	-H "Priority: ${3:-default}" \

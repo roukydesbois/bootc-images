@@ -2,8 +2,10 @@
 set -euxo pipefail
 
 ### Packages
-# greenboot: health checks after each update, rollback if they fail
-dnf -y install nftables greenboot greenboot-default-health-checks jq
+# greenboot: health checks after each update, rollback if they fail. Not
+# greenboot-default-health-checks: it makes the checks wait for
+# network-online, and ours stay local (see the check scripts).
+dnf -y install nftables greenboot jq
 
 # NetBird and Tailscale clients. Their repos are only needed at build time.
 # NetBird's service unit comes from system_files, so skip the package
@@ -29,9 +31,9 @@ cp -avf /ctx/system_files/. /
 chmod 0440 /etc/sudoers.d/wheel-nopasswd
 ln -sf ../usr/share/zoneinfo/Europe/Paris /etc/localtime
 
-# Fail the build rather than ship a firewall, sudoers or sshd config that
-# doesn't parse
-nft -c -f /usr/share/public-node/firewall.nft
+# Fail the build rather than ship a sudoers or sshd config that doesn't
+# parse. The firewall is checked by ci-check.sh: nft needs netlink, which
+# the build doesn't have.
 visudo -c -f /etc/sudoers.d/wheel-nopasswd
 ssh-keygen -q -t ed25519 -N '' -f /tmp/sshd-check-key
 sshd -t -h /tmp/sshd-check-key
@@ -44,10 +46,9 @@ systemctl enable netbird.service
 systemctl enable tailscaled.service tailscale-netfilter-off.service
 # First boot only: they run when the install left a key on the disk
 systemctl enable public-node-netbird-enroll.service public-node-tailscale-enroll.service
-systemctl enable greenboot-healthcheck.service greenboot-task-runner.service \
-    redboot-task-runner.service redboot-auto-reboot.service greenboot-status.service \
-    greenboot-grub2-set-counter.service greenboot-grub2-set-success.service \
-    greenboot-rpm-ostree-grub2-check-fallback.service
+# greenboot 0.16 (the Rust rewrite): the checks, and the boot counter that
+# makes a failing image roll back
+systemctl enable greenboot-healthcheck.service greenboot-set-rollback-trigger.service
 # Nightly updates (timer drop-in in system_files)
 systemctl enable bootc-fetch-apply-updates.timer
 # The stock nftables.service would `flush ruleset` on reload/stop, wiping

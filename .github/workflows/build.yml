@@ -135,6 +135,14 @@ jobs:
             ${IMAGE_NAME} \
             ${DEFAULT_TAG}
 
+      # Image-specific checks that need a running container (e.g. nft,
+      # which needs netlink and can't run during the build)
+      - name: Image checks
+        run: |
+          if [ -x ci-check.sh ]; then
+            ./ci-check.sh "${IMAGE_NAME}:${DEFAULT_TAG}"
+          fi
+
       - name: Rechunk with rpm-ostree
         id: rechunk
         run: |

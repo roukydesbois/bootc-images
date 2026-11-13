@@ -13,7 +13,7 @@ This is the host layer only. The apps come as quadlets in later changes.
 - **Admin user** `roukydesbois` (`sysusers.d`): no password, `sudo` without one, public keys from `/usr/share/public-node/ssh/roukydesbois.keys` (the same as https://github.com/roukydesbois.keys). Changing keys means rebuilding the image.
 - **NetBird** client (`netbird.service`, logs in `/var/log/netbird/client.log`) and **Tailscale** (`tailscaled.service`), the emergency path. `tailscale-netfilter-off.service` keeps Tailscale's netfilter rules off: they drop `100.64.0.0/10` traffic that doesn't come from `tailscale0`, which is also NetBird's range, and NetBird's DNS and SSH break.
 - **Updates**: `bootc-fetch-apply-updates.timer` installs a new image and reboots every night around 04:00 (Europe/Paris). The image must be signed with `cosign.pub` (signature policy, see the [root README](../../README.md)).
-- **greenboot**: after each boot, the checks in `/usr/lib/greenboot/check/required.d` (firewall loaded, sshd running) must pass, or the box reboots and goes back to the previous image after three attempts. `wanted.d` (NetBird, Tailscale) only logs a warning. Checks stay local on purpose: one depending on another host would roll back good images during someone else's outage.
+- **greenboot**: after each boot, the checks in `/usr/lib/greenboot/check/required.d` (firewall loaded, sshd running) must pass, or the box reboots and, after a few failed attempts, goes back to the previous image. `wanted.d` (NetBird, Tailscale) only logs a warning. Checks stay local on purpose: one depending on another host would roll back good images during someone else's outage.
 
 ## Installation
 

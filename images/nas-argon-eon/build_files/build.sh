@@ -75,11 +75,16 @@ image=ghcr.io/roukydesbois/bootc-images/nas-argon-eon
 key=/etc/pki/containers/nas-argon-eon.pub
 install -Dm0644 /ctx/cosign.pub "$key"
 command -v jq >/dev/null || dnf5 -y install jq
+# Fedora ships the default policy in /usr/share/containers (read when /etc
+# has none); ublue's base images have their own in /etc. Start from the one
+# in effect and write the result to /etc, which takes precedence.
+current=/etc/containers/policy.json
+[ -f "$current" ] || current=/usr/share/containers/policy.json
 policy=$(jq --arg image "$image" --arg key "$key" \
     '.transports.docker[$image] = [{type: "sigstoreSigned", keyPath: $key, signedIdentity: {type: "matchRepository"}}]' \
-    /etc/containers/policy.json)
-printf '%s\n' "$policy" >/etc/containers/policy.json
+    "$current")
 mkdir -p /etc/containers/registries.d
+printf '%s\n' "$policy" >/etc/containers/policy.json
 cat >/etc/containers/registries.d/bootc-images-nas-argon-eon.yaml <<YAML
 docker:
   $image:

@@ -1,0 +1,10 @@
+[Unit]
+Description=Hourly backup to Garage (restic) and BorgBase (borg)
+
+[Timer]
+OnCalendar=*-*-* *:15:00
+RandomizedDelaySec=5min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

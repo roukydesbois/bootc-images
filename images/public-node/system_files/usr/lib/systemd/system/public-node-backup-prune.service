@@ -1,0 +1,12 @@
+[Unit]
+Description=Apply backup retention on Garage (restic) and BorgBase (borg)
+Documentation=file:///usr/libexec/public-node/backup
+ConditionDirectoryNotEmpty=/etc/public-node/secrets/backup
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/public-node/backup prune
+Nice=10
+IOSchedulingClass=idle

@@ -6,6 +6,11 @@ set -euxo pipefail
 # greenboot-default-health-checks: it makes the checks wait for
 # network-online, and ours stay local (see the check scripts).
 dnf -y install nftables greenboot jq
+# Backups: restic and borg from EPEL, sqlite3 for a consistent copy of
+# NetBird's store. borgmatic isn't packaged for EL10, and a handful of paths
+# doesn't need it.
+dnf -y install epel-release
+dnf -y --enablerepo=crb install restic borgbackup sqlite
 
 # NetBird and Tailscale clients. Their repos are only needed at build time.
 # NetBird's service unit comes from system_files, so skip the package
@@ -58,6 +63,7 @@ for quadlet in traefik.container netbird-management.container netbird-signal.con
     keycloak-postgres.container keycloak.container; do
     ln -sf "/usr/share/containers/systemd/$quadlet" "/usr/lib/bootc/bound-images.d/$quadlet"
 done
+systemctl enable public-node-backup.timer public-node-backup-prune.timer
 # Nightly updates (timer drop-in in system_files)
 systemctl enable bootc-fetch-apply-updates.timer
 # The stock nftables.service would `flush ruleset` on reload/stop, wiping

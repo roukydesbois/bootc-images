@@ -2,7 +2,7 @@
 
 bootc image for the public entry point: NetBird (management, signal, relay, reverse proxy) and the always-on apps. It runs on bare metal (a Scaleway Dedibox), so everything about the host is in this image and arrives with `bootc upgrade`.
 
-The host layer, the reverse proxy, NetBird and Keycloak are in place. The other apps come as quadlets in later changes.
+The host layer, the reverse proxy, NetBird, Keycloak and the backups are in place. The other apps come as quadlets in later changes.
 
 ## What's in the image
 
@@ -17,6 +17,7 @@ The host layer, the reverse proxy, NetBird and Keycloak are in place. The other 
 - **NetBird** server side, same versions and config as the public cluster (0.83.1, dashboard v2.97.0, SQLite store, Keycloak at `sso.thomelab.net`): `netbird-management`, `-signal`, `-relay`, `-dashboard` and `-proxy` quadlets on their own podman network (`netbird.network`), each publishing on `127.0.0.1` only (8081 to 8084, and 8443 for the proxy). Traefik routes `netbird.thomelab.net` by path like the cluster's IngressRoute (`/api`, gRPC on `/management` and `/signalexchange` over h2c, `/ws-proxy`, `/relay`, dashboard for the rest), and passes every other TLS connection untouched to the NetBird proxy, which terminates it with its own certificates (`dynamic/netbird.yml`). `management.json` is rendered at start from `/usr/share/public-node/netbird/management.json` and the secrets into `/run/public-node/netbird` (`public-node-netbird-config.service`). State is in `/var/lib/netbird` (`management/`: SQLite store, `proxy-certs/`).
   **The NetBird units only start once `/etc/public-node/secrets/netbird/datastore-encryption-key` exists.** Before the cutover the cluster's NetBird serves the peers, and two management servers for the same peers must never run at once.
 - **Keycloak** (`sso.thomelab.net`) and its **Postgres**, same versions as the public cluster (Keycloak 26.8.2, Postgres 18.3), on their own podman network (`keycloak.network`). Keycloak publishes on `127.0.0.1:8090`, Postgres publishes nothing. The settings match the cluster's Keycloak CR (hostname, `xforwarded` proxy headers, non-strict hostname), with a local cache because there's a single instance and a 1.5 GB memory limit so the JVM doesn't size its heap from the whole host. The database is in `/var/lib/keycloak/postgres` (owned by UID 999, the image's `postgres` user). Like NetBird, **nothing starts before `/etc/public-node/secrets/keycloak/db-password` exists**. The database moves at cutover with `pg_dump`/`pg_restore`.
+- **Backups** every hour (around :15), to two independent destinations: restic to Garage (bucket `public-node-backups`) and borg to BorgBase. See [Backups](#backups).
 - **Container images** of the quadlets are bootc *logically bound images* (`/usr/lib/bootc/bound-images.d`): `bootc upgrade` pulls them before rebooting into the new image, so a reboot never waits on a registry. Renovate updates their tags in the `.container` files.
 - **greenboot**: after each boot, the checks in `/usr/lib/greenboot/check/required.d` (firewall loaded, sshd running, Traefik answering its local ping) must pass, or the box reboots and, after a few failed attempts, goes back to the previous image. `wanted.d` (NetBird, Tailscale) only logs a warning. Checks stay local on purpose: one depending on another host would roll back good images during someone else's outage.
 
@@ -65,6 +66,51 @@ Secrets are root-only files in `/etc/public-node/secrets/` (created 0700 by tmpf
 | `db-password` | `keycloak-pg-app`, key `password` (CNPG's application user) |
 
 One value per file, mode 0600. Containers that run as another user than root get them through env files rendered into `/run` by root (`public-node-*-config.service`), never by reading these files themselves. The datastore key only works with the SQLite store it encrypted: they move together, at cutover.
+
+## Backups
+
+`public-node-backup.timer` runs `/usr/libexec/public-node/backup` every hour:
+1. It dumps Keycloak's database (`pg_dump -Fc`) and takes a consistent copy of NetBird's SQLite store (`sqlite3 .backup`) into `/var/lib/public-node/backup/staging`.
+2. It backs up that staging dir, `/etc/public-node/secrets` (the NetBird store is useless without its encryption key) and `/var/lib/traefik` (certificates). The backup's own secrets are left out: you need them to read the backup anyway.
+3. It sends that to each destination that's configured. A failed destination doesn't stop the other one, but makes the run fail.
+
+`public-node-backup-prune.timer` applies the same retention to both every morning: 48 hourly, 14 daily, 8 weekly and 12 monthly backups. Both timers skip until `/etc/public-node/secrets/backup/` has files.
+
+Setup, once (as root):
+
+| File in `/etc/public-node/secrets/backup/` | Content |
+|---|---|
+| `restic.env` | `RESTIC_REPOSITORY=s3:https://garage-s3.thomelab.net/public-node-backups`, `AWS_DEFAULT_REGION=garage`, `AWS_ACCESS_KEY_ID=` and `AWS_SECRET_ACCESS_KEY=` (from `bao kv get secret/public-node/garage-backup`), `RESTIC_PASSWORD_FILE=/etc/public-node/secrets/backup/restic-password` |
+| `restic-password` | a new random password, also kept in the password manager |
+| `borg.env` | `BORG_REPO=ssh://<ID>@<ID>.repo.borgbase.com/./repo` (a new BorgBase repository) |
+| `borg-passphrase` | a new random passphrase, also kept in the password manager |
+| `borg-ssh-key` | a new SSH private key, its public key added to the BorgBase repository |
+
+Then initialise each repository once:
+
+```bash
+sudo bash -c 'set -a; . /etc/public-node/secrets/backup/restic.env; restic init'
+sudo bash -c 'set -a; . /etc/public-node/secrets/backup/borg.env; BORG_PASSCOMMAND="cat /etc/public-node/secrets/backup/borg-passphrase" BORG_RSH="ssh -i /etc/public-node/secrets/backup/borg-ssh-key" borg init -e repokey-blake2'
+sudo systemctl start public-node-backup.service && journalctl -u public-node-backup.service -n 20
+```
+
+Without the repository passwords, the backups can't be read: keep them outside this box (password manager).
+
+Restore (from either destination; restic shown):
+
+```bash
+sudo bash -c 'set -a; . /etc/public-node/secrets/backup/restic.env; restic restore latest --target /var/tmp/restore'
+# secrets and certificates back in place
+sudo cp -a /var/tmp/restore/etc/public-node/secrets/. /etc/public-node/secrets/
+sudo cp -a /var/tmp/restore/var/lib/traefik/. /var/lib/traefik/
+# NetBird's store, with NetBird stopped
+sudo systemctl stop netbird-proxy netbird-management
+sudo install -m 0600 /var/tmp/restore/var/lib/public-node/backup/staging/netbird-store.db /var/lib/netbird/management/store.db
+# Keycloak's database, with Keycloak stopped and Postgres running
+sudo systemctl stop keycloak
+sudo podman exec -i keycloak-postgres pg_restore -U keycloak -d keycloak --clean --if-exists </var/tmp/restore/var/lib/public-node/backup/staging/keycloak.pgdump
+sudo systemctl start keycloak netbird-management netbird-proxy
+```
 
 ## Recovery
 

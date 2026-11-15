@@ -1,0 +1,13 @@
+[Unit]
+Description=Hourly backup to Garage (restic) and BorgBase (borg)
+Documentation=file:///usr/libexec/public-node/backup
+# Nothing to do before the backup secrets are placed (README, "Backups")
+ConditionDirectoryNotEmpty=/etc/public-node/secrets/backup
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/public-node/backup
+Nice=10
+IOSchedulingClass=idle

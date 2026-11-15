@@ -1,0 +1,28 @@
+[Unit]
+Description=NetBird relay
+Wants=network-online.target
+After=network-online.target public-node-netbird-config.service
+Requires=public-node-netbird-config.service
+# Only once the secrets are in place, i.e. after the cutover: before that, the
+# NetBird of the public cluster serves the peers, and two management servers
+# for the same peers must never run at once.
+ConditionPathExists=/etc/public-node/secrets/netbird/datastore-encryption-key
+
+[Container]
+Image=docker.io/netbirdio/relay:0.83.1
+ContainerName=netbird-relay
+Network=netbird.network
+PublishPort=127.0.0.1:8083:33080
+Environment=NB_LISTEN_ADDRESS=:33080
+Environment=NB_EXPOSED_ADDRESS=rels://netbird.thomelab.net:443/relay
+Environment=NB_LOG_LEVEL=info
+# NB_AUTH_SECRET
+EnvironmentFile=/run/public-node/netbird/relay.env
+ReadOnly=true
+NoNewPrivileges=true
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

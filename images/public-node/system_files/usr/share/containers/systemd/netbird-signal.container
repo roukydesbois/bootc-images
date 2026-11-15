@@ -1,0 +1,24 @@
+[Unit]
+Description=NetBird signal
+Wants=network-online.target
+After=network-online.target public-node-netbird-config.service
+Requires=public-node-netbird-config.service
+# Only once the secrets are in place, i.e. after the cutover: before that, the
+# NetBird of the public cluster serves the peers, and two management servers
+# for the same peers must never run at once.
+ConditionPathExists=/etc/public-node/secrets/netbird/datastore-encryption-key
+
+[Container]
+Image=docker.io/netbirdio/signal:0.83.1
+ContainerName=netbird-signal
+Network=netbird.network
+PublishPort=127.0.0.1:8082:80
+Exec=--port=80 --log-file=console --log-level=info
+ReadOnly=true
+NoNewPrivileges=true
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

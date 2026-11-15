@@ -1,0 +1,30 @@
+[Unit]
+Description=NetBird dashboard
+Wants=network-online.target
+After=network-online.target public-node-netbird-config.service
+Requires=public-node-netbird-config.service
+# Only once the secrets are in place, i.e. after the cutover: before that, the
+# NetBird of the public cluster serves the peers, and two management servers
+# for the same peers must never run at once.
+ConditionPathExists=/etc/public-node/secrets/netbird/datastore-encryption-key
+
+[Container]
+Image=docker.io/netbirdio/dashboard:v2.97.0
+ContainerName=netbird-dashboard
+Network=netbird.network
+PublishPort=127.0.0.1:8084:80
+Environment=NETBIRD_MGMT_API_ENDPOINT=https://netbird.thomelab.net
+Environment=NETBIRD_MGMT_GRPC_API_ENDPOINT=https://netbird.thomelab.net
+Environment=AUTH_AUTHORITY=https://sso.thomelab.net/realms/self-hosted-apps
+Environment=AUTH_CLIENT_ID=netbird-client
+Environment=AUTH_AUDIENCE=netbird-client
+Environment="AUTH_SUPPORTED_SCOPES=openid profile email offline_access api"
+Environment=USE_AUTH0=false
+Environment=NETBIRD_GOOGLE_AUTH_ENABLED=false
+NoNewPrivileges=true
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

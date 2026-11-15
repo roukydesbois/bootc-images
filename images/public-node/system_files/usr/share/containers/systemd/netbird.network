@@ -1,0 +1,4 @@
+# Private network of the NetBird server containers. They publish on
+# 127.0.0.1 only; Traefik (host network) routes to them.
+[Network]
+NetworkName=netbird

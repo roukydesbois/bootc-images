@@ -9,7 +9,14 @@ image="$1"
 podman run --rm --network none --cap-add NET_ADMIN "$image" \
     nft --check --file /usr/share/public-node/firewall.nft
 
-# The enabled units exist (a renamed unit would only show at boot)
+# The quadlets generate valid units
+podman run --rm "$image" /usr/libexec/podman/quadlet -dryrun >/dev/null
+
+# Each logically bound image points at an existing quadlet
+podman run --rm "$image" sh -c 'for f in /usr/lib/bootc/bound-images.d/*; do test -e "$f" || { echo "dangling: $f" >&2; exit 1; }; done'
+
+# The enabled units exist (a renamed unit would only show at boot). Quadlet
+# units like traefik.service are generated at boot: checked by -dryrun above.
 podman run --rm "$image" systemctl --root=/ is-enabled \
     public-node-firewall.service sshd.service netbird.service tailscaled.service \
     tailscale-netfilter-off.service public-node-netbird-enroll.service \

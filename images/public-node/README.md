@@ -2,7 +2,7 @@
 
 bootc image for the public entry point: NetBird (management, signal, relay, reverse proxy) and the always-on apps. It runs on bare metal (a Scaleway Dedibox), so everything about the host is in this image and arrives with `bootc upgrade`.
 
-This is the host layer only. The apps come as quadlets in later changes.
+The host layer and the reverse proxy are in place. The apps come as quadlets in later changes.
 
 ## What's in the image
 
@@ -13,7 +13,9 @@ This is the host layer only. The apps come as quadlets in later changes.
 - **Admin user** `roukydesbois` (`sysusers.d`): no password, `sudo` without one, public keys from `/usr/share/public-node/ssh/roukydesbois.keys` (the same as https://github.com/roukydesbois.keys). Changing keys means rebuilding the image.
 - **NetBird** client (`netbird.service`, logs in `/var/log/netbird/client.log`) and **Tailscale** (`tailscaled.service`), the emergency path. `tailscale-netfilter-off.service` keeps Tailscale's netfilter rules off: they drop `100.64.0.0/10` traffic that doesn't come from `tailscale0`, which is also NetBird's range, and NetBird's DNS and SSH break.
 - **Updates**: `bootc-fetch-apply-updates.timer` installs a new image and reboots every night around 04:00 (Europe/Paris). The image must be signed with `cosign.pub` (signature policy, see the [root README](../../README.md)).
-- **greenboot**: after each boot, the checks in `/usr/lib/greenboot/check/required.d` (firewall loaded, sshd running) must pass, or the box reboots and, after a few failed attempts, goes back to the previous image. `wanted.d` (NetBird, Tailscale) only logs a warning. Checks stay local on purpose: one depending on another host would roll back good images during someone else's outage.
+- **Traefik** (`/usr/share/containers/systemd/traefik.container`), the reverse proxy for everything public. It has to be Traefik: NetBird's self-hosted reverse proxy needs TLS passthrough to its own proxy. Traefik runs on the host network, so the firewall applies to it, and the apps listen on `127.0.0.1`. Routes are files in `/usr/share/public-node/traefik/dynamic/`, one per app, shipped with the image. There's no podman socket in the container. Certificates come from Let's Encrypt over HTTP-01 on port 80 (not TLS-ALPN, because 443 also carries NetBird's passthrough) and are stored in `/var/lib/traefik`. The dashboard is on `127.0.0.1:8080` only: `ssh -L 8080:127.0.0.1:8080 roukydesbois@<NETBIRD_NAME>`.
+- **Container images** of the quadlets are bootc *logically bound images* (`/usr/lib/bootc/bound-images.d`): `bootc upgrade` pulls them before rebooting into the new image, so a reboot never waits on a registry. Renovate updates their tags in the `.container` files.
+- **greenboot**: after each boot, the checks in `/usr/lib/greenboot/check/required.d` (firewall loaded, sshd running, Traefik answering its local ping) must pass, or the box reboots and, after a few failed attempts, goes back to the previous image. `wanted.d` (NetBird, Tailscale) only logs a warning. Checks stay local on purpose: one depending on another host would roll back good images during someone else's outage.
 
 ## Installation
 

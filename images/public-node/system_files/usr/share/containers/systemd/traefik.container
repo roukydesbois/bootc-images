@@ -1,0 +1,35 @@
+# Reverse proxy in front of everything public on this host. Traefik (not
+# Caddy) because NetBird's reverse proxy needs TLS passthrough to its own
+# proxy, which only Traefik offers. Routes are files in
+# /usr/share/public-node/traefik/dynamic, shipped with the image; there's no
+# podman socket in here.
+[Unit]
+Description=Traefik reverse proxy
+Wants=network-online.target
+After=network-online.target public-node-firewall.service
+
+[Container]
+# Also a bootc logically bound image (build.sh): `bootc upgrade` pulls it
+# before rebooting into the new image
+Image=docker.io/library/traefik:v3.7.19
+ContainerName=traefik
+# Binds 80/443 on the host directly, so firewall.nft applies (published
+# ports would be DNAT'ed past it). Apps listen on 127.0.0.1.
+Network=host
+Volume=/usr/share/public-node/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+Volume=/usr/share/public-node/traefik/dynamic:/etc/traefik/dynamic:ro
+Volume=/var/lib/traefik:/data:Z
+ReadOnly=true
+NoNewPrivileges=true
+DropCapability=ALL
+AddCapability=NET_BIND_SERVICE
+HealthCmd=traefik healthcheck --ping
+HealthInterval=30s
+HealthRetries=3
+HealthOnFailure=kill
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

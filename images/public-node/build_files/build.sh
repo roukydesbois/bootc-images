@@ -49,6 +49,13 @@ systemctl enable public-node-netbird-enroll.service public-node-tailscale-enroll
 # greenboot 0.16 (the Rust rewrite): the checks, and the boot counter that
 # makes a failing image roll back
 systemctl enable greenboot-healthcheck.service greenboot-set-rollback-trigger.service
+# Quadlets in /usr/share/containers/systemd are enabled by their [Install]
+# section. Their images are also logically bound: `bootc upgrade` pulls them
+# before rebooting, so a reboot never waits on a registry.
+mkdir -p /usr/lib/bootc/bound-images.d
+for quadlet in traefik.container; do
+    ln -sf "/usr/share/containers/systemd/$quadlet" "/usr/lib/bootc/bound-images.d/$quadlet"
+done
 # Nightly updates (timer drop-in in system_files)
 systemctl enable bootc-fetch-apply-updates.timer
 # The stock nftables.service would `flush ruleset` on reload/stop, wiping

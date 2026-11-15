@@ -8,19 +8,22 @@ log:
   level: INFO
 
 entryPoints:
+  # HTTP to HTTPS is a low-priority route (dynamic/00-common.yml), not the
+  # entrypoint redirection: on the public cluster that got in the way of
+  # ACME HTTP-01 challenges
   web:
     address: ":80"
-    http:
-      redirections:
-        entryPoint:
-          to: websecure
-          scheme: https
-          permanent: true
   websecure:
     address: ":443"
     http:
       tls:
         certResolver: letsencrypt
+    # No read timeout: NetBird's gRPC streams (signal, management sync) stay
+    # open for hours, and Traefik v3 cuts requests after 60 s by default.
+    # Same as the public cluster.
+    transport:
+      respondingTimeouts:
+        readTimeout: "0s"
   # Dashboard, API and ping, on localhost only (SSH tunnel to look at it)
   traefik:
     address: "127.0.0.1:8080"

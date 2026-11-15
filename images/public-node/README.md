@@ -2,7 +2,7 @@
 
 bootc image for the public entry point: NetBird (management, signal, relay, reverse proxy) and the always-on apps. It runs on bare metal (a Scaleway Dedibox), so everything about the host is in this image and arrives with `bootc upgrade`.
 
-The host layer, the reverse proxy and NetBird are in place. The other apps come as quadlets in later changes.
+The host layer, the reverse proxy, NetBird and Keycloak are in place. The other apps come as quadlets in later changes.
 
 ## What's in the image
 
@@ -16,6 +16,7 @@ The host layer, the reverse proxy and NetBird are in place. The other apps come 
 - **Traefik** (`/usr/share/containers/systemd/traefik.container`), the reverse proxy for everything public. It has to be Traefik: NetBird's self-hosted reverse proxy needs TLS passthrough to its own proxy. Traefik runs on the host network, so the firewall applies to it, and the apps listen on `127.0.0.1`. Routes are files in `/usr/share/public-node/traefik/dynamic/`, one per app, shipped with the image. There's no podman socket in the container. Certificates come from Let's Encrypt over HTTP-01 on port 80 (not TLS-ALPN, because 443 also carries NetBird's passthrough) and are stored in `/var/lib/traefik`. The dashboard is on `127.0.0.1:8080` only: `ssh -L 8080:127.0.0.1:8080 roukydesbois@<NETBIRD_NAME>`.
 - **NetBird** server side, same versions and config as the public cluster (0.83.1, dashboard v2.97.0, SQLite store, Keycloak at `sso.thomelab.net`): `netbird-management`, `-signal`, `-relay`, `-dashboard` and `-proxy` quadlets on their own podman network (`netbird.network`), each publishing on `127.0.0.1` only (8081 to 8084, and 8443 for the proxy). Traefik routes `netbird.thomelab.net` by path like the cluster's IngressRoute (`/api`, gRPC on `/management` and `/signalexchange` over h2c, `/ws-proxy`, `/relay`, dashboard for the rest), and passes every other TLS connection untouched to the NetBird proxy, which terminates it with its own certificates (`dynamic/netbird.yml`). `management.json` is rendered at start from `/usr/share/public-node/netbird/management.json` and the secrets into `/run/public-node/netbird` (`public-node-netbird-config.service`). State is in `/var/lib/netbird` (`management/`: SQLite store, `proxy-certs/`).
   **The NetBird units only start once `/etc/public-node/secrets/netbird/datastore-encryption-key` exists.** Before the cutover the cluster's NetBird serves the peers, and two management servers for the same peers must never run at once.
+- **Keycloak** (`sso.thomelab.net`) and its **Postgres**, same versions as the public cluster (Keycloak 26.8.2, Postgres 18.3), on their own podman network (`keycloak.network`). Keycloak publishes on `127.0.0.1:8090`, Postgres publishes nothing. The settings match the cluster's Keycloak CR (hostname, `xforwarded` proxy headers, non-strict hostname), with a local cache because there's a single instance and a 1.5 GB memory limit so the JVM doesn't size its heap from the whole host. The database is in `/var/lib/keycloak/postgres` (owned by UID 999, the image's `postgres` user). Like NetBird, **nothing starts before `/etc/public-node/secrets/keycloak/db-password` exists**. The database moves at cutover with `pg_dump`/`pg_restore`.
 - **Container images** of the quadlets are bootc *logically bound images* (`/usr/lib/bootc/bound-images.d`): `bootc upgrade` pulls them before rebooting into the new image, so a reboot never waits on a registry. Renovate updates their tags in the `.container` files.
 - **greenboot**: after each boot, the checks in `/usr/lib/greenboot/check/required.d` (firewall loaded, sshd running, Traefik answering its local ping) must pass, or the box reboots and, after a few failed attempts, goes back to the previous image. `wanted.d` (NetBird, Tailscale) only logs a warning. Checks stay local on purpose: one depending on another host would roll back good images during someone else's outage.
 
@@ -59,7 +60,11 @@ Secrets are root-only files in `/etc/public-node/secrets/` (created 0700 by tmpf
 | `idp-client-secret` | `netbird-management-secret`, key `idpClientSecret` |
 | `proxy-token` | `netbird-proxy-token`, key `token` |
 
-One value per file, mode 0600. The datastore key only works with the SQLite store it encrypted: they move together, at cutover.
+| File in `/etc/public-node/secrets/keycloak/` | Cluster source (namespace `keycloak`) |
+|---|---|
+| `db-password` | `keycloak-pg-app`, key `password` (CNPG's application user) |
+
+One value per file, mode 0600. Containers that run as another user than root get them through env files rendered into `/run` by root (`public-node-*-config.service`), never by reading these files themselves. The datastore key only works with the SQLite store it encrypted: they move together, at cutover.
 
 ## Recovery
 

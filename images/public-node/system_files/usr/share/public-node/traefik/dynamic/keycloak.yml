@@ -1,0 +1,12 @@
+# Keycloak on sso.thomelab.net. No secure-headers middleware: Keycloak sets
+# its own, and its session iframe needs framing from its own origin.
+http:
+  routers:
+    keycloak:
+      rule: Host(`sso.thomelab.net`)
+      entryPoints: [websecure]
+      service: keycloak
+  services:
+    keycloak:
+      loadBalancer:
+        servers: [{url: "http://127.0.0.1:8090"}]

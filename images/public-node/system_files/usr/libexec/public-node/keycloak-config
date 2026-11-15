@@ -1,0 +1,19 @@
+#!/bin/bash
+# Renders the env files with Keycloak's database password for Keycloak and
+# its Postgres into /run, from the secret on this host. Run by
+# public-node-keycloak-config.service. Paths can be overridden for tests:
+# SECRETS, OUT.
+set -euo pipefail
+secrets=${SECRETS:-/etc/public-node/secrets/keycloak}
+out=${OUT:-/run/public-node/keycloak}
+
+if [ ! -s "$secrets/db-password" ]; then
+    echo "missing or empty: $secrets/db-password" >&2
+    exit 1
+fi
+password=$(tr -d '\n\r' <"$secrets/db-password")
+
+umask 077
+mkdir -p "$out"
+printf 'POSTGRES_PASSWORD=%s\n' "$password" >"$out/postgres.env"
+printf 'KC_DB_PASSWORD=%s\n' "$password" >"$out/keycloak.env"

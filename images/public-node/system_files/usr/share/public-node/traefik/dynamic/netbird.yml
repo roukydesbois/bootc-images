@@ -1,0 +1,74 @@
+# NetBird on netbird.thomelab.net, routed by path like the public cluster's
+# IngressRoute. gRPC (management, signal) goes over h2c.
+http:
+  routers:
+    netbird-api:
+      rule: Host(`netbird.thomelab.net`) && PathPrefix(`/api`)
+      entryPoints: [websecure]
+      service: netbird-management
+    netbird-management-grpc:
+      rule: Host(`netbird.thomelab.net`) && PathPrefix(`/management`)
+      entryPoints: [websecure]
+      service: netbird-management-grpc
+    netbird-signal-grpc:
+      rule: Host(`netbird.thomelab.net`) && PathPrefix(`/signalexchange`)
+      entryPoints: [websecure]
+      service: netbird-signal-grpc
+    # The dashboard's browser client (SSH/RDP from the web UI) can't do gRPC
+    # and goes over WebSocket instead
+    netbird-ws-management:
+      rule: Host(`netbird.thomelab.net`) && PathPrefix(`/ws-proxy/management`)
+      entryPoints: [websecure]
+      service: netbird-management
+    netbird-ws-signal:
+      rule: Host(`netbird.thomelab.net`) && PathPrefix(`/ws-proxy/signal`)
+      entryPoints: [websecure]
+      service: netbird-signal
+    netbird-relay:
+      rule: Host(`netbird.thomelab.net`) && PathPrefix(`/relay`)
+      entryPoints: [websecure]
+      service: netbird-relay
+    netbird-dashboard:
+      rule: Host(`netbird.thomelab.net`)
+      entryPoints: [websecure]
+      service: netbird-dashboard
+      middlewares: [secure-headers]
+      # Below the path routers above
+      priority: 10
+
+  services:
+    netbird-management:
+      loadBalancer:
+        servers: [{url: "http://127.0.0.1:8081"}]
+    netbird-management-grpc:
+      loadBalancer:
+        servers: [{url: "h2c://127.0.0.1:8081"}]
+    netbird-signal:
+      loadBalancer:
+        servers: [{url: "http://127.0.0.1:8082"}]
+    netbird-signal-grpc:
+      loadBalancer:
+        servers: [{url: "h2c://127.0.0.1:8082"}]
+    netbird-relay:
+      loadBalancer:
+        servers: [{url: "http://127.0.0.1:8083"}]
+    netbird-dashboard:
+      loadBalancer:
+        servers: [{url: "http://127.0.0.1:8084"}]
+
+# Every TLS connection no route above claims (the services exposed through
+# NetBird's reverse proxy, *.thomelab.net) goes to the NetBird proxy
+# untouched: it terminates TLS with its own certificates. Lowest priority.
+tcp:
+  routers:
+    netbird-proxy-passthrough:
+      rule: HostSNI(`*`)
+      entryPoints: [websecure]
+      priority: 1
+      service: netbird-proxy
+      tls:
+        passthrough: true
+  services:
+    netbird-proxy:
+      loadBalancer:
+        servers: [{address: "127.0.0.1:8443"}]

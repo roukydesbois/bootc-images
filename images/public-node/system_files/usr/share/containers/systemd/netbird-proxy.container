@@ -1,0 +1,37 @@
+# NetBird's reverse proxy for services exposed from the mesh. It terminates
+# TLS itself (own Let's Encrypt certificates, TLS-ALPN-01), so Traefik hands
+# it every TLS connection no other route claims, untouched (dynamic/netbird.yml).
+[Unit]
+Description=NetBird reverse proxy
+Wants=network-online.target
+After=network-online.target public-node-netbird-config.service
+Requires=public-node-netbird-config.service
+# Only once the secrets are in place, i.e. after the cutover: before that, the
+# NetBird of the public cluster serves the peers, and two management servers
+# for the same peers must never run at once.
+ConditionPathExists=/etc/public-node/secrets/netbird/datastore-encryption-key
+After=netbird-management.service
+
+[Container]
+Image=docker.io/netbirdio/reverse-proxy:0.83.1
+ContainerName=netbird-proxy
+Network=netbird.network
+PublishPort=127.0.0.1:8443:8443
+Environment=NB_PROXY_DOMAIN=thomelab.net
+Environment=NB_PROXY_MANAGEMENT_ADDRESS=http://netbird-management:80
+Environment=NB_PROXY_ALLOW_INSECURE=true
+Environment=NB_PROXY_ADDRESS=:8443
+Environment=NB_PROXY_ACME_CERTIFICATES=true
+Environment=NB_PROXY_ACME_CHALLENGE_TYPE=tls-alpn-01
+Environment=NB_PROXY_CERTIFICATE_DIRECTORY=/certs
+Environment=NB_PROXY_PRIVATE=true
+# NB_PROXY_TOKEN
+EnvironmentFile=/run/public-node/netbird/proxy.env
+Volume=/var/lib/netbird/proxy-certs:/certs:Z
+NoNewPrivileges=true
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

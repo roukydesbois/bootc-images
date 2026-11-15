@@ -1,0 +1,27 @@
+[Unit]
+Description=NetBird management
+Wants=network-online.target
+After=network-online.target public-node-netbird-config.service
+Requires=public-node-netbird-config.service
+# Only once the secrets are in place, i.e. after the cutover: before that, the
+# NetBird of the public cluster serves the peers, and two management servers
+# for the same peers must never run at once.
+ConditionPathExists=/etc/public-node/secrets/netbird/datastore-encryption-key
+
+[Container]
+Image=docker.io/netbirdio/management:0.83.1
+ContainerName=netbird-management
+Network=netbird.network
+PublishPort=127.0.0.1:8081:80
+# Rendered with the secrets by public-node-netbird-config.service
+Volume=/run/public-node/netbird/management.json:/etc/netbird/management.json:ro,Z
+# SQLite store, encrypted with the datastore key: they only work together
+Volume=/var/lib/netbird/management:/var/lib/netbird:Z
+Exec=--port=80 --log-file=console --log-level=info --disable-anonymous-metrics=false --single-account-mode-domain=netbird.thomelab.net --dns-domain=internal.thomelab
+NoNewPrivileges=true
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

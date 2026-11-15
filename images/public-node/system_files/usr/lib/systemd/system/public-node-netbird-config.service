@@ -1,0 +1,8 @@
+[Unit]
+Description=Render NetBird's config from the image template and the host secrets
+ConditionPathExists=/etc/public-node/secrets/netbird/datastore-encryption-key
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/libexec/public-node/netbird-config

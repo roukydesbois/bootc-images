@@ -1,0 +1,32 @@
+#!/bin/bash
+# Renders NetBird's management.json and the relay/proxy env files from the
+# template in the image and the secrets on this host, into /run (never on
+# disk outside /etc/public-node/secrets). Run by
+# public-node-netbird-config.service before the NetBird containers.
+# Paths can be overridden for tests: SECRETS, OUT, TEMPLATE.
+set -euo pipefail
+secrets=${SECRETS:-/etc/public-node/secrets/netbird}
+out=${OUT:-/run/public-node/netbird}
+template=${TEMPLATE:-/usr/share/public-node/netbird/management.json}
+
+for name in relay-secret datastore-encryption-key idp-client-secret proxy-token; do
+    if [ ! -s "$secrets/$name" ]; then
+        echo "missing or empty: $secrets/$name" >&2
+        exit 1
+    fi
+done
+# One line each, no trailing newline or spaces
+value() { tr -d '\n\r' <"$secrets/$1"; }
+
+umask 077
+mkdir -p "$out"
+jq --arg relay "$(value relay-secret)" \
+   --arg datastore "$(value datastore-encryption-key)" \
+   --arg idp "$(value idp-client-secret)" \
+   '.Relay.Secret = $relay
+    | .DataStoreEncryptionKey = $datastore
+    | .IdpManagerConfig.ClientConfig.ClientSecret = $idp' \
+   "$template" >"$out/management.json.new"
+mv "$out/management.json.new" "$out/management.json"
+printf 'NB_AUTH_SECRET=%s\n' "$(value relay-secret)" >"$out/relay.env"
+printf 'NB_PROXY_TOKEN=%s\n' "$(value proxy-token)" >"$out/proxy.env"

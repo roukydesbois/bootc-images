@@ -1,0 +1,98 @@
+{
+  "Stuns": [
+    {
+      "Proto": "udp",
+      "URI": "stun:stun.cloudflare.com:3478",
+      "Username": "",
+      "Password": ""
+    }
+  ],
+  "TURNConfig": {
+    "TimeBasedCredentials": false,
+    "CredentialsTTL": "12h0m0s",
+    "Secret": "secret",
+    "Turns": []
+  },
+  "Relay": {
+    "Addresses": [
+      "rels://netbird.thomelab.net:443/relay"
+    ],
+    "CredentialsTTL": "24h",
+    "Secret": ""
+  },
+  "Signal": {
+    "Proto": "https",
+    "URI": "netbird.thomelab.net:443",
+    "Username": "",
+    "Password": ""
+  },
+  "Datadir": "/var/lib/netbird/",
+  "DataStoreEncryptionKey": "",
+  "HttpConfig": {
+    "LetsEncryptDomain": "",
+    "CertFile": "",
+    "CertKey": "",
+    "AuthAudience": "netbird-client",
+    "AuthClientID": "netbird-client",
+    "AuthCallbackURL": "https://netbird.thomelab.net/api/reverse-proxy/callback",
+    "AuthIssuer": "https://sso.thomelab.net/realms/self-hosted-apps",
+    "AuthUserIDClaim": "",
+    "AuthKeysLocation": "https://sso.thomelab.net/realms/self-hosted-apps/protocol/openid-connect/certs",
+    "OIDCConfigEndpoint": "https://sso.thomelab.net/realms/self-hosted-apps/.well-known/openid-configuration",
+    "IdpSignKeyRefreshEnabled": true,
+    "JWTGroupsEnabled": true,
+    "JWTGroupsClaimName": "groups"
+  },
+  "IdpManagerConfig": {
+    "ManagerType": "keycloak",
+    "ClientConfig": {
+      "Issuer": "https://sso.thomelab.net/realms/self-hosted-apps",
+      "TokenEndpoint": "https://sso.thomelab.net/realms/self-hosted-apps/protocol/openid-connect/token",
+      "ClientID": "netbird-backend",
+      "ClientSecret": "",
+      "GrantType": "client_credentials"
+    },
+    "ExtraConfig": {
+      "AdminEndpoint": "https://sso.thomelab.net/admin/realms/self-hosted-apps"
+    }
+  },
+  "DeviceAuthorizationFlow": {
+    "Provider": "hosted",
+    "ProviderConfig": {
+      "ClientID": "netbird-client",
+      "ClientSecret": "",
+      "Domain": "",
+      "Audience": "netbird-client",
+      "TokenEndpoint": "https://sso.thomelab.net/realms/self-hosted-apps/protocol/openid-connect/token",
+      "DeviceAuthEndpoint": "https://sso.thomelab.net/realms/self-hosted-apps/protocol/openid-connect/auth/device",
+      "AuthorizationEndpoint": "",
+      "Scope": "openid",
+      "UseIDToken": false,
+      "RedirectURLs": null
+    }
+  },
+  "PKCEAuthorizationFlow": {
+    "ProviderConfig": {
+      "ClientID": "netbird-client",
+      "ClientSecret": "",
+      "Domain": "",
+      "Audience": "netbird-client",
+      "TokenEndpoint": "https://sso.thomelab.net/realms/self-hosted-apps/protocol/openid-connect/token",
+      "DeviceAuthEndpoint": "",
+      "AuthorizationEndpoint": "https://sso.thomelab.net/realms/self-hosted-apps/protocol/openid-connect/auth",
+      "Scope": "openid profile email offline_access api",
+      "UseIDToken": false,
+      "RedirectURLs": [
+        "http://localhost:53000"
+      ]
+    }
+  },
+  "StoreConfig": {
+    "Engine": "sqlite"
+  },
+  "ReverseProxy": {
+    "TrustedHTTPProxies": null,
+    "TrustedHTTPProxiesCount": 0,
+    "TrustedPeers": null
+  }
+}

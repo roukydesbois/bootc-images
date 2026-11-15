@@ -1,0 +1,47 @@
+# Traefik static configuration (traefik.container). Routes live in
+# dynamic/, one file per app.
+global:
+  checkNewVersion: false
+  sendAnonymousUsage: false
+
+log:
+  level: INFO
+
+entryPoints:
+  web:
+    address: ":80"
+    http:
+      redirections:
+        entryPoint:
+          to: websecure
+          scheme: https
+          permanent: true
+  websecure:
+    address: ":443"
+    http:
+      tls:
+        certResolver: letsencrypt
+  # Dashboard, API and ping, on localhost only (SSH tunnel to look at it)
+  traefik:
+    address: "127.0.0.1:8080"
+
+api:
+  dashboard: true
+  insecure: true
+
+ping:
+  entryPoint: traefik
+
+providers:
+  file:
+    directory: /etc/traefik/dynamic
+    watch: true
+
+certificatesResolvers:
+  letsencrypt:
+    acme:
+      storage: /data/acme.json
+      # HTTP-01 on :80. Not TLS-ALPN-01: 443 also carries NetBird's TLS
+      # passthrough.
+      httpChallenge:
+        entryPoint: web

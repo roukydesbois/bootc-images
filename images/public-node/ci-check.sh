@@ -28,6 +28,15 @@ podman run --rm "$image" sh -c '
     jq -e ".Relay.Secret == \"\" and .DataStoreEncryptionKey == \"\" and .IdpManagerConfig.ClientConfig.ClientSecret == \"\"" /usr/share/public-node/netbird/management.json >/dev/null
 '
 
+# Keycloak's env files render from the secret
+podman run --rm "$image" sh -c '
+    set -e
+    mkdir -p /tmp/s && echo "test-db-password" >/tmp/s/db-password
+    SECRETS=/tmp/s OUT=/tmp/o /usr/libexec/public-node/keycloak-config
+    grep -qx POSTGRES_PASSWORD=test-db-password /tmp/o/postgres.env
+    grep -qx KC_DB_PASSWORD=test-db-password /tmp/o/keycloak.env
+'
+
 # The enabled units exist (a renamed unit would only show at boot). Quadlet
 # units like traefik.service are generated at boot: checked by -dryrun above.
 podman run --rm "$image" systemctl --root=/ is-enabled \

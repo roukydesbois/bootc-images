@@ -1,0 +1,8 @@
+[Unit]
+Description=Render Keycloak's database password for Keycloak and Postgres
+ConditionPathExists=/etc/public-node/secrets/keycloak/db-password
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/libexec/public-node/keycloak-config

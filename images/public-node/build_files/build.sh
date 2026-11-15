@@ -54,7 +54,8 @@ systemctl enable greenboot-healthcheck.service greenboot-set-rollback-trigger.se
 # before rebooting, so a reboot never waits on a registry.
 mkdir -p /usr/lib/bootc/bound-images.d
 for quadlet in traefik.container netbird-management.container netbird-signal.container \
-    netbird-relay.container netbird-dashboard.container netbird-proxy.container; do
+    netbird-relay.container netbird-dashboard.container netbird-proxy.container \
+    keycloak-postgres.container keycloak.container; do
     ln -sf "/usr/share/containers/systemd/$quadlet" "/usr/lib/bootc/bound-images.d/$quadlet"
 done
 # Nightly updates (timer drop-in in system_files)

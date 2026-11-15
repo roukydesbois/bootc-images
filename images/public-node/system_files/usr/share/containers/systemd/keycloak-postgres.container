@@ -1,0 +1,33 @@
+[Unit]
+Description=Postgres for Keycloak
+Requires=public-node-keycloak-config.service
+After=public-node-keycloak-config.service
+# Only once the secret is in place, i.e. at cutover: before that, the
+# public cluster serves sso.thomelab.net, and this Postgres would start empty.
+ConditionPathExists=/etc/public-node/secrets/keycloak/db-password
+
+[Container]
+# Same major version as the public cluster's CNPG (18.3); the data moves with
+# pg_dump/pg_restore, not as files
+Image=docker.io/library/postgres:18.3
+ContainerName=keycloak-postgres
+Network=keycloak.network
+Environment=POSTGRES_USER=keycloak
+Environment=POSTGRES_DB=keycloak
+# POSTGRES_PASSWORD, only used to create the database on first start. Not
+# POSTGRES_PASSWORD_FILE: the image reads it again as UID 999, which can't
+# read a root-only file.
+EnvironmentFile=/run/public-node/keycloak/postgres.env
+# Owned by 999 (the image's postgres user), see tmpfiles.d
+Volume=/var/lib/keycloak/postgres:/var/lib/postgresql:Z
+HealthCmd=pg_isready -U keycloak -d keycloak
+HealthInterval=30s
+HealthRetries=3
+HealthOnFailure=kill
+NoNewPrivileges=true
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

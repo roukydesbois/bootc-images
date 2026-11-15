@@ -1,0 +1,4 @@
+# Private network of Keycloak and its Postgres. Postgres publishes nothing;
+# Keycloak publishes on 127.0.0.1 for Traefik.
+[Network]
+NetworkName=keycloak

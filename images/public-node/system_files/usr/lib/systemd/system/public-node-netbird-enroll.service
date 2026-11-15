@@ -3,6 +3,8 @@
 # so this is how the box becomes reachable at all. The key file is deleted
 # once the peer is registered.
 [Unit]
+# ntfy alert with the end of the journal when it fails (common/)
+OnFailure=bootc-images-notify-failure@%n.service
 Description=Join NetBird with the setup key placed at install
 ConditionPathExists=/etc/netbird/setup-key
 Requires=netbird.service

@@ -1,0 +1,15 @@
+#!/bin/bash
+# OnFailure= handler (bootc-images-notify-failure@.service): report a failed
+# unit with the end of its journal. The journal may rotate within days, so a
+# longer excerpt is also kept in /var/log/bootc-images/failures (cleaned up
+# after 90 days, tmpfiles.d/bootc-images.conf); the alert says where.
+# Overridable for tests: FAILURES (log dir), NOTIFY (the sender).
+set -euo pipefail
+unit="$1"
+failures=${FAILURES:-/var/log/bootc-images/failures}
+notify=${NOTIFY:-/usr/libexec/bootc-images/notify}
+saved="$failures/$(date -u +%Y%m%dT%H%M%SZ)-${unit}.log"
+journalctl -u "$unit" -n 200 --no-pager -o short-iso >"$saved" 2>&1 || true
+log="$(journalctl -u "$unit" -n 15 --no-pager -o cat 2>&1 || true)"
+exec "$notify" "$unit failed" "$log
+(full log on $(hostname): $saved)" high warning

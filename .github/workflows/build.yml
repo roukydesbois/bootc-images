@@ -64,6 +64,8 @@ jobs:
           else
             changed=$(git diff --name-only "$base" HEAD)
             grep -qx '.github/workflows/build.yml' <<<"$changed" && all=true
+            # common/ is shared by several images
+            grep -q '^common/' <<<"$changed" && all=true
           fi
           include=()
           for image in "${!RUNNERS[@]}"; do

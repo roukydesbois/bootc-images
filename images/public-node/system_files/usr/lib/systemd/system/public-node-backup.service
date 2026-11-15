@@ -1,4 +1,6 @@
 [Unit]
+# ntfy alert with the end of the journal when it fails (common/)
+OnFailure=bootc-images-notify-failure@%n.service
 Description=Hourly backup to Garage (restic) and BorgBase (borg)
 Documentation=file:///usr/libexec/public-node/backup
 # Nothing to do before the backup secrets are placed (README, "Backups")

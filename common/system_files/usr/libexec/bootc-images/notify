@@ -1,0 +1,27 @@
+#!/bin/bash
+# Send a notification to ntfy: notify <title> <message> [priority] [tags]
+# Server, topic and token come from /etc/bootc-images/ntfy.env, created on
+# the machine (the token is a secret):
+#   NTFY_URL=https://ntfy.thomelab.net
+#   NTFY_TOPIC=<topic>
+#   NTFY_TOKEN=<token>
+# Shared by the images through common/.
+set -euo pipefail
+
+env_file=${NTFY_ENV:-/etc/bootc-images/ntfy.env}
+if [ ! -r "$env_file" ]; then
+	echo "notify: $env_file missing, can't send: $1: $2" >&2
+	exit 1
+fi
+# shellcheck source=/dev/null
+. "$env_file"
+
+# Retries ride out a short network or ntfy outage (2026-11-12: a failed
+# backup's alert was lost to a single timeout): 10 tries, 30 s apart.
+curl -fsS --max-time 30 --retry 10 --retry-delay 30 --retry-all-errors \
+	-H "Authorization: Bearer ${NTFY_TOKEN}" \
+	-H "Title: $(hostname): $1" \
+	-H "Priority: ${3:-default}" \
+	-H "Tags: ${4:-warning}" \
+	-d "$2" \
+	"${NTFY_URL%/}/${NTFY_TOPIC}" >/dev/null

@@ -55,6 +55,18 @@ podman run --rm "$image" sh -c '
     BORG_PASSCOMMAND="cat /tmp/sec/borg-passphrase" borg list --short /tmp/borg | grep -q .
 '
 
+# The failure alert (common/): the handler keeps the log and calls the
+# sender with the unit name, priority and tags (stub instead of ntfy)
+podman run --rm "$image" sh -c '
+    set -e
+    test -f /usr/lib/systemd/system/bootc-images-notify-failure@.service
+    mkdir -p /tmp/failures
+    printf "#!/bin/sh\necho \"\$1|\$3|\$4\" >/tmp/sent\n" >/tmp/stub && chmod +x /tmp/stub
+    FAILURES=/tmp/failures NOTIFY=/tmp/stub /usr/libexec/bootc-images/notify-unit-failure test.service
+    grep -qx "test.service failed|high|warning" /tmp/sent
+    ls /tmp/failures/*-test.service.log >/dev/null
+'
+
 # The enabled units exist (a renamed unit would only show at boot). Quadlet
 # units like traefik.service are generated at boot: checked by -dryrun above.
 podman run --rm "$image" systemctl --root=/ is-enabled \

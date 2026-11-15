@@ -2,6 +2,8 @@
 # TLS itself (own Let's Encrypt certificates, TLS-ALPN-01), so Traefik hands
 # it every TLS connection no other route claims, untouched (dynamic/netbird.yml).
 [Unit]
+# ntfy alert with the end of the journal when it fails (common/)
+OnFailure=bootc-images-notify-failure@%n.service
 Description=NetBird reverse proxy
 Wants=network-online.target
 After=network-online.target public-node-netbird-config.service

@@ -1,4 +1,6 @@
 [Unit]
+# ntfy alert with the end of the journal when it fails (common/)
+OnFailure=bootc-images-notify-failure@%n.service
 Description=Apply backup retention on Garage (restic) and BorgBase (borg)
 Documentation=file:///usr/libexec/public-node/backup
 ConditionDirectoryNotEmpty=/etc/public-node/secrets/backup

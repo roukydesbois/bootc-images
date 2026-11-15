@@ -1,4 +1,6 @@
 [Unit]
+# ntfy alert with the end of the journal when it fails (common/)
+OnFailure=bootc-images-notify-failure@%n.service
 Description=Render Keycloak's database password for Keycloak and Postgres
 ConditionPathExists=/etc/public-node/secrets/keycloak/db-password
 

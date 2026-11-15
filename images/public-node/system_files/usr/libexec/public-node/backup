@@ -1,10 +1,12 @@
 #!/bin/bash
 # Backup of public-node, to restic (Garage) and borg (BorgBase), each
 # independent of the other. `backup` runs hourly, `backup prune` daily.
-#   1. dumps into the staging dir: Keycloak's database (pg_dump) and a
-#      consistent copy of NetBird's SQLite store (sqlite3 .backup)
+#   1. dumps into the staging dir: Keycloak's database (pg_dump) and
+#      consistent copies of the SQLite databases (sqlite3 .backup) of
+#      NetBird, Vaultwarden and ntfy
 #   2. backs up the staging dir, the secrets (the NetBird store is useless
-#      without its encryption key) and Traefik's certificates
+#      without its encryption key), Vaultwarden's other files (attachments,
+#      keys) and Traefik's certificates
 # A destination is used when its file is in the secrets dir (README,
 # "Backups"). Paths can be overridden for tests: SECRETS, STATE.
 set -euo pipefail
@@ -12,7 +14,10 @@ mode=${1:-backup}
 secrets=${SECRETS:-/etc/public-node/secrets/backup}
 state=${STATE:-/var/lib/public-node/backup}
 staging="$state/staging"
-paths=("$staging" /etc/public-node/secrets /var/lib/traefik)
+paths=("$staging" /etc/public-node/secrets /var/lib/traefik /var/lib/vaultwarden)
+# Live SQLite files: their consistent copies are in the staging dir. The
+# backup's own secrets stay out: they're needed to read it.
+excludes=("$secrets" "/var/lib/vaultwarden/db.sqlite3*")
 # Retention, the same on both sides
 keep=(--keep-hourly 48 --keep-daily 14 --keep-weekly 8 --keep-monthly 12)
 
@@ -26,8 +31,15 @@ dumps() {
     if systemctl is-active --quiet keycloak-postgres.service; then
         podman exec keycloak-postgres pg_dump -U keycloak -Fc keycloak >"$staging/keycloak.pgdump"
     fi
-    if [ -f /var/lib/netbird/management/store.db ]; then
-        sqlite3 /var/lib/netbird/management/store.db ".backup '$staging/netbird-store.db'"
+    sqlite_copy /var/lib/netbird/management/store.db netbird-store.db
+    sqlite_copy /var/lib/vaultwarden/db.sqlite3 vaultwarden.sqlite3
+    sqlite_copy /var/lib/ntfy/user.db ntfy-user.db
+}
+
+# Consistent copy of a live SQLite database, if it exists
+sqlite_copy() {
+    if [ -f "$1" ]; then
+        sqlite3 "$1" ".backup '$staging/$2'"
     fi
 }
 
@@ -39,8 +51,7 @@ restic_run() (
     if [ "$mode" = prune ]; then
         restic forget "${keep[@]}" --prune
     else
-        # The backup secrets themselves stay out: they're needed to read it
-        restic backup --tag hourly --exclude "$secrets" "${paths[@]}"
+        restic backup --tag hourly "${excludes[@]/#/--exclude=}" "${paths[@]}"
     fi
 )
 
@@ -55,7 +66,7 @@ borg_run() (
         borg prune "${keep[@]}"
         borg compact
     else
-        borg create --compression zstd --exclude "$secrets" "::{now:%Y-%m-%dT%H:%M}" "${paths[@]}"
+        borg create --compression zstd "${excludes[@]/#/--exclude=}" "::{now:%Y-%m-%dT%H:%M}" "${paths[@]}"
     fi
 )
 

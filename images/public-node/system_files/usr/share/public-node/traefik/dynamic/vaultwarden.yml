@@ -1,0 +1,11 @@
+# Vaultwarden. No secure-headers middleware: it sets its own.
+http:
+  routers:
+    vaultwarden:
+      rule: Host(`passwords.thomelab.net`)
+      entryPoints: [websecure]
+      service: vaultwarden
+  services:
+    vaultwarden:
+      loadBalancer:
+        servers: [{url: "http://127.0.0.1:8091"}]

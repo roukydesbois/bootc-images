@@ -1,0 +1,35 @@
+# ntfy on ntfy.thomelab.net, same version and config as the public cluster
+# (thomelab-infra applications/ntfy). Users, ACL entries and tokens are
+# provisioned from server.yml and the env file at every start.
+[Unit]
+Description=ntfy (ntfy.thomelab.net)
+# ntfy alert with the end of the journal when it fails (common/)
+OnFailure=bootc-images-notify-failure@%n.service
+ConditionPathExists=/etc/public-node/secrets/ntfy/ntfy.env
+
+[Container]
+Image=docker.io/binwiederhier/ntfy:v2.38.0
+ContainerName=ntfy
+Network=ntfy.network
+PublishPort=127.0.0.1:8092:8080
+Exec=serve
+User=1000:1000
+# NTFY_AUTH_USERS, NTFY_AUTH_TOKENS: the cluster's ntfy-auth secret
+EnvironmentFile=/etc/public-node/secrets/ntfy/ntfy.env
+Volume=/usr/share/public-node/ntfy/server.yml:/etc/ntfy/server.yml:ro
+Volume=/usr/share/public-node/ntfy/templates:/etc/ntfy/templates:ro
+# user.db (provisioned from the config) and the 12 h message cache
+Volume=/var/lib/ntfy:/var/lib/ntfy:Z
+Volume=/var/cache/ntfy:/var/cache/ntfy:Z
+DropCapability=ALL
+NoNewPrivileges=true
+HealthCmd=wget -q -O /dev/null http://127.0.0.1:8080/v1/health
+HealthInterval=30s
+HealthRetries=3
+HealthOnFailure=kill
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

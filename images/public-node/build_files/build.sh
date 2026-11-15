@@ -62,7 +62,7 @@ systemctl enable greenboot-healthcheck.service greenboot-set-rollback-trigger.se
 mkdir -p /usr/lib/bootc/bound-images.d
 for quadlet in traefik.container netbird-management.container netbird-signal.container \
     netbird-relay.container netbird-dashboard.container netbird-proxy.container \
-    keycloak-postgres.container keycloak.container; do
+    keycloak-postgres.container keycloak.container vaultwarden.container ntfy.container; do
     ln -sf "/usr/share/containers/systemd/$quadlet" "/usr/lib/bootc/bound-images.d/$quadlet"
 done
 systemctl enable public-node-backup.timer public-node-backup-prune.timer

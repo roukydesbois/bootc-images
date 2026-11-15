@@ -1,0 +1,38 @@
+# Vaultwarden on passwords.thomelab.net, same version and settings as the
+# public cluster (thomelab-infra applications/vaultwarden).
+[Unit]
+Description=Vaultwarden (passwords.thomelab.net)
+# ntfy alert with the end of the journal when it fails (common/)
+OnFailure=bootc-images-notify-failure@%n.service
+# Only once its config is in place, i.e. at cutover, with the data
+ConditionPathExists=/etc/public-node/secrets/vaultwarden/vaultwarden.env
+
+[Container]
+Image=docker.io/vaultwarden/server:1.37.5
+ContainerName=vaultwarden
+Network=vaultwarden.network
+PublishPort=127.0.0.1:8091:8080
+# As on the cluster: UID 1000, no privileges; it listens on 8080 because an
+# unprivileged user can't bind 80
+User=1000:1000
+Environment=ROCKET_PORT=8080
+Environment=SIGNUPS_ALLOWED=false
+Environment=SSO_ENABLED=false
+Environment=SHOW_PASSWORD_HINT=false
+# DOMAIN, ADMIN_TOKEN (hash), SMTP_*: the cluster's vaultwarden-config secret
+EnvironmentFile=/etc/public-node/secrets/vaultwarden/vaultwarden.env
+# SQLite database, attachments, keys. Owned by 1000 (tmpfiles.d)
+Volume=/var/lib/vaultwarden:/data:Z
+DropCapability=ALL
+NoNewPrivileges=true
+# The image's own check (follows ROCKET_PORT)
+HealthCmd=/healthcheck.sh
+HealthInterval=30s
+HealthRetries=3
+HealthOnFailure=kill
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

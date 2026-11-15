@@ -2,7 +2,7 @@
 
 bootc image for the public entry point: NetBird (management, signal, relay, reverse proxy) and the always-on apps. It runs on bare metal (a Scaleway Dedibox), so everything about the host is in this image and arrives with `bootc upgrade`.
 
-The host layer, the reverse proxy, NetBird, Keycloak and the backups are in place. The other apps come as quadlets in later changes.
+The host layer, the reverse proxy, NetBird, Keycloak, Vaultwarden, ntfy and the backups are in place. The other apps come as quadlets in later changes.
 
 ## What's in the image
 
@@ -17,6 +17,7 @@ The host layer, the reverse proxy, NetBird, Keycloak and the backups are in plac
 - **NetBird** server side, same versions and config as the public cluster (0.83.1, dashboard v2.97.0, SQLite store, Keycloak at `sso.thomelab.net`): `netbird-management`, `-signal`, `-relay`, `-dashboard` and `-proxy` quadlets on their own podman network (`netbird.network`), each publishing on `127.0.0.1` only (8081 to 8084, and 8443 for the proxy). Traefik routes `netbird.thomelab.net` by path like the cluster's IngressRoute (`/api`, gRPC on `/management` and `/signalexchange` over h2c, `/ws-proxy`, `/relay`, dashboard for the rest), and passes every other TLS connection untouched to the NetBird proxy, which terminates it with its own certificates (`dynamic/netbird.yml`). `management.json` is rendered at start from `/usr/share/public-node/netbird/management.json` and the secrets into `/run/public-node/netbird` (`public-node-netbird-config.service`). State is in `/var/lib/netbird` (`management/`: SQLite store, `proxy-certs/`).
   **The NetBird units only start once `/etc/public-node/secrets/netbird/datastore-encryption-key` exists.** Before the cutover the cluster's NetBird serves the peers, and two management servers for the same peers must never run at once.
 - **Keycloak** (`sso.thomelab.net`) and its **Postgres**, same versions as the public cluster (Keycloak 26.8.2, Postgres 18.3), on their own podman network (`keycloak.network`). Keycloak publishes on `127.0.0.1:8090`, Postgres publishes nothing. The settings match the cluster's Keycloak CR (hostname, `xforwarded` proxy headers, non-strict hostname), with a local cache because there's a single instance and a 1.5 GB memory limit so the JVM doesn't size its heap from the whole host. The database is in `/var/lib/keycloak/postgres` (owned by UID 999, the image's `postgres` user). Like NetBird, **nothing starts before `/etc/public-node/secrets/keycloak/db-password` exists**. The database moves at cutover with `pg_dump`/`pg_restore`.
+- **Vaultwarden** (`passwords.thomelab.net`, 1.37.5) and **ntfy** (`ntfy.thomelab.net`, v2.38.0), same versions and settings as the public cluster, each on its own podman network, publishing on `127.0.0.1:8091` and `:8092`. Both run as UID 1000, like on the cluster. Their data is in `/var/lib/vaultwarden` and in `/var/lib/ntfy` + `/var/cache/ntfy`. ntfy's `server.yml` and Alertmanager template are in `/usr/share/public-node/ntfy/`, copied from thomelab-infra: keep them in sync until the cutover. An ACL entry for a user that isn't in `NTFY_AUTH_USERS` makes ntfy crash at start. ntfy now sees the real client IPs (`behind-proxy`, Traefik on the host), unlike behind the cluster's SNAT. Both stay inactive until their env file is in place.
 - **Backups** every hour (around :15), to two independent destinations: restic to Garage (bucket `public-node-backups`) and borg to BorgBase. See [Backups](#backups).
 - **Alerts** (shared ntfy alerts from [`common/`](../../common/)): every container, the backups, the nightly update, the post-boot health check (a failure there means a rollback), the config renders and the enrollment units have `OnFailure=bootc-images-notify-failure@%n.service`. A failure sends the end of the unit's journal to ntfy and keeps a longer excerpt in `/var/log/bootc-images/failures/` (90 days). Config: `/etc/bootc-images/ntfy.env` (`NTFY_URL`, `NTFY_TOPIC=ops`, `NTFY_TOKEN` of a `public-node` ntfy user). Until that file exists, the alerts are only logged. ntfy itself will run on this box, so an alert about Traefik being down can't get out until Traefik is back. That case is covered from outside: UptimeRobot watches gatus (`status.thomelab.net`, which will also run here) and alerts through its own channel, and gatus watches ntfy.
 - **Container images** of the quadlets are bootc *logically bound images* (`/usr/lib/bootc/bound-images.d`): `bootc upgrade` pulls them before rebooting into the new image, so a reboot never waits on a registry. Renovate updates their tags in the `.container` files.
@@ -66,13 +67,20 @@ Secrets are root-only files in `/etc/public-node/secrets/` (created 0700 by tmpf
 |---|---|
 | `db-password` | `keycloak-pg-app`, key `password` (CNPG's application user) |
 
+| File | Cluster source | Format |
+|---|---|---|
+| `/etc/public-node/secrets/vaultwarden/vaultwarden.env` | `vaultwarden-config` (namespace `vaultwarden`) | env file, all its keys (`DOMAIN`, `ADMIN_TOKEN`, `SMTP_*`) |
+| `/etc/public-node/secrets/ntfy/ntfy.env` | `ntfy-auth` (namespace `ntfy`) | env file, `NTFY_AUTH_USERS` and `NTFY_AUTH_TOKENS` |
+
+Env files from a cluster secret: `kubectl -n <NAMESPACE> get secret <SECRET> -o json | jq -r '.data | to_entries[] | "\(.key)=\(.value | @base64d)"'`. The two above are passed to their container as they are (`EnvironmentFile=`), so no render step is needed.
+
 One value per file, mode 0600. Containers that run as another user than root get them through env files rendered into `/run` by root (`public-node-*-config.service`), never by reading these files themselves. The datastore key only works with the SQLite store it encrypted: they move together, at cutover.
 
 ## Backups
 
 `public-node-backup.timer` runs `/usr/libexec/public-node/backup` every hour:
-1. It dumps Keycloak's database (`pg_dump -Fc`) and takes a consistent copy of NetBird's SQLite store (`sqlite3 .backup`) into `/var/lib/public-node/backup/staging`.
-2. It backs up that staging dir, `/etc/public-node/secrets` (the NetBird store is useless without its encryption key) and `/var/lib/traefik` (certificates). The backup's own secrets are left out: you need them to read the backup anyway.
+1. It dumps Keycloak's database (`pg_dump -Fc`) and takes consistent copies (`sqlite3 .backup`) of the SQLite databases of NetBird (`store.db`), Vaultwarden (`db.sqlite3`) and ntfy (`user.db`) into `/var/lib/public-node/backup/staging`.
+2. It backs up that staging dir, `/etc/public-node/secrets` (the NetBird store is useless without its encryption key), `/var/lib/vaultwarden` without its live database (attachments, sends, keys) and `/var/lib/traefik` (certificates). ntfy's message cache (12 h) isn't backed up. The backup's own secrets are left out: you need them to read the backup anyway.
 3. It sends that to each destination that's configured. A failed destination doesn't stop the other one, but makes the run fail.
 
 `public-node-backup-prune.timer` applies the same retention to both every morning: 48 hourly, 14 daily, 8 weekly and 12 monthly backups. Both timers skip until `/etc/public-node/secrets/backup/` has files.

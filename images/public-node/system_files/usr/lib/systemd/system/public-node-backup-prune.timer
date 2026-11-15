@@ -1,0 +1,11 @@
+[Unit]
+Description=Daily backup retention
+
+[Timer]
+# After the nightly update (around 04:00)
+OnCalendar=*-*-* 05:45
+RandomizedDelaySec=10min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

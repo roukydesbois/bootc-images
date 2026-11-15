@@ -37,10 +37,29 @@ podman run --rm "$image" sh -c '
     grep -qx KC_DB_PASSWORD=test-db-password /tmp/o/keycloak.env
 '
 
+# A backup and a prune run end to end, against a local restic and borg
+# repository (no dumps: no Keycloak or NetBird running in here)
+podman run --rm "$image" sh -c '
+    set -e
+    # Created by tmpfiles on a booted system
+    mkdir -p /tmp/sec /tmp/state /etc/public-node/secrets /var/lib/traefik
+    echo restic-pw >/tmp/sec/restic-password
+    printf "RESTIC_REPOSITORY=/tmp/restic\nRESTIC_PASSWORD_FILE=/tmp/sec/restic-password\n" >/tmp/sec/restic.env
+    echo borg-pw >/tmp/sec/borg-passphrase
+    echo BORG_REPO=/tmp/borg >/tmp/sec/borg.env
+    . /tmp/sec/restic.env && export RESTIC_REPOSITORY RESTIC_PASSWORD_FILE && restic init -q
+    BORG_PASSCOMMAND="cat /tmp/sec/borg-passphrase" borg init -e repokey-blake2 /tmp/borg
+    SECRETS=/tmp/sec STATE=/tmp/state /usr/libexec/public-node/backup
+    SECRETS=/tmp/sec STATE=/tmp/state /usr/libexec/public-node/backup prune
+    restic snapshots --json | jq -e "length == 1" >/dev/null
+    BORG_PASSCOMMAND="cat /tmp/sec/borg-passphrase" borg list --short /tmp/borg | grep -q .
+'
+
 # The enabled units exist (a renamed unit would only show at boot). Quadlet
 # units like traefik.service are generated at boot: checked by -dryrun above.
 podman run --rm "$image" systemctl --root=/ is-enabled \
     public-node-firewall.service sshd.service netbird.service tailscaled.service \
     tailscale-netfilter-off.service public-node-netbird-enroll.service \
     public-node-tailscale-enroll.service greenboot-healthcheck.service \
-    greenboot-set-rollback-trigger.service bootc-fetch-apply-updates.timer
+    greenboot-set-rollback-trigger.service bootc-fetch-apply-updates.timer \
+    public-node-backup.timer public-node-backup-prune.timer

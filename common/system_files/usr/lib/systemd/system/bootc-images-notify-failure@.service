@@ -1,0 +1,10 @@
+# Add to a unit to get an ntfy alert when it fails:
+#   OnFailure=bootc-images-notify-failure@%n.service
+[Unit]
+Description=Send a ntfy notification about the failure of %i
+
+[Service]
+Type=oneshot
+# notify retries for up to ~10 minutes
+TimeoutStartSec=15min
+ExecStart=/usr/libexec/bootc-images/notify-unit-failure %i

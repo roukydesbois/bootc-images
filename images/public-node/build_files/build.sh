@@ -32,6 +32,8 @@ dnf -y install tailscale
 rm /etc/yum.repos.d/tailscale.repo
 
 ### Configuration
+# Shared files first (common/), so this image's own files can override them
+cp -avf /ctx/common_files/. /
 cp -avf /ctx/system_files/. /
 chmod 0440 /etc/sudoers.d/wheel-nopasswd
 ln -sf ../usr/share/zoneinfo/Europe/Paris /etc/localtime

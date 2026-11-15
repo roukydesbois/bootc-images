@@ -3,6 +3,8 @@ FROM scratch AS ctx
 COPY build_files /
 COPY system_files /system_files
 COPY cosign.pub /cosign.pub
+# Shared with other images (common/, passed as a named build context)
+COPY --from=common system_files /common_files
 
 # CentOS Stream 10: slower-moving than Fedora, for the box every public
 # service depends on

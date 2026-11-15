@@ -1,4 +1,6 @@
 [Unit]
+# ntfy alert with the end of the journal when it fails (common/)
+OnFailure=bootc-images-notify-failure@%n.service
 Description=Host firewall (nftables table inet public_node)
 Documentation=file:///usr/share/public-node/firewall.nft
 # Up before any interface, so there's no window without it

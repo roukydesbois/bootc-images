@@ -4,6 +4,8 @@
 # /usr/share/public-node/traefik/dynamic, shipped with the image; there's no
 # podman socket in here.
 [Unit]
+# ntfy alert with the end of the journal when it fails (common/)
+OnFailure=bootc-images-notify-failure@%n.service
 Description=Traefik reverse proxy
 Wants=network-online.target
 After=network-online.target public-node-firewall.service

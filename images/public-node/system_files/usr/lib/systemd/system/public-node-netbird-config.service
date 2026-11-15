@@ -1,4 +1,6 @@
 [Unit]
+# ntfy alert with the end of the journal when it fails (common/)
+OnFailure=bootc-images-notify-failure@%n.service
 Description=Render NetBird's config from the image template and the host secrets
 ConditionPathExists=/etc/public-node/secrets/netbird/datastore-encryption-key
 

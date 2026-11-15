@@ -1,4 +1,6 @@
 [Unit]
+# ntfy alert with the end of the journal when it fails (common/)
+OnFailure=bootc-images-notify-failure@%n.service
 Description=Postgres for Keycloak
 Requires=public-node-keycloak-config.service
 After=public-node-keycloak-config.service

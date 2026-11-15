@@ -1,6 +1,8 @@
 # First boot: join Tailscale (the emergency path) with the auth key placed on
 # the disk at install time (README, "Installation"), then delete it.
 [Unit]
+# ntfy alert with the end of the journal when it fails (common/)
+OnFailure=bootc-images-notify-failure@%n.service
 Description=Join Tailscale with the auth key placed at install
 ConditionPathExists=/etc/tailscale/authkey
 Requires=tailscaled.service

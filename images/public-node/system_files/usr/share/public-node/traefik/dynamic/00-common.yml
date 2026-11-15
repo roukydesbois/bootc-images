@@ -1,6 +1,20 @@
 # Shared pieces for the per-app route files in this directory
 http:
+  routers:
+    # Everything on :80 goes to HTTPS, except ACME HTTP-01 challenges, which
+    # Traefik's own challenge router answers first
+    http-to-https:
+      rule: PathPrefix(`/`)
+      entryPoints: [web]
+      priority: 1
+      middlewares: [to-https]
+      service: noop@internal
+
   middlewares:
+    to-https:
+      redirectScheme:
+        scheme: https
+        permanent: true
     secure-headers:
       headers:
         stsSeconds: 31536000

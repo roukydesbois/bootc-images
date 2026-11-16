@@ -1,0 +1,12 @@
+# Homepage, through its oauth2-proxy (Keycloak login, homelab-users)
+http:
+  routers:
+    homepage:
+      rule: Host(`home.thomelab.net`)
+      entryPoints: [websecure]
+      service: homepage
+      middlewares: [secure-headers]
+  services:
+    homepage:
+      loadBalancer:
+        servers: [{url: "http://127.0.0.1:8095"}]

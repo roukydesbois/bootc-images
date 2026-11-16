@@ -1,0 +1,4 @@
+# gethomepage config for home.thomelab.net (homepage.container), copied from
+# thomelab-infra's applications/homepage/overlays/public configmap at the
+# migration: keep in sync until the cutover.
+[]

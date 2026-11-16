@@ -1,0 +1,27 @@
+# gethomepage config for home.thomelab.net (homepage.container), copied from
+# thomelab-infra's applications/homepage/overlays/public configmap at the
+# migration: keep in sync until the cutover.
+title: Thomelab
+description: Homelab services
+theme: dark
+color: slate
+headerStyle: clean
+layout:
+  General:
+    style: row
+    columns: 3
+  Productivity:
+    style: row
+    columns: 3
+  Communication:
+    style: row
+    columns: 2
+  Media:
+    style: row
+    columns: 1
+  Security:
+    style: row
+    columns: 1
+  Infrastructure:
+    style: row
+    columns: 3

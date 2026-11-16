@@ -1,0 +1,27 @@
+# gethomepage on home.thomelab.net, reached only through
+# homepage-oauth2-proxy (Keycloak login), so it publishes nothing.
+[Unit]
+Description=Homepage (home.thomelab.net)
+# ntfy alert with the end of the journal when it fails (common/)
+OnFailure=bootc-images-notify-failure@%n.service
+
+[Container]
+Image=ghcr.io/gethomepage/homepage:v2.8.0
+ContainerName=homepage
+Network=homepage.network
+# As on the cluster
+User=1000:1000
+# The Host header oauth2-proxy passes on, and its upstream name
+Environment=HOMEPAGE_ALLOWED_HOSTS=home.thomelab.net,homepage:3000
+# Logs to the journal, not to /app/config/logs (read-only here)
+Environment=LOG_TARGETS=stdout
+# Every config file exists (empty ones included), so homepage creates none
+Volume=/usr/share/public-node/homepage:/app/config:ro
+DropCapability=ALL
+NoNewPrivileges=true
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

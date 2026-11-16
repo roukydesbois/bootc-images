@@ -1,0 +1,79 @@
+# gethomepage config for home.thomelab.net (homepage.container), copied from
+# thomelab-infra's applications/homepage/overlays/public configmap at the
+# migration: keep in sync until the cutover.
+- General:
+    - Account management:
+        href: https://sso.thomelab.net/realms/self-hosted-apps/account/
+        description: Manage your Keycloak account
+        icon: si-keycloak
+        siteMonitor: https://sso.thomelab.net/realms/self-hosted-apps/account/
+    - Public applications statuspage:
+        href: https://status.thomelab.net
+        description: Service status
+        icon: gatus.png
+        siteMonitor: https://status.thomelab.net
+    - ntfy announcements:
+        href: https://ntfy.thomelab.net
+        description: Notifications
+        icon: ntfy.png
+        siteMonitor: https://ntfy.thomelab.net/announcements
+
+- Productivity:
+    - Nextcloud:
+        href: https://nextcloud.thomelab.net
+        description: File sync & share
+        icon: nextcloud.png
+        siteMonitor: https://nextcloud.thomelab.net
+    - Paperless-NGX:
+        href: https://paperless.thomelab.net
+        description: Document management
+        icon: paperless-ngx.png
+        siteMonitor: https://paperless.thomelab.net
+    - CryptPad:
+        href: https://cryptpad.thomelab.net
+        description: Encrypted collaboration
+        icon: cryptpad.png
+        siteMonitor: https://cryptpad.thomelab.net
+    - Joplin:
+        href: https://joplin.thomelab.net
+        description: Note-taking sync server
+        icon: joplin.png
+        siteMonitor: https://joplin.thomelab.net
+    - Karakeep:
+        href: https://karakeep.thomelab.net
+        description: Read-it-later / bookmarks
+        icon: karakeep.png
+        siteMonitor: https://karakeep.thomelab.net
+    - Open WebUI:
+        href: https://open-webui.thomelab.net
+        description: AI chat (free models for everyone)
+        icon: open-webui.png
+        siteMonitor: https://open-webui.thomelab.net
+
+- Communication:
+    - Element:
+        href: https://chat.thomelab.net
+        description: Matrix chat
+        icon: element.png
+        siteMonitor: https://chat.thomelab.net
+
+- Media:
+    - Photos:
+        href: https://photos.thomelab.net
+        description: Photo library
+        icon: immich.png
+        siteMonitor: https://photos.thomelab.net
+
+- Security:
+    - Vaultwarden:
+        href: https://passwords.thomelab.net
+        description: Password manager
+        icon: vaultwarden.png
+        siteMonitor: https://passwords.thomelab.net
+
+- Infrastructure:
+    - Harbor:
+        href: https://harbor.thomelab.net
+        description: Container registry
+        icon: harbor.png
+        siteMonitor: https://harbor.thomelab.net

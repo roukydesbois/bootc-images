@@ -14,6 +14,8 @@ dnf -y --enablerepo=crb install restic borgbackup sqlite
 # Cockpit, over the mesh only (firewall.nft doesn't open 9090): journal,
 # services, containers, bootc deployments and rollback, files, terminal
 dnf -y install cockpit cockpit-podman cockpit-ostree cockpit-files
+# Compressed swap in RAM (usr/lib/systemd/zram-generator.conf): 4 GB host
+dnf -y install zram-generator
 
 # NetBird and Tailscale clients. Their repos are only needed at build time.
 # NetBird's service unit comes from system_files, so skip the package
@@ -71,6 +73,7 @@ for quadlet in traefik.container netbird-management.container netbird-signal.con
     ln -sf "/usr/share/containers/systemd/$quadlet" "/usr/lib/bootc/bound-images.d/$quadlet"
 done
 systemctl enable public-node-backup.timer public-node-backup-prune.timer
+systemctl enable public-node-memory-check.timer
 # Socket-activated: cockpit-ws only runs while someone uses it
 systemctl enable cockpit.socket
 # Nightly updates (timer drop-in in system_files)

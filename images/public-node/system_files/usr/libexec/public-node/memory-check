@@ -1,0 +1,32 @@
+#!/bin/bash
+# Every 5 minutes (public-node-memory-check.timer): ntfy alert when available
+# memory drops below the threshold, and again when it recovers. Only state
+# changes send something. Overridable for tests: MEMINFO, STATE, NOTIFY,
+# THRESHOLD (percent).
+set -euo pipefail
+meminfo=${MEMINFO:-/proc/meminfo}
+state=${STATE:-/run/public-node/memory-low}
+notify=${NOTIFY:-/usr/libexec/bootc-images/notify}
+threshold=${THRESHOLD:-15}
+
+kb() { awk -v k="$1:" '$1 == k { print $2 }' "$meminfo"; }
+total=$(kb MemTotal)
+available=$(kb MemAvailable)
+swap_total=$(kb SwapTotal)
+swap_free=$(kb SwapFree)
+percent=$((available * 100 / total))
+summary="$((available / 1024)) MB available of $((total / 1024)) MB (${percent} %), swap used $(((swap_total - swap_free) / 1024)) of $((swap_total / 1024)) MB"
+
+if [ "$percent" -lt "$threshold" ]; then
+    if [ ! -e "$state" ]; then
+        mkdir -p "$(dirname "$state")"
+        top=$(ps -eo rss=,comm= --sort=-rss | head -5 | awk '{ printf "%s %d MB\n", $2, $1 / 1024 }')
+        "$notify" "memory low" "$summary
+Biggest processes:
+$top" high warning
+        touch "$state"
+    fi
+elif [ -e "$state" ]; then
+    "$notify" "memory back to normal" "$summary" default white_check_mark
+    rm -f "$state"
+fi

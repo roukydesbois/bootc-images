@@ -77,6 +77,20 @@ podman run --rm "$image" sh -c '
     ls /tmp/failures/*-test.service.log >/dev/null
 '
 
+# The memory check alerts once when low, stays quiet while low, and alerts
+# once on recovery (fake /proc/meminfo, stub sender)
+podman run --rm "$image" sh -c '
+    set -e
+    printf "#!/bin/sh\necho \"\$1\" >>/tmp/sent\n" >/tmp/stub && chmod +x /tmp/stub
+    run() { MEMINFO=/tmp/meminfo STATE=/tmp/state/low NOTIFY=/tmp/stub /usr/libexec/public-node/memory-check; }
+    meminfo() { printf "MemTotal: 4000000 kB\nMemAvailable: %s kB\nSwapTotal: 2000000 kB\nSwapFree: 1500000 kB\n" "$1" >/tmp/meminfo; }
+    meminfo 400000; run; run
+    meminfo 2000000; run; run
+    test "$(cat /tmp/sent)" = "$(printf "memory low\nmemory back to normal")"
+'
+# zram is configured
+podman run --rm "$image" test -s /usr/lib/systemd/zram-generator.conf
+
 # The enabled units exist (a renamed unit would only show at boot). Quadlet
 # units like traefik.service are generated at boot: checked by -dryrun above.
 podman run --rm "$image" systemctl --root=/ is-enabled \
@@ -84,4 +98,5 @@ podman run --rm "$image" systemctl --root=/ is-enabled \
     tailscale-netfilter-off.service public-node-netbird-enroll.service \
     public-node-tailscale-enroll.service greenboot-healthcheck.service \
     greenboot-set-rollback-trigger.service bootc-fetch-apply-updates.timer \
-    public-node-backup.timer public-node-backup-prune.timer cockpit.socket
+    public-node-backup.timer public-node-backup-prune.timer cockpit.socket \
+    public-node-memory-check.timer

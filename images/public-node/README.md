@@ -1,6 +1,6 @@
 # public-node
 
-bootc image for the public entry point: NetBird (management, signal, relay, reverse proxy) and the always-on apps. It runs on bare metal (a Scaleway Dedibox), so everything about the host is in this image and arrives with `bootc upgrade`.
+bootc image for the public entry point: NetBird (management, signal, relay, reverse proxy) and the always-on apps. The machine is **carcavelos**, an OVH VPS (`vps-2027-model2` in GRA), ordered and switched into rescue mode by tofu (thomelab-ops `tofu/public-node`). Everything about the host itself is in this image and arrives with `bootc upgrade`.
 
 The host layer, the reverse proxy, NetBird, Keycloak, Vaultwarden, ntfy, gatus, the homepage and the backups are in place. The other apps come as quadlets in later changes.
 
@@ -30,16 +30,16 @@ The host layer, the reverse proxy, NetBird, Keycloak, Vaultwarden, ntfy, gatus, 
 
 ## Installation
 
-You need a rescue system that can run podman (or a live system booted on the box), and two one-off keys made by tofu in thomelab-ops: a NetBird setup key and a Tailscale auth key.
+You need the VPS in rescue mode, and two one-off keys made by tofu in thomelab-ops: a NetBird setup key and a Tailscale auth key.
 
-1. Boot the rescue system and install podman in it.
-2. Install the image on the disk. This **wipes** it:
+1. In thomelab-ops `tofu/public-node`, set `netboot_mode = "rescue"`, `tofu apply`, and reboot the VPS (changing the mode doesn't reboot it). OVH emails the rescue system's root password. Install podman in the rescue system.
+2. Install the image on the disk. This **wipes** it. The hostname is a kernel argument rather than a file written from the rescue system (no SELinux label there), and it's set before NetBird and Tailscale enroll, which take it as the peer name:
    ```bash
    sudo podman run --rm --privileged --pid=host \
      -v /dev:/dev -v /var/lib/containers:/var/lib/containers \
      --security-opt label=type:unconfined_t \
      ghcr.io/roukydesbois/bootc-images/public-node:latest \
-     bootc install to-disk --wipe <DISK>
+     bootc install to-disk --wipe --karg systemd.hostname=carcavelos <DISK>
    ```
 3. Leave the enrollment keys on the new system. It has no other way in until it's on the mesh:
    ```bash
@@ -52,8 +52,8 @@ You need a rescue system that can run podman (or a live system booted on the box
    sudo chmod 0600 "$etc/netbird/setup-key" "$etc/tailscale/authkey"
    sudo umount /mnt
    ```
-4. Switch the server back to normal boot and reboot. On first boot, `public-node-netbird-enroll.service` and `public-node-tailscale-enroll.service` join the mesh and delete the keys.
-5. Connect: `ssh roukydesbois@<NETBIRD_NAME>`. Then check `sudo bootc status`, `systemctl --failed` and `sudo nft list table inet public_node`.
+4. Back to `netboot_mode = "local"`, `tofu apply`, and reboot. On first boot, `public-node-netbird-enroll.service` and `public-node-tailscale-enroll.service` join the mesh and delete the keys.
+5. Connect: `ssh roukydesbois@carcavelos.<NETBIRD_DNS_DOMAIN>`. Then check `sudo bootc status`, `systemctl --failed` and `sudo nft list table inet public_node`, and make the hostname static too: `sudo hostnamectl set-hostname carcavelos`.
 
 If the box doesn't show up on the mesh, boot the rescue system again, mount the root partition and read `/var/log/journal` (for example with `journalctl -D <MOUNTED_ROOT>/var/log/journal -u public-node-netbird-enroll`).
 
@@ -135,7 +135,7 @@ sudo systemctl start keycloak netbird-management netbird-proxy
 
 1. **A bad update**: greenboot rolls back on its own when the required checks fail. Otherwise, run `sudo bootc rollback && sudo systemctl reboot` over SSH.
 2. **NetBird is down**: SSH over Tailscale.
-3. **No network access at all**: boot the rescue system, mount the root partition and fix `/etc` in the current deployment (`ostree/deploy/default/deploy/*.0/etc`), or reinstall (steps above) and restore the backups.
+3. **No network access at all**: OVH's KVM console (in the OVH manager) shows the box's own console; or boot the rescue system (`netboot_mode = "rescue"` in tofu, then reboot), mount the root partition and fix `/etc` in the current deployment (`ostree/deploy/default/deploy/*.0/etc`), or reinstall (steps above) and restore the backups.
 
 ## Testing in a VM
 

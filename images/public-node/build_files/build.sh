@@ -11,6 +11,9 @@ dnf -y install nftables greenboot jq
 # doesn't need it.
 dnf -y install epel-release
 dnf -y --enablerepo=crb install restic borgbackup sqlite
+# Cockpit, over the mesh only (firewall.nft doesn't open 9090): journal,
+# services, containers, bootc deployments and rollback, files, terminal
+dnf -y install cockpit cockpit-podman cockpit-ostree cockpit-files
 
 # NetBird and Tailscale clients. Their repos are only needed at build time.
 # NetBird's service unit comes from system_files, so skip the package
@@ -68,6 +71,8 @@ for quadlet in traefik.container netbird-management.container netbird-signal.con
     ln -sf "/usr/share/containers/systemd/$quadlet" "/usr/lib/bootc/bound-images.d/$quadlet"
 done
 systemctl enable public-node-backup.timer public-node-backup-prune.timer
+# Socket-activated: cockpit-ws only runs while someone uses it
+systemctl enable cockpit.socket
 # Nightly updates (timer drop-in in system_files)
 systemctl enable bootc-fetch-apply-updates.timer
 # The stock nftables.service would `flush ruleset` on reload/stop, wiping

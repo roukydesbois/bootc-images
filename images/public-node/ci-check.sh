@@ -84,4 +84,4 @@ podman run --rm "$image" systemctl --root=/ is-enabled \
     tailscale-netfilter-off.service public-node-netbird-enroll.service \
     public-node-tailscale-enroll.service greenboot-healthcheck.service \
     greenboot-set-rollback-trigger.service bootc-fetch-apply-updates.timer \
-    public-node-backup.timer public-node-backup-prune.timer
+    public-node-backup.timer public-node-backup-prune.timer cockpit.socket

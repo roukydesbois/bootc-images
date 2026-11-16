@@ -36,5 +36,8 @@ table inet public_node {
 		udp dport { 3478, 51820 } accept
 		# Tailscale direct connections (it falls back to DERP without)
 		udp dport 41641 accept
+
+		# Not open here on purpose: 22 (SSH) and 9090 (Cockpit), reached over
+		# the mesh only (the iifname rule above)
 	}
 }

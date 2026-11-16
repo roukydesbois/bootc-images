@@ -1,0 +1,8 @@
+[Unit]
+Description=Alert when available memory is low
+Documentation=file:///usr/libexec/public-node/memory-check
+OnFailure=bootc-images-notify-failure@%n.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/public-node/memory-check

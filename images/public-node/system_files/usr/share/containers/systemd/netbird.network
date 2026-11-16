@@ -2,3 +2,8 @@
 # 127.0.0.1 only; Traefik (host network) routes to them.
 [Network]
 NetworkName=netbird
+# Fixed, because the NetBird proxy trusts PROXY protocol headers from this
+# network (netbird-proxy.container). Away from podman's automatic range
+# (10.89.0.0/24 upwards), so it can't clash with the other networks.
+Subnet=10.89.100.0/24
+Gateway=10.89.100.1

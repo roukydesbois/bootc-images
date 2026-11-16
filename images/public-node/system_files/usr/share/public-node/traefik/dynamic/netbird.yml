@@ -59,7 +59,13 @@ http:
 # Every TLS connection no route above claims (the services exposed through
 # NetBird's reverse proxy, *.thomelab.net) goes to the NetBird proxy
 # untouched: it terminates TLS with its own certificates. Lowest priority.
+# A PROXY protocol v2 header carries the client's address, so the services
+# behind it see real client IPs.
 tcp:
+  serversTransports:
+    proxy-protocol-v2:
+      proxyProtocol:
+        version: 2
   routers:
     netbird-proxy-passthrough:
       rule: HostSNI(`*`)
@@ -71,4 +77,5 @@ tcp:
   services:
     netbird-proxy:
       loadBalancer:
+        serversTransport: proxy-protocol-v2
         servers: [{address: "127.0.0.1:8443"}]

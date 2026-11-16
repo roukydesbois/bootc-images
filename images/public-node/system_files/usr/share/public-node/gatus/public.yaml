@@ -1,0 +1,162 @@
+# gatus, public page: status.thomelab.net (gatus-public.container).
+# The checks other people rely on, no alerts (the private instance alerts),
+# URLs and hostnames hidden. UptimeRobot watches this page from outside.
+#
+# Endpoints generated from thomelab-infra's applications/gatus/overlays/
+# public/gatus-patch.yaml (v5.34.0) at the migration: the General and
+# Personal groups. Announcements are shown at the top: after a maintenance,
+# set the notice to archived: true and add an "operational" entry.
+web:
+  address: 127.0.0.1
+  port: 8093
+storage:
+  type: sqlite
+  path: /data/data.db
+announcements:
+- timestamp: 2026-11-05 18:56:00+00:00
+  type: operational
+  message: The NAS maintenance of Thursday 5 November is finished. Photos, Nextcloud, Paperless, CryptPad
+    and Matrix are back.
+- timestamp: 2026-11-05 15:30:00+00:00
+  type: warning
+  archived: true
+  message: "**NAS maintenance today, Thursday 5 November, 18:00–20:00 CET.** Photos, Nextcloud, Paperless,\
+    \ CryptPad and Matrix will be unavailable for about an hour while the storage server moves to a new\
+    \ system."
+endpoints:
+- name: site
+  group: General
+  url: "https://thomelab.net"
+  interval: 60s
+  conditions:
+  - "[STATUS] == 200"
+  ui:
+    hide-url: true
+    hide-hostname: true
+- name: keycloak-sso
+  group: General
+  url: "https://sso.thomelab.net/realms/self-hosted-apps/account/"
+  interval: 60s
+  conditions:
+  - "[STATUS] == 200"
+  ui:
+    hide-url: true
+    hide-hostname: true
+- name: ntfy
+  group: General
+  url: "https://ntfy.thomelab.net"
+  interval: 60s
+  conditions:
+  - "[STATUS] == 200"
+  ui:
+    hide-url: true
+    hide-hostname: true
+- name: docs
+  group: General
+  url: "https://docs.thomelab.net"
+  interval: 60s
+  conditions:
+  - "[STATUS] == 200"
+  ui:
+    hide-url: true
+    hide-hostname: true
+- name: vaultwarden
+  group: Personal
+  url: "https://passwords.thomelab.net"
+  interval: 60s
+  conditions:
+  - "[STATUS] == 200"
+  ui:
+    hide-url: true
+    hide-hostname: true
+- name: photos
+  group: Personal
+  url: "https://photos.thomelab.net"
+  interval: 60s
+  conditions:
+  - "[STATUS] == 200"
+  ui:
+    hide-url: true
+    hide-hostname: true
+- name: nextcloud
+  group: Personal
+  url: "https://nextcloud.thomelab.net"
+  interval: 60s
+  conditions:
+  - "[STATUS] < 400"
+  ui:
+    hide-url: true
+    hide-hostname: true
+- name: collabora
+  group: Personal
+  url: "https://collabora.thomelab.net"
+  interval: 60s
+  conditions:
+  - "[STATUS] == 200"
+  ui:
+    hide-url: true
+    hide-hostname: true
+- name: paperless-ngx
+  group: Personal
+  url: "https://paperless.thomelab.net"
+  interval: 60s
+  conditions:
+  - "[STATUS] < 400"
+  ui:
+    hide-url: true
+    hide-hostname: true
+- name: cryptpad
+  group: Personal
+  url: "https://cryptpad.thomelab.net"
+  interval: 60s
+  conditions:
+  - "[STATUS] == 200"
+  ui:
+    hide-url: true
+    hide-hostname: true
+- name: karakeep
+  group: Personal
+  url: "https://karakeep.thomelab.net"
+  interval: 60s
+  conditions:
+  - "[STATUS] < 400"
+  ui:
+    hide-url: true
+    hide-hostname: true
+- name: open-webui
+  group: Personal
+  url: "https://open-webui.thomelab.net/health"
+  interval: 60s
+  conditions:
+  - "[STATUS] == 200"
+  - "[BODY].status == true"
+  ui:
+    hide-url: true
+    hide-hostname: true
+- name: element
+  group: Personal
+  url: "https://chat.thomelab.net"
+  interval: 60s
+  conditions:
+  - "[STATUS] == 200"
+  ui:
+    hide-url: true
+    hide-hostname: true
+- name: synapse
+  group: Personal
+  url: "https://matrix.thomelab.net/_matrix/client/versions"
+  interval: 60s
+  conditions:
+  - "[STATUS] == 200"
+  ui:
+    hide-url: true
+    hide-hostname: true
+- name: joplin
+  group: Personal
+  url: "https://joplin.thomelab.net"
+  interval: 60s
+  conditions:
+  - "[STATUS] < 400"
+  ui:
+    hide-url: true
+    hide-hostname: true

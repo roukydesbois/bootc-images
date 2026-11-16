@@ -1,0 +1,204 @@
+# gatus, private page: status-admin.thomelab.net (gatus-private.container),
+# Keycloak login, only the subject in ADMIN_SUBJECT gets in. Every check,
+# the thomelab Alertmanager heartbeat, the hourly backup's heartbeat, and
+# the ntfy alerts. ${...} come from /etc/public-node/secrets/gatus/gatus.env.
+#
+# Endpoints generated from thomelab-infra's applications/gatus/overlays/
+# public/gatus-patch.yaml (v5.34.0) at the migration, plus this box's own.
+#
+# Heartbeats (external endpoints) are pushed to
+#   POST http://127.0.0.1:8094/api/v1/endpoints/<group>_<name>/external?success=true
+# with "Authorization: Bearer <token>"; no push within the interval alerts.
+# - monitoring_thomelab-watchdog: thomelab's Alertmanager, every 5 minutes
+#   (it pushes to status-admin.thomelab.net, not this local address)
+# - backups_public-node: /usr/libexec/public-node/backup after each good run
+web:
+  address: 127.0.0.1
+  port: 8094
+security:
+  oidc:
+    issuer-url: "https://sso.thomelab.net/realms/self-hosted-apps"
+    redirect-url: "https://status-admin.thomelab.net/authorization-code/callback"
+    client-id: gatus-admin
+    client-secret: "${OIDC_CLIENT_SECRET}"
+    scopes:
+    - openid
+    allowed-subjects:
+    - "${ADMIN_SUBJECT}"
+alerting:
+  ntfy:
+    topic: "${NTFY_TOPIC}"
+    url: "${NTFY_URL}"
+    token: "${NTFY_TOKEN}"
+    priority: 5
+    click: "https://status-admin.thomelab.net"
+    default-alert:
+      failure-threshold: 3
+      send-on-resolved: true
+storage:
+  type: sqlite
+  path: /data/data.db
+external-endpoints:
+- name: thomelab-watchdog
+  group: Monitoring
+  token: "${HEARTBEAT_TOKEN}"
+  heartbeat:
+    interval: 15m
+  alerts:
+  - type: ntfy
+- name: public-node
+  group: Backups
+  token: "${BACKUP_HEARTBEAT_TOKEN}"
+  heartbeat:
+    interval: 2h
+  alerts:
+  - type: ntfy
+endpoints:
+- name: site
+  group: General
+  url: "https://thomelab.net"
+  interval: 60s
+  conditions:
+  - "[STATUS] == 200"
+  alerts:
+  - type: ntfy
+- name: keycloak-sso
+  group: General
+  url: "https://sso.thomelab.net/realms/self-hosted-apps/account/"
+  interval: 60s
+  conditions:
+  - "[STATUS] == 200"
+  alerts:
+  - type: ntfy
+- name: ntfy
+  group: General
+  url: "https://ntfy.thomelab.net"
+  interval: 60s
+  conditions:
+  - "[STATUS] == 200"
+  alerts:
+  - type: ntfy
+- name: docs
+  group: General
+  url: "https://docs.thomelab.net"
+  interval: 60s
+  conditions:
+  - "[STATUS] == 200"
+  alerts:
+  - type: ntfy
+- name: vaultwarden
+  group: Personal
+  url: "https://passwords.thomelab.net"
+  interval: 60s
+  conditions:
+  - "[STATUS] == 200"
+  alerts:
+  - type: ntfy
+- name: photos
+  group: Personal
+  url: "https://photos.thomelab.net"
+  interval: 60s
+  conditions:
+  - "[STATUS] == 200"
+  alerts:
+  - type: ntfy
+- name: nextcloud
+  group: Personal
+  url: "https://nextcloud.thomelab.net"
+  interval: 60s
+  conditions:
+  - "[STATUS] < 400"
+  alerts:
+  - type: ntfy
+- name: collabora
+  group: Personal
+  url: "https://collabora.thomelab.net"
+  interval: 60s
+  conditions:
+  - "[STATUS] == 200"
+  alerts:
+  - type: ntfy
+- name: paperless-ngx
+  group: Personal
+  url: "https://paperless.thomelab.net"
+  interval: 60s
+  conditions:
+  - "[STATUS] < 400"
+  alerts:
+  - type: ntfy
+- name: cryptpad
+  group: Personal
+  url: "https://cryptpad.thomelab.net"
+  interval: 60s
+  conditions:
+  - "[STATUS] == 200"
+  alerts:
+  - type: ntfy
+- name: karakeep
+  group: Personal
+  url: "https://karakeep.thomelab.net"
+  interval: 60s
+  conditions:
+  - "[STATUS] < 400"
+  alerts:
+  - type: ntfy
+- name: open-webui
+  group: Personal
+  url: "https://open-webui.thomelab.net/health"
+  interval: 60s
+  conditions:
+  - "[STATUS] == 200"
+  - "[BODY].status == true"
+  alerts:
+  - type: ntfy
+- name: element
+  group: Personal
+  url: "https://chat.thomelab.net"
+  interval: 60s
+  conditions:
+  - "[STATUS] == 200"
+  alerts:
+  - type: ntfy
+- name: synapse
+  group: Personal
+  url: "https://matrix.thomelab.net/_matrix/client/versions"
+  interval: 60s
+  conditions:
+  - "[STATUS] == 200"
+  alerts:
+  - type: ntfy
+- name: joplin
+  group: Personal
+  url: "https://joplin.thomelab.net"
+  interval: 60s
+  conditions:
+  - "[STATUS] < 400"
+  alerts:
+  - type: ntfy
+- name: harbor
+  group: Infrastructure
+  url: "https://harbor.thomelab.net"
+  interval: 60s
+  conditions:
+  - "[STATUS] == 200"
+  alerts:
+  - type: ntfy
+- name: garage
+  group: Infrastructure
+  url: "https://garage-admin.thomelab.net/health"
+  interval: 60s
+  conditions:
+  - "[STATUS] == 200"
+  - "[BODY] == pat(*fully operational*)"
+  ui:
+    hide-url: true
+  alerts:
+  - type: ntfy
+- name: traefik
+  group: public-node
+  url: "http://127.0.0.1:8080/ping"
+  interval: 60s
+  conditions:
+  - "[STATUS] == 200"
+  alerts:
+  - type: ntfy

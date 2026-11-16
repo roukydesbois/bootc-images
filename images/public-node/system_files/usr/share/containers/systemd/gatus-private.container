@@ -1,0 +1,35 @@
+# gatus, private status page (status-admin.thomelab.net, Keycloak login):
+# config in /usr/share/public-node/gatus/private.yaml, every check, the
+# heartbeats and the ntfy alerts.
+[Unit]
+Description=gatus, private status page
+# ntfy alert with the end of the journal when it fails (common/)
+OnFailure=bootc-images-notify-failure@%n.service
+Wants=network-online.target
+After=network-online.target
+# Needs its secrets (alerting, OIDC, heartbeat tokens)
+ConditionPathExists=/etc/public-node/secrets/gatus/gatus.env
+
+[Container]
+Image=docker.io/twinproduction/gatus:v5.34.0
+ContainerName=gatus-private
+# Host network: it also checks this box's local services (127.0.0.1) and
+# takes the backup's heartbeat there; listens on 127.0.0.1:8094 only
+Network=host
+Environment=GATUS_CONFIG_PATH=/config/config.yaml
+Environment=NTFY_URL=https://ntfy.thomelab.net
+Environment=NTFY_TOPIC=ops
+# NTFY_TOKEN, HEARTBEAT_TOKEN, BACKUP_HEARTBEAT_TOKEN, OIDC_CLIENT_SECRET,
+# ADMIN_SUBJECT (README, "Secrets")
+EnvironmentFile=/etc/public-node/secrets/gatus/gatus.env
+Volume=/usr/share/public-node/gatus/private.yaml:/config/config.yaml:ro
+Volume=/var/lib/gatus/private:/data:Z
+ReadOnly=true
+DropCapability=ALL
+NoNewPrivileges=true
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

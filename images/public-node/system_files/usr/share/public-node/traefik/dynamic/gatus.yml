@@ -1,0 +1,20 @@
+# The two gatus instances. The private one has its own login (Keycloak).
+http:
+  routers:
+    gatus-public:
+      rule: Host(`status.thomelab.net`)
+      entryPoints: [websecure]
+      service: gatus-public
+      middlewares: [secure-headers]
+    gatus-private:
+      rule: Host(`status-admin.thomelab.net`)
+      entryPoints: [websecure]
+      service: gatus-private
+      middlewares: [secure-headers]
+  services:
+    gatus-public:
+      loadBalancer:
+        servers: [{url: "http://127.0.0.1:8093"}]
+    gatus-private:
+      loadBalancer:
+        servers: [{url: "http://127.0.0.1:8094"}]

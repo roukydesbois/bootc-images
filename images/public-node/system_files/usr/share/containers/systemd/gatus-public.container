@@ -1,0 +1,29 @@
+# gatus, public status page (status.thomelab.net): config in
+# /usr/share/public-node/gatus/public.yaml. No secret and no alerts, so it
+# runs as soon as the box is up.
+[Unit]
+Description=gatus, public status page
+# ntfy alert with the end of the journal when it fails (common/)
+OnFailure=bootc-images-notify-failure@%n.service
+Wants=network-online.target
+After=network-online.target
+
+[Container]
+Image=docker.io/twinproduction/gatus:v5.34.0
+ContainerName=gatus-public
+# Host network: checks resolve and connect like the host; listens on
+# 127.0.0.1:8093 only (web.address in its config)
+Network=host
+Environment=GATUS_CONFIG_PATH=/config/config.yaml
+Volume=/usr/share/public-node/gatus/public.yaml:/config/config.yaml:ro
+# Check history (SQLite)
+Volume=/var/lib/gatus/public:/data:Z
+ReadOnly=true
+DropCapability=ALL
+NoNewPrivileges=true
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

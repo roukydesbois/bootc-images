@@ -1,0 +1,18 @@
+# Alertmanager webhook -> ntfy, used as ?template=alertmanager-cluster by
+# thomelab's Alertmanager (thomelab-infra, applications/monitoring/overlays/
+# thomelab/kube-prometheus-stack-patch.yaml).
+# Replaces ntfy's built-in "alertmanager" template: no empty Instance/Severity
+# lines, the cluster in the title, one line per alert, and the priority set
+# from severity (critical 5, warning 4, resolved 3).
+# Alertmanager groups by alertname + namespace, so alertname is always common.
+title: |
+  {{- if eq .status "resolved" }}✅{{ else if eq (get .commonLabels "severity") "critical" }}🚨{{ else }}⚠️{{ end }} {{ get .groupLabels "alertname" }}
+  {{- with get .commonLabels "cluster" }} · {{ . }}{{ end }}
+  {{- if gt (len .alerts) 1 }} ({{ len .alerts }}){{ end }}
+message: |
+  {{- range $i, $a := .alerts }}{{ if $i }}{{ "\n" }}{{ end }}
+  {{- if eq $a.status "resolved" }}Resolved: {{ end }}{{ default (default (get $a.labels "alertname") (get $a.annotations "summary")) (get $a.annotations "description") }}
+  {{- end }}
+  {{- with get .commonAnnotations "runbook_url" }}{{ "\n\n" }}Runbook: {{ . }}{{ end }}
+priority: |
+  {{- if eq .status "resolved" }}3{{ else if eq (get .commonLabels "severity") "critical" }}5{{ else }}4{{ end }}

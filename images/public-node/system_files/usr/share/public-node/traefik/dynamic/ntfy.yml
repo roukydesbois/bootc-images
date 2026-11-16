@@ -1,0 +1,13 @@
+# ntfy (behind-proxy: true in server.yml, it takes the client IP from
+# X-Forwarded-For). Subscriptions are long-lived connections: no read
+# timeout on websecure (traefik.yml).
+http:
+  routers:
+    ntfy:
+      rule: Host(`ntfy.thomelab.net`)
+      entryPoints: [websecure]
+      service: ntfy
+  services:
+    ntfy:
+      loadBalancer:
+        servers: [{url: "http://127.0.0.1:8092"}]

@@ -42,16 +42,26 @@ podman run --rm "$image" sh -c '
 podman run --rm "$image" sh -c '
     set -e
     # Created by tmpfiles on a booted system
-    mkdir -p /tmp/sec /tmp/state /etc/public-node/secrets /var/lib/traefik
+    mkdir -p /tmp/sec /tmp/state /etc/public-node/secrets /var/lib/traefik /var/lib/vaultwarden
     echo restic-pw >/tmp/sec/restic-password
     printf "RESTIC_REPOSITORY=/tmp/restic\nRESTIC_PASSWORD_FILE=/tmp/sec/restic-password\n" >/tmp/sec/restic.env
     echo borg-pw >/tmp/sec/borg-passphrase
     echo BORG_REPO=/tmp/borg >/tmp/sec/borg.env
     . /tmp/sec/restic.env && export RESTIC_REPOSITORY RESTIC_PASSWORD_FILE && restic init -q
     BORG_PASSCOMMAND="cat /tmp/sec/borg-passphrase" borg init -e repokey-blake2 /tmp/borg
+    # A live SQLite database and an attachment, like Vaultwarden has
+    sqlite3 /var/lib/vaultwarden/db.sqlite3 "create table t(x); insert into t values (1);"
+    mkdir -p /var/lib/vaultwarden/attachments && echo a >/var/lib/vaultwarden/attachments/f
     SECRETS=/tmp/sec STATE=/tmp/state /usr/libexec/public-node/backup
     SECRETS=/tmp/sec STATE=/tmp/state /usr/libexec/public-node/backup prune
     restic snapshots --json | jq -e "length == 1" >/dev/null
+    # The database is in as a consistent copy, the live file is excluded, the
+    # attachment is in, the backup secrets are not
+    restic ls latest >/tmp/files
+    grep -qx /tmp/state/staging/vaultwarden.sqlite3 /tmp/files
+    grep -qx /var/lib/vaultwarden/attachments/f /tmp/files
+    ! grep -q "^/var/lib/vaultwarden/db.sqlite3" /tmp/files
+    ! grep -q "^/tmp/sec" /tmp/files
     BORG_PASSCOMMAND="cat /tmp/sec/borg-passphrase" borg list --short /tmp/borg | grep -q .
 '
 

@@ -1,0 +1,46 @@
+# ntfy server config (ntfy.container). Everything here is non-secret and
+# reviewed in PRs. Password hashes and tokens come from
+# /etc/public-node/secrets/ntfy/ntfy.env as the NTFY_AUTH_USERS /
+# NTFY_AUTH_TOKENS env vars (README, "Secrets"). Copied from thomelab-infra's
+# applications/ntfy/overlays/public at the migration: keep them in sync until
+# the cutover. An ACL entry for a user that isn't in NTFY_AUTH_USERS makes
+# ntfy crash at start.
+#
+# Users, ACL entries and tokens are provisioned declaratively at every start:
+# entries removed here (or from OpenBao, then re-sealed) are deleted from the
+# database on the next restart.
+base-url: "https://ntfy.thomelab.net"
+listen-http: ":8080"
+cache-file: "/var/cache/ntfy/cache.db"
+cache-duration: "12h"
+auth-file: "/var/lib/ntfy/user.db"
+auth-default-access: "deny-all"
+behind-proxy: true
+upstream-base-url: "https://ntfy.sh"
+visitor-request-limit-burst: 10000
+visitor-request-limit-replenishment: 50ms
+
+# Topics are named after what they're for, not who sends them; severity goes
+# through the Priority header. One user per publisher, write-only on its own
+# topics. "thomas" is admin and reads everything.
+#
+# Format: "<username>:<topic-pattern>:<access>" (rw | ro | wo, "*" = anonymous)
+auth-access:
+  # Cluster health, backups, certs, OpenBao, uptime
+  - "argo-workflows:ops:wo"
+  - "gatus:ops:wo"
+  # NAS image: disk health, btrfs errors, scrubs, backups, image updates
+  - "nas:ops:wo"
+  # Prometheus alerts from thomelab (kube-prometheus-stack)
+  - "alertmanager:ops:wo"
+  # Daily MR digests
+  - "argo-workflows:digest:wo"
+  # ArgoCD sync events, both clusters
+  - "argocd:deploys:wo"
+  # Application events. The consuming repo picks topic names inside the
+  # prefix, so adding one doesn't need a change here.
+  - "apps:apps-*:wo"
+  # Home network (personal-ops)
+  - "openwrt:personal-infra:wo"
+  # Public read-only
+  - "*:announcements:ro"

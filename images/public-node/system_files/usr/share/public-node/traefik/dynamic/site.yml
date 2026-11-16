@@ -1,0 +1,28 @@
+# The homepage and public docs are on GitLab Pages at www.thomelab.net
+# (thomelab-site). thomelab.net itself stays this box's address: NetBird's
+# reverse proxy validates its custom domains against that canonical name.
+# So the apex and the old docs host only redirect, path kept, like the
+# public cluster did (thomelab-infra!1661).
+http:
+  routers:
+    apex-to-www:
+      rule: Host(`thomelab.net`)
+      entryPoints: [websecure]
+      middlewares: [apex-to-www]
+      service: noop@internal
+    docs-to-www:
+      rule: Host(`docs.thomelab.net`)
+      entryPoints: [websecure]
+      middlewares: [docs-to-www]
+      service: noop@internal
+  middlewares:
+    apex-to-www:
+      redirectRegex:
+        regex: ^https?://thomelab\.net/(.*)
+        replacement: https://www.thomelab.net/${1}
+        permanent: true
+    docs-to-www:
+      redirectRegex:
+        regex: ^https?://docs\.thomelab\.net/(.*)
+        replacement: https://www.thomelab.net/docs/${1}
+        permanent: true

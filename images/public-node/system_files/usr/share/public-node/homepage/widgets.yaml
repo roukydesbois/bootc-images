@@ -1,0 +1,28 @@
+# gethomepage config for home.thomelab.net (homepage.container), copied from
+# thomelab-infra's applications/homepage/overlays/public configmap at the
+# migration: keep in sync until the cutover.
+- greeting:
+    text_size: xl
+    text: Thomelab
+
+- datetime:
+    text_size: xl
+    format:
+      dateStyle: long
+      timeStyle: short
+      hourCycle: h23
+
+- search:
+    provider: duckduckgo
+    focus: false
+    target: _blank
+
+- openmeteo:
+    label: Home
+    latitude: 48.8566
+    longitude: 2.3522
+    timezone: Europe/Paris
+    units: metric
+    cache: 5
+    format:
+      maximumFractionDigits: 1

@@ -2,7 +2,7 @@
 
 bootc image for the public entry point: NetBird (management, signal, relay, reverse proxy) and the always-on apps. It runs on bare metal (a Scaleway Dedibox), so everything about the host is in this image and arrives with `bootc upgrade`.
 
-The host layer, the reverse proxy, NetBird, Keycloak, Vaultwarden, ntfy, gatus and the backups are in place. The other apps come as quadlets in later changes.
+The host layer, the reverse proxy, NetBird, Keycloak, Vaultwarden, ntfy, gatus, the homepage and the backups are in place. The other apps come as quadlets in later changes.
 
 ## What's in the image
 
@@ -21,6 +21,7 @@ The host layer, the reverse proxy, NetBird, Keycloak, Vaultwarden, ntfy, gatus a
 - **gatus**, two instances, because gatus's login covers its whole UI (configs in `/usr/share/public-node/gatus/`, generated from the cluster's `gatus-patch.yaml` v5.34.0 at the migration). Both are on the host network, listening on `127.0.0.1` only:
   - **public**, `status.thomelab.net` (`:8093`): the `General` and `Personal` checks, with URLs and hostnames hidden, no alerts, and the announcements. It has no secret, so it runs as soon as the box is up. UptimeRobot watches it from outside, which also covers this box being down.
   - **private**, `status-admin.thomelab.net` (`:8094`): Keycloak login (gatus OIDC, client `gatus-admin`), and only the subject in `ADMIN_SUBJECT` gets in. It has every check (including `Infrastructure` and this box's Traefik), the ntfy alerts, and two heartbeats: `monitoring_thomelab-watchdog` (thomelab's Alertmanager, every 5 minutes) and `backups_public-node` (pushed by the hourly backup, alerts after 2 hours without a successful run). The heartbeat push API isn't behind the login: it checks its own bearer token.
+- **Homepage** (`home.thomelab.net`, gethomepage v2.8.0) behind **oauth2-proxy** (v7.15.5), as on the cluster: Keycloak login, members of `homelab-users` only. Both are on `homepage.network`, and only the proxy publishes (`127.0.0.1:8095`). The config is in `/usr/share/public-node/homepage/`, copied from the cluster's configmap: keep it in sync until the cutover. It's mounted read-only, with every file present (empty ones included) so homepage creates none. The Kubernetes integration is gone: no service used it. The proxy stays inactive until its env file is in place.
 - **Backups** every hour (around :15), to two independent destinations: restic to Garage (bucket `public-node-backups`) and borg to BorgBase. See [Backups](#backups).
 - **Alerts** (shared ntfy alerts from [`common/`](../../common/)): every container, the backups, the nightly update, the post-boot health check (a failure there means a rollback), the config renders and the enrollment units have `OnFailure=bootc-images-notify-failure@%n.service`. A failure sends the end of the unit's journal to ntfy and keeps a longer excerpt in `/var/log/bootc-images/failures/` (90 days). Config: `/etc/bootc-images/ntfy.env` (`NTFY_URL`, `NTFY_TOPIC=ops`, `NTFY_TOKEN` of a `public-node` ntfy user). Until that file exists, the alerts are only logged. ntfy itself will run on this box, so an alert about Traefik being down can't get out until Traefik is back. That case is covered from outside: UptimeRobot watches gatus (`status.thomelab.net`, which will also run here) and alerts through its own channel, and gatus watches ntfy.
 - **Container images** of the quadlets are bootc *logically bound images* (`/usr/lib/bootc/bound-images.d`): `bootc upgrade` pulls them before rebooting into the new image, so a reboot never waits on a registry. Renovate updates their tags in the `.container` files.
@@ -77,6 +78,7 @@ Secrets are root-only files in `/etc/public-node/secrets/` (created 0700 by tmpf
 
 | File | Content |
 |---|---|
+| `/etc/public-node/secrets/homepage/oauth2-proxy.env` | `OAUTH2_PROXY_CLIENT_ID`, `OAUTH2_PROXY_CLIENT_SECRET`, `OAUTH2_PROXY_COOKIE_SECRET` (cluster secret `homepage-oauth2-proxy-secret` in namespace `homepage`, keys `client-id`, `client-secret`, `cookie-secret`) |
 | `/etc/public-node/secrets/gatus/gatus.env` | `NTFY_TOKEN` (cluster secret `gatus-ntfy`, key `token`), `HEARTBEAT_TOKEN` (`gatus-heartbeat`, key `token`), `BACKUP_HEARTBEAT_TOKEN` (new random value), `OIDC_CLIENT_SECRET` (Keycloak client `gatus-admin`, thomelab-ops tofu), `ADMIN_SUBJECT` (your Keycloak user ID) |
 
 Env files from a cluster secret: `kubectl -n <NAMESPACE> get secret <SECRET> -o json | jq -r '.data | to_entries[] | "\(.key)=\(.value | @base64d)"'`. The two above are passed to their container as they are (`EnvironmentFile=`), so no render step is needed.

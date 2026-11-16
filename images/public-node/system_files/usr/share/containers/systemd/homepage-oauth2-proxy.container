@@ -1,0 +1,37 @@
+# Keycloak login in front of the homepage: members of homelab-users only,
+# same as on the cluster.
+[Unit]
+Description=oauth2-proxy for the homepage
+# ntfy alert with the end of the journal when it fails (common/)
+OnFailure=bootc-images-notify-failure@%n.service
+Wants=homepage.service
+After=homepage.service
+ConditionPathExists=/etc/public-node/secrets/homepage/oauth2-proxy.env
+
+[Container]
+Image=quay.io/oauth2-proxy/oauth2-proxy:v7.15.5
+ContainerName=homepage-oauth2-proxy
+Network=homepage.network
+PublishPort=127.0.0.1:8095:4180
+Exec=--upstream=http://homepage:3000/
+Environment=OAUTH2_PROXY_PROVIDER=oidc
+Environment=OAUTH2_PROXY_OIDC_ISSUER_URL=https://sso.thomelab.net/realms/self-hosted-apps
+Environment=OAUTH2_PROXY_HTTP_ADDRESS=0.0.0.0:4180
+Environment=OAUTH2_PROXY_EMAIL_DOMAINS=*
+Environment=OAUTH2_PROXY_SKIP_PROVIDER_BUTTON=true
+Environment=OAUTH2_PROXY_PASS_USER_HEADERS=true
+Environment=OAUTH2_PROXY_COOKIE_SECURE=true
+Environment=OAUTH2_PROXY_REDIRECT_URL=https://home.thomelab.net/oauth2/callback
+Environment=OAUTH2_PROXY_COOKIE_NAME=_oauth2_proxy_homepage
+Environment=OAUTH2_PROXY_ALLOWED_GROUPS=homelab-users
+# OAUTH2_PROXY_CLIENT_ID, _CLIENT_SECRET, _COOKIE_SECRET
+EnvironmentFile=/etc/public-node/secrets/homepage/oauth2-proxy.env
+ReadOnly=true
+DropCapability=ALL
+NoNewPrivileges=true
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

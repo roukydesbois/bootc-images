@@ -63,7 +63,8 @@ mkdir -p /usr/lib/bootc/bound-images.d
 for quadlet in traefik.container netbird-management.container netbird-signal.container \
     netbird-relay.container netbird-dashboard.container netbird-proxy.container \
     keycloak-postgres.container keycloak.container vaultwarden.container ntfy.container \
-    gatus-public.container gatus-private.container; do
+    gatus-public.container gatus-private.container homepage.container \
+    homepage-oauth2-proxy.container; do
     ln -sf "/usr/share/containers/systemd/$quadlet" "/usr/lib/bootc/bound-images.d/$quadlet"
 done
 systemctl enable public-node-backup.timer public-node-backup-prune.timer

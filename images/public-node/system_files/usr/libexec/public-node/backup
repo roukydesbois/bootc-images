@@ -79,4 +79,15 @@ fi
 if [ -s "$secrets/borg.env" ]; then
     borg_run || { echo "borg $mode failed" >&2; failed=1; }
 fi
+
+# Heartbeat to the private gatus (backups_public-node): no successful push
+# within 2 hours alerts, which also covers a backup that never runs
+gatus_env=${GATUS_ENV:-/etc/public-node/secrets/gatus/gatus.env}
+if [ "$mode" = backup ] && [ -r "$gatus_env" ]; then
+    token=$(sed -n 's/^BACKUP_HEARTBEAT_TOKEN=//p' "$gatus_env")
+    success=$([ "$failed" = 0 ] && echo true || echo false)
+    curl -fsS --max-time 10 -X POST -H "Authorization: Bearer $token" \
+        "http://127.0.0.1:8094/api/v1/endpoints/backups_public-node/external?success=$success" \
+        || echo "heartbeat to gatus failed" >&2
+fi
 exit "$failed"

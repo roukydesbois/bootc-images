@@ -15,6 +15,20 @@ podman run --rm "$image" /usr/libexec/podman/quadlet -dryrun >/dev/null
 # Each logically bound image points at an existing quadlet
 podman run --rm "$image" sh -c 'for f in /usr/lib/bootc/bound-images.d/*; do test -e "$f" || { echo "dangling: $f" >&2; exit 1; }; done'
 
+# The public gatus config loads (it has no secrets; the private one needs
+# OIDC discovery at startup, so it can't run here). gatus panics on a bad
+# config right away; a good one keeps running until --timeout stops it.
+gatus_image=$(podman run --rm "$image" sed -n 's/^Image=//p' /usr/share/containers/systemd/gatus-public.container)
+gatus_cfg=$(mktemp)
+podman run --rm "$image" cat /usr/share/public-node/gatus/public.yaml >"$gatus_cfg"
+gatus_out=$(podman run --rm --network none --timeout 10 --tmpfs /data \
+    -e GATUS_CONFIG_PATH=/config/config.yaml -v "$gatus_cfg:/config/config.yaml:ro,Z" \
+    "$gatus_image" 2>&1 || true)
+if grep -qiE 'panic|error parsing config' <<<"$gatus_out"; then
+    echo "$gatus_out" >&2
+    exit 1
+fi
+
 # NetBird's config renders from the template with every secret in place, and
 # the template has no secret left in it
 podman run --rm "$image" sh -c '

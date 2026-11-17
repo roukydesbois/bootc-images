@@ -5,7 +5,9 @@
 # Endpoints generated from thomelab-infra's applications/gatus/overlays/
 # public/gatus-patch.yaml (v5.34.0) at the migration: the General and
 # Personal groups. Announcements are shown at the top: after a maintenance,
-# set the notice to archived: true and add an "operational" entry.
+# set the notice to archived: true and add an "operational" entry. Timestamps
+# are RFC 3339 strings ("2026-11-05T18:56:00Z"): gatus panics on the YAML
+# space form.
 web:
   address: 127.0.0.1
   port: 8093
@@ -13,11 +15,11 @@ storage:
   type: sqlite
   path: /data/data.db
 announcements:
-- timestamp: 2026-11-05 18:56:00+00:00
+- timestamp: "2026-11-05T18:56:00Z"
   type: operational
   message: The NAS maintenance of Thursday 5 November is finished. Photos, Nextcloud, Paperless, CryptPad
     and Matrix are back.
-- timestamp: 2026-11-05 15:30:00+00:00
+- timestamp: "2026-11-05T15:30:00Z"
   type: warning
   archived: true
   message: "**NAS maintenance today, Thursday 5 November, 18:00–20:00 CET.** Photos, Nextcloud, Paperless,\

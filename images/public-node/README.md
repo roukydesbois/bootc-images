@@ -119,15 +119,22 @@ Setup, once (as root):
 | `borg-passphrase` | a new random passphrase, also kept in the password manager |
 | `borg-ssh-key` | a new SSH private key, its public key added to the BorgBase repository |
 
-Then initialise each repository once:
+All five files are mode 0600 (SSH refuses a readable key). The directory is root-only, so the glob has to run as root:
+
+```bash
+sudo sh -c 'chmod 0600 /etc/public-node/secrets/backup/*'
+```
+
+Then initialise each repository once, with the same borg base dir as the service (systemd gives it no `$HOME`):
 
 ```bash
 sudo bash -c 'set -a; . /etc/public-node/secrets/backup/restic.env; restic init'
-sudo bash -c 'set -a; . /etc/public-node/secrets/backup/borg.env; BORG_PASSCOMMAND="cat /etc/public-node/secrets/backup/borg-passphrase" BORG_RSH="ssh -i /etc/public-node/secrets/backup/borg-ssh-key" borg init -e repokey-blake2'
+sudo bash -c 'set -a; . /etc/public-node/secrets/backup/borg.env; BORG_BASE_DIR=/var/lib/public-node/backup/borg BORG_PASSCOMMAND="cat /etc/public-node/secrets/backup/borg-passphrase" BORG_RSH="ssh -i /etc/public-node/secrets/backup/borg-ssh-key" borg init -e repokey-blake2'
+sudo bash -c 'set -a; . /etc/public-node/secrets/backup/borg.env; BORG_BASE_DIR=/var/lib/public-node/backup/borg BORG_PASSCOMMAND="cat /etc/public-node/secrets/backup/borg-passphrase" BORG_RSH="ssh -i /etc/public-node/secrets/backup/borg-ssh-key" borg key export --paper ::'
 sudo systemctl start public-node-backup.service && journalctl -u public-node-backup.service -n 20
 ```
 
-Without the repository passwords, the backups can't be read: keep them outside this box (password manager).
+Without the repository passwords, the backups can't be read: keep them outside this box (password manager), with borg's paper key export (the `repokey` key otherwise only lives in the repository).
 
 Restore (from either destination; restic shown):
 

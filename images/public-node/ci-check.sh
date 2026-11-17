@@ -66,8 +66,9 @@ podman run --rm "$image" sh -c '
     # A live SQLite database and an attachment, like Vaultwarden has
     sqlite3 /var/lib/vaultwarden/db.sqlite3 "create table t(x); insert into t values (1);"
     mkdir -p /var/lib/vaultwarden/attachments && echo a >/var/lib/vaultwarden/attachments/f
-    SECRETS=/tmp/sec STATE=/tmp/state /usr/libexec/public-node/backup
-    SECRETS=/tmp/sec STATE=/tmp/state /usr/libexec/public-node/backup prune
+    # No HOME, like under systemd
+    env -u HOME SECRETS=/tmp/sec STATE=/tmp/state /usr/libexec/public-node/backup
+    env -u HOME SECRETS=/tmp/sec STATE=/tmp/state /usr/libexec/public-node/backup prune
     restic snapshots --json | jq -e "length == 1" >/dev/null
     # The database is in as a consistent copy, the live file is excluded, the
     # attachment is in, the backup secrets are not

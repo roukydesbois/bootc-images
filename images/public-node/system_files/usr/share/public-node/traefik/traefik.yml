@@ -38,7 +38,11 @@ ping:
 providers:
   file:
     directory: /etc/traefik/dynamic
-    watch: true
+    # No watch: the directory is the image's read-only /usr, which only
+    # changes with a reboot, and SELinux denies the container inotify on it
+    # ("error adding file watcher: permission denied" stops the whole
+    # provider: no routes at all, seen on carcavelos' first boot).
+    watch: false
 
 certificatesResolvers:
   letsencrypt:

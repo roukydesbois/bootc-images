@@ -31,6 +31,8 @@ auth-access:
   - "gatus:ops:wo"
   # NAS image: disk health, btrfs errors, scrubs, backups, image updates
   - "nas:ops:wo"
+  # carcavelos (public node replacement): failed units, backups, updates, memory
+  - "carcavelos:ops:wo"
   # Prometheus alerts from thomelab (kube-prometheus-stack)
   - "alertmanager:ops:wo"
   # Daily MR digests

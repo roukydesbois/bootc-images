@@ -1,6 +1,6 @@
 # public-node
 
-bootc image for the public entry point: NetBird (management, signal, relay, reverse proxy) and the always-on apps. The machine is **carcavelos**, an OVH VPS (`vps-2027-model2` in GRA), ordered and switched into rescue mode by tofu (thomelab-ops `tofu/public-node`). Everything about the host itself is in this image and arrives with `bootc upgrade`.
+bootc image for the public entry point: NetBird (management, signal, relay, reverse proxy) and the always-on apps. The machine is **carcavelos**, an OVH VPS (`vps-2027-model1` in Warsaw), ordered by tofu (thomelab-ops `tofu/public-node`), which also holds its OVH firewall and reverse DNS. Everything about the host itself is in this image and arrives with `bootc upgrade`.
 
 The host layer, the reverse proxy, NetBird, Keycloak, Vaultwarden, ntfy, gatus, the homepage and the backups are in place. The other apps come as quadlets in later changes.
 
@@ -32,32 +32,38 @@ The host layer, the reverse proxy, NetBird, Keycloak, Vaultwarden, ntfy, gatus, 
 
 ## Installation
 
-You need the VPS in rescue mode, and two one-off keys made by tofu in thomelab-ops: a NetBird setup key and a Tailscale auth key.
+The install runs from the Debian 13 that OVH delivers, with `bootc install to-existing-root`: the image goes onto the existing root filesystem and takes over at the next boot. (OVH's rescue system doesn't work for this: its RAM disk is too small to pull the image.) You need two one-off keys made by tofu in thomelab-ops, a NetBird setup key and a Tailscale auth key.
 
-1. In thomelab-ops `tofu/public-node`, set `netboot_mode = "rescue"`, `tofu apply`, and reboot the VPS (changing the mode doesn't reboot it). OVH emails the rescue system's root password. Install podman in the rescue system.
-2. Install the image on the disk. This **wipes** it. The hostname is a kernel argument rather than a file written from the rescue system (no SELinux label there), and it's set before NetBird and Tailscale enroll, which take it as the peer name:
+1. In thomelab-ops `tofu/public-node`, set `public_ssh = true` and `tofu apply`. That lifts the OVH firewall's tcp/22 deny. SSH in as `debian` with the password OVH emailed at delivery, then `sudo -i`.
+2. Check the layout and install podman. `to-existing-root` keeps the partition table and the root filesystem. It needs an ESP (UEFI) or a BIOS boot partition, which Debian's cloud layout has:
    ```bash
-   sudo podman run --rm --privileged --pid=host \
-     -v /dev:/dev -v /var/lib/containers:/var/lib/containers \
+   lsblk -f; [ -d /sys/firmware/efi ] && echo UEFI || echo BIOS
+   apt-get update && apt-get install -y podman
+   ```
+3. Install. The hostname is a kernel argument, set before NetBird and Tailscale enroll, which take it as the peer name. `--cleanup` deletes Debian's leftover files on the first boot, and `--bound-images pull` pulls the logically bound images (Traefik, NetBird, the apps) straight into the new system (the default expects them in the host's podman storage already):
+   ```bash
+   podman run --rm --privileged --pid=host \
+     -v /dev:/dev -v /var/lib/containers:/var/lib/containers -v /:/target \
      --security-opt label=type:unconfined_t \
      ghcr.io/roukydesbois/bootc-images/public-node:latest \
-     bootc install to-disk --wipe --karg systemd.hostname=carcavelos <DISK>
+     bootc install to-existing-root --acknowledge-destructive --cleanup \
+       --bound-images pull --karg systemd.hostname=carcavelos
    ```
-3. Leave the enrollment keys on the new system. It has no other way in until it's on the mesh:
+4. Leave the enrollment keys on the new system, which has no other way in until it's on the mesh. The new deployment's `/etc` is on the same root filesystem:
    ```bash
-   sudo mount <DISK_ROOT_PARTITION> /mnt
-   etc=$(echo /mnt/ostree/deploy/default/deploy/*.0/etc)
-   sudo install -d -m 0700 "$etc/netbird" "$etc/tailscale"
-   echo '<NETBIRD_MANAGEMENT_URL>' | sudo tee "$etc/netbird/management-url" >/dev/null
-   echo '<PASTE_NETBIRD_SETUP_KEY_HERE>' | sudo tee "$etc/netbird/setup-key" >/dev/null
-   echo '<PASTE_TAILSCALE_AUTH_KEY_HERE>' | sudo tee "$etc/tailscale/authkey" >/dev/null
-   sudo chmod 0600 "$etc/netbird/setup-key" "$etc/tailscale/authkey"
-   sudo umount /mnt
+   etc=$(echo /ostree/deploy/default/deploy/*.0/etc)
+   install -d -m 0700 "$etc/netbird" "$etc/tailscale"
+   echo '<NETBIRD_MANAGEMENT_URL>' > "$etc/netbird/management-url"
+   echo '<PASTE_NETBIRD_SETUP_KEY_HERE>' > "$etc/netbird/setup-key"
+   echo '<PASTE_TAILSCALE_AUTH_KEY_HERE>' > "$etc/tailscale/authkey"
+   chmod 0600 "$etc/netbird/setup-key" "$etc/tailscale/authkey"
+   reboot
    ```
-4. Back to `netboot_mode = "local"`, `tofu apply`, and reboot. On first boot, `public-node-netbird-enroll.service` and `public-node-tailscale-enroll.service` join the mesh and delete the keys.
-5. Connect: `ssh roukydesbois@carcavelos.<NETBIRD_DNS_DOMAIN>`. Then check `sudo bootc status`, `systemctl --failed` and `sudo nft list table inet public_node`, and make the hostname static too: `sudo hostnamectl set-hostname carcavelos`.
+   On first boot, `public-node-netbird-enroll.service` and `public-node-tailscale-enroll.service` join the mesh and delete the keys.
+5. Back to `public_ssh = false` in thomelab-ops and `tofu apply`. (The host's nftables keeps 22 closed on the public side either way.)
+6. Connect: `ssh roukydesbois@carcavelos.<NETBIRD_DNS_DOMAIN>`. Then check `sudo bootc status`, `systemctl --failed` and `sudo nft list table inet public_node`, and make the hostname static too: `sudo hostnamectl set-hostname carcavelos`.
 
-If the box doesn't show up on the mesh, boot the rescue system again, mount the root partition and read `/var/log/journal` (for example with `journalctl -D <MOUNTED_ROOT>/var/log/journal -u public-node-netbird-enroll`).
+If the box doesn't show up on the mesh, use the KVM console in the OVH manager, or boot the rescue system (`netboot_mode = "rescue"` in thomelab-ops, then reboot), mount the root partition and read `/var/log/journal` (for example with `journalctl -D <MOUNTED_ROOT>/var/log/journal -u public-node-netbird-enroll`).
 
 ## Secrets
 

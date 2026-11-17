@@ -21,3 +21,7 @@ wait_for() {
 }
 wait_for "sshd.service isn't active" systemctl is-active --quiet sshd.service
 wait_for "traefik doesn't answer on 127.0.0.1:8080/ping" curl -fsS --max-time 5 -o /dev/null http://127.0.0.1:8080/ping
+# ...and loaded its routes: a file provider that fails to start leaves
+# Traefik answering /ping with no route at all
+wait_for "traefik has no routes from /etc/traefik/dynamic" \
+    sh -c 'curl -fsS --max-time 5 http://127.0.0.1:8080/api/http/routers | jq -e "any(.[]; .provider == \"file\")" >/dev/null'

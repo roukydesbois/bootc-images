@@ -40,14 +40,14 @@ The install runs from the Debian 13 that OVH delivers, with `bootc install to-ex
    lsblk -f; [ -d /sys/firmware/efi ] && echo UEFI || echo BIOS
    apt-get update && apt-get install -y podman
    ```
-3. Install. The hostname is a kernel argument, set before NetBird and Tailscale enroll, which take it as the peer name. `--cleanup` deletes Debian's leftover files on the first boot:
+3. Install. The hostname is a kernel argument, set before NetBird and Tailscale enroll, which take it as the peer name. `--cleanup` deletes Debian's leftover files on the first boot, and `--bound-images pull` pulls the logically bound images (Traefik, NetBird, the apps) straight into the new system (the default expects them in the host's podman storage already):
    ```bash
    podman run --rm --privileged --pid=host \
      -v /dev:/dev -v /var/lib/containers:/var/lib/containers -v /:/target \
      --security-opt label=type:unconfined_t \
      ghcr.io/roukydesbois/bootc-images/public-node:latest \
      bootc install to-existing-root --acknowledge-destructive --cleanup \
-       --karg systemd.hostname=carcavelos
+       --bound-images pull --karg systemd.hostname=carcavelos
    ```
 4. Leave the enrollment keys on the new system, which has no other way in until it's on the mesh. The new deployment's `/etc` is on the same root filesystem:
    ```bash

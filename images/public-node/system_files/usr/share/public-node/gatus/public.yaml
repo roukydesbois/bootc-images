@@ -15,8 +15,12 @@ storage:
   type: sqlite
   path: /data/data.db
 announcements:
+- timestamp: "2026-11-17T14:27:00Z"
+  type: warning
+  message: "**Maintenance tomorrow, Wednesday 18 November, 15:00–16:00 CET.** The public server moves to a new machine: sign-in (SSO), Passwords and the sites that go through it will be unavailable for about an hour. Apps you are already signed in to keep working, and the Bitwarden apps keep their offline copy of your vault."
 - timestamp: "2026-11-05T18:56:00Z"
   type: operational
+  archived: true
   message: The NAS maintenance of Thursday 5 November is finished. Photos, Nextcloud, Paperless, CryptPad
     and Matrix are back.
 - timestamp: "2026-11-05T15:30:00Z"

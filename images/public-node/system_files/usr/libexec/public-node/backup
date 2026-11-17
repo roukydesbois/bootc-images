@@ -70,7 +70,7 @@ borg_run() (
         borg prune "${keep[@]}"
         borg compact
     else
-        borg create --compression zstd "${excludes[@]/#/--exclude=}" "::{now:%Y-%m-%dT%H:%M}" "${paths[@]}"
+        borg create --compression zstd "${excludes[@]/#/--exclude=}" "::{now:%Y-%m-%dT%H:%M:%S}" "${paths[@]}"
     fi
 )
 

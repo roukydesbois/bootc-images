@@ -62,6 +62,12 @@ The install runs from the Debian 13 that OVH delivers, with `bootc install to-ex
    On first boot, `public-node-netbird-enroll.service` and `public-node-tailscale-enroll.service` join the mesh and delete the keys.
 5. Back to `public_ssh = false` in thomelab-ops and `tofu apply`. (The host's nftables keeps 22 closed on the public side either way.)
 6. Connect: `ssh roukydesbois@carcavelos.<NETBIRD_DNS_DOMAIN>`. Then check `sudo bootc status`, `systemctl --failed` and `sudo nft list table inet public_node`, and make the hostname static too: `sudo hostnamectl set-hostname carcavelos`.
+7. Retype Debian's EFI partition. OVH boots the VPS in BIOS mode, so nothing uses it, but bootupd tries to adopt it at every boot and `bootloader-update.service` fails ("opening EFI dir"). On carcavelos it's `sda15`:
+   ```bash
+   sudo sfdisk --part-type /dev/sda 15 0FC63DAF-8483-4772-8E79-3D69D8477DE4   # EFI System → Linux filesystem
+   sudo partx -u /dev/sda
+   sudo systemctl restart bootloader-update.service
+   ```
 
 If the box doesn't show up on the mesh, use the KVM console in the OVH manager, or boot the rescue system (`netboot_mode = "rescue"` in thomelab-ops, then reboot), mount the root partition and read `/var/log/journal` (for example with `journalctl -D <MOUNTED_ROOT>/var/log/journal -u public-node-netbird-enroll`).
 

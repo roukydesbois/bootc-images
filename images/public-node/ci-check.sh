@@ -9,6 +9,10 @@ image="$1"
 podman run --rm --network none --cap-add NET_ADMIN "$image" \
     nft --check --file /usr/share/public-node/firewall.nft
 
+# The nightly update uses --soft-reboot (bootc-fetch-apply-updates drop-in):
+# fail the build if this bootc doesn't know it, rather than the update
+podman run --rm "$image" bootc upgrade --help | grep -q -- '--soft-reboot'
+
 # The quadlets generate valid units
 podman run --rm "$image" /usr/libexec/podman/quadlet -dryrun >/dev/null
 

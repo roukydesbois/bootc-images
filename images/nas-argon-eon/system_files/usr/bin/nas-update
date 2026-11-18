@@ -1,6 +1,6 @@
 #!/bin/bash
-# Update the NAS to the latest image and restart into it. Automatic updates
-# are off (NFS and Garage go down meanwhile), so this is run by hand.
+# Update the NAS to the latest image and restart into it, now: what the
+# weekly automatic update (bootc-fetch-apply-updates) does on Sundays.
 #
 # When the new image keeps the kernel, initramfs and kernel arguments, this is
 # a soft reboot: systemd restarts userspace only, on the new image, without

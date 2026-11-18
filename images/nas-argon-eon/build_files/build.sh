@@ -47,7 +47,7 @@ systemctl enable podman.socket
 systemctl enable cockpit.socket
 # Disk health and update notifications (ntfy, see /etc/nas-argon-eon/README)
 systemctl enable smartd.service
-systemctl enable nas-smart-check.timer nas-btrfs-errors.timer nas-check-update.timer
+systemctl enable nas-smart-check.timer nas-btrfs-errors.timer
 systemctl enable nas-backup.timer
 systemctl enable netbird.service
 systemctl enable nas-btrfs-scrub-ssd1tb.timer nas-btrfs-scrub-ssd2tb.timer nas-btrfs-scrub-hdd4tb.timer
@@ -61,10 +61,11 @@ systemctl enable var-srv-hdd4tb.mount var-srv-ssd2tb.mount var-srv-ssd1tb.mount
 systemctl enable 'export-thomelab\x2ddynamic\x2d4tb\x2dhdd.mount' 'export-thomelab\x2ddynamic\x2d2tb\x2dssd.mount' 'export-thomelab\x2ddynamic\x2d1tb\x2dssd.mount'
 systemctl enable nfs-server.service
 
-# Updates are applied by hand (nas-update: soft reboot when the kernel is
-# unchanged): an unplanned reboot takes down NFS for thomelab and Garage, which
-# has no replica
-systemctl mask bootc-fetch-apply-updates.timer
+# Weekly automatic updates, Sunday morning, soft reboot when the kernel is
+# unchanged (timer and service drop-ins in system_files). NFS and Garage go
+# down meanwhile; greenboot rolls a bad image back. `nas-update` does the same
+# by hand.
+systemctl enable bootc-fetch-apply-updates.timer
 
 # Metrics pushed to thomelab (node-exporter + prometheus-agent quadlets, enabled
 # by their [Install] section). Their images are logically bound: `bootc upgrade`

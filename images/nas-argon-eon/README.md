@@ -74,7 +74,6 @@ Alerts go to ntfy through `/usr/libexec/nas-argon-eon/notify`. Its server, topic
 | `nas-smart-check.timer` | daily 07:15 | SMART health fails, reallocated/pending/uncorrectable sectors, ≥ 55 °C, failed self-test. Only when that list changes, not every day |
 | `nas-btrfs-errors.timer` | daily 07:00 | any btrfs error counter is non-zero, or a disk isn't mounted |
 | `nas-btrfs-scrub-<disk>.timer` | monthly: SSD 1 TB on the 1st, SSD 2 TB on the 8th, HDD on the 15th, 02:00 | the scrub fails or finds errors |
-| `nas-check-update.timer` | Mondays 09:00 | a new image is available (once per image) |
 
 smartd runs confined (SELinux `fsdaemon_t`, dropped capabilities), so it only runs the self-tests; the daily check reads the results with `smartctl`. A failed check, scrub or backup sends the end of its journal (`nas-notify-failure@.service`); delivery is retried for up to about 10 minutes if ntfy can't be reached.
 
@@ -120,13 +119,9 @@ NetBird's SSH server starts sessions through `login`, which SELinux blocks by de
 
 ### Updates
 
-Automatic updates are off (`bootc-fetch-apply-updates.timer` is masked): a reboot takes NFS and Garage down. `nas-check-update.timer` sends a ntfy notification when a new image is available. Update by hand when convenient:
+Updates install on their own once a week (`bootc-fetch-apply-updates.timer`, Sunday 06:00 plus up to 15 minutes). If the nightly backup or a scrub is still running, the update waits for it, up to 12 hours; past that it fails with a ntfy alert and waits for next week. The update is a **soft reboot** when the new image keeps the kernel, initramfs and kernel arguments: systemd only restarts userspace on the new image, without the firmware and kernel boot, so NFS and Garage are back sooner. Otherwise it falls back to a normal reboot. Before that, the image's compiled SELinux policy is put back in `/etc` (`/usr/libexec/bootc-images/sepolicy-match-image`, from `common/`): ostree recompiles it at each deployment, and bootc refuses a soft reboot when the policies differ. A failed update sends a ntfy alert. `systemctl show -p SoftRebootsCount` counts soft reboots since the last full boot. The Argon case's power-off hook and `config.txt` changes (I2C) only apply on a full reboot (`sudo systemctl reboot`).
 
-```bash
-sudo nas-update
-```
-
-`nas-update` runs `bootc upgrade --apply --soft-reboot=auto`: when the new image keeps the kernel, initramfs and kernel arguments, systemd only restarts userspace on the new image (a **soft reboot**, no firmware or kernel boot, so NFS and Garage are back sooner); otherwise it falls back to a normal reboot. Before that it puts the image's compiled SELinux policy back in `/etc` (`/usr/libexec/bootc-images/sepolicy-match-image`, from `common/`): ostree recompiles it at each deployment, and bootc refuses a soft reboot when the policies differ. `systemctl show -p SoftRebootsCount` counts soft reboots since the last full boot. The Argon case's power-off hook and `config.txt` changes (I2C) only apply on a full reboot (`sudo systemctl reboot`).
+To update right away, `sudo nas-update` does the same by hand. To pause updates (before a migration, say): `sudo systemctl disable --now bootc-fetch-apply-updates.timer`.
 
 `sudo bootc rollback` goes back to the previous image.
 

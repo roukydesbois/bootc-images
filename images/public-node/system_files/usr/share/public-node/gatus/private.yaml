@@ -194,6 +194,9 @@ endpoints:
     hide-url: true
   alerts:
   - type: ntfy
+    # The NAS updates and (soft-)reboots on Sunday mornings: Garage is gone
+    # for a few minutes. Alert only when it stays down longer.
+    failure-threshold: 8
 - name: traefik
   group: public-node
   url: "http://127.0.0.1:8080/ping"

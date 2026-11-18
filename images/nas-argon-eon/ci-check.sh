@@ -24,3 +24,9 @@ podman run --rm "$image" cat /usr/share/nas-argon-eon/prometheus/agent.yml >"$pr
 chmod 0644 "$prom_cfg"
 podman run --rm --network none --entrypoint promtool -v "$prom_cfg:/agent.yml:ro,Z" "$prom_image" \
     check config --agent /agent.yml
+
+# Weekly updates are on, with the soft-reboot drop-in, and the "update
+# available" reminder is off
+podman run --rm "$image" systemctl --root=/ is-enabled bootc-fetch-apply-updates.timer
+podman run --rm "$image" grep -q -- "--soft-reboot=auto" /usr/lib/systemd/system/bootc-fetch-apply-updates.service.d/20-soft-reboot.conf
+! podman run --rm "$image" systemctl --root=/ is-enabled --quiet nas-check-update.timer

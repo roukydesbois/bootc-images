@@ -9,7 +9,7 @@ After=public-node-keycloak-config.service keycloak-postgres.service
 ConditionPathExists=/etc/public-node/secrets/keycloak/db-password
 
 [Container]
-Image=quay.io/keycloak/keycloak:26.8.2
+Image=quay.io/keycloak/keycloak:26.8.2@sha256:c68e286cacd87b942ac1939a0a1481461109d6acd3a57dc496969a319a76bbf0
 ContainerName=keycloak
 Network=keycloak.network
 PublishPort=127.0.0.1:8090:8080

@@ -40,10 +40,13 @@ dumps() {
     sqlite_copy /var/lib/ntfy/user.db ntfy-user.db
 }
 
-# Consistent copy of a live SQLite database, if it exists
+# Consistent copy of a live SQLite database, if it exists. The busy timeout
+# lets the copy wait for the app's write lock instead of failing at once
+# ("database is locked", NetBird's store at the first backup after the
+# cutover).
 sqlite_copy() {
     if [ -f "$1" ]; then
-        sqlite3 "$1" ".backup '$staging/$2'"
+        sqlite3 -cmd ".timeout 60000" "$1" ".backup '$staging/$2'"
     fi
 }
 

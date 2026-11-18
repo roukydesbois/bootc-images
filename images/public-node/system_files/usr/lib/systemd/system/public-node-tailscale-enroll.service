@@ -12,7 +12,11 @@ Wants=network-online.target
 [Service]
 Type=oneshot
 ExecStartPre=/usr/sbin/restorecon -R /etc/tailscale
-ExecStart=/usr/bin/tailscale up --netfilter-mode=off --ssh=false --auth-key=file:/etc/tailscale/authkey
+# --accept-dns=false: Tailscale is break-glass only and must not take over
+# the host's DNS. With it, everything resolved through 100.100.100.100, which
+# doesn't know NetBird's cluster.local (the Prometheus agent couldn't reach
+# thomelab).
+ExecStart=/usr/bin/tailscale up --netfilter-mode=off --ssh=false --accept-dns=false --auth-key=file:/etc/tailscale/authkey
 ExecStartPost=/usr/bin/rm -f /etc/tailscale/authkey
 Restart=on-failure
 RestartSec=60

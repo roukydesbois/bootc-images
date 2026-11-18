@@ -1,23 +1,4 @@
 #!/bin/bash
-# Send a notification to ntfy: notify <title> <message> [priority] [tags]
-# Server, topic and token come from /etc/nas-argon-eon/ntfy.env (not in the image,
-# the token is a secret), see /etc/nas-argon-eon/README.
-set -euo pipefail
-
-env_file=/etc/nas-argon-eon/ntfy.env
-if [ ! -r "$env_file" ]; then
-	echo "notify: $env_file missing, can't send: $1: $2" >&2
-	exit 1
-fi
-# shellcheck source=/dev/null
-. "$env_file"
-
-# Retries ride out a short network or ntfy outage (2026-11-12: a failed
-# backup's alert was lost to a single timeout): 10 tries, 30 s apart.
-curl -fsS --max-time 30 --retry 10 --retry-delay 30 --retry-all-errors \
-	-H "Authorization: Bearer ${NTFY_TOKEN}" \
-	-H "Title: $(hostname): $1" \
-	-H "Priority: ${3:-default}" \
-	-H "Tags: ${4:-floppy_disk}" \
-	-d "$2" \
-	"${NTFY_URL%/}/${NTFY_TOPIC}" >/dev/null
+# Kept for scripts still calling it: the shared sender (common/), with this
+# image's default tag. notify <title> <message> [priority] [tags]
+exec /usr/libexec/bootc-images/notify "$1" "$2" "${3:-default}" "${4:-floppy_disk}"

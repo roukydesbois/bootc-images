@@ -66,7 +66,7 @@ Cockpit logs in with a password, but the user created by Ignition has none (SSH 
 
 ### Notifications and disk health
 
-Alerts go to ntfy through `/usr/libexec/nas-argon-eon/notify`. Its server, topic and token live in `/etc/nas-argon-eon/ntfy.env`, created on the machine (see `/etc/nas-argon-eon/README`). Without it, the checks still run and log, but nothing is sent.
+Alerts go to ntfy through the sender shared by the images, `/usr/libexec/bootc-images/notify` (from [`common/`](../../common/README.md)). Its server, topic and token live in `/etc/nas-argon-eon/ntfy.env`, created on the machine (see `/etc/nas-argon-eon/README`). `/etc/bootc-images/ntfy.env`, where the shared sender looks, is a symlink to it. Without it, the checks still run and log, but nothing is sent.
 
 | What | When | Alerts when |
 |---|---|---|
@@ -76,9 +76,9 @@ Alerts go to ntfy through `/usr/libexec/nas-argon-eon/notify`. Its server, topic
 | `nas-btrfs-scrub-<disk>.timer` | monthly: SSD 1 TB on the 1st, SSD 2 TB on the 8th, HDD on the 15th, 02:00 | the scrub fails or finds errors |
 | `nas-check-update.timer` | Mondays 09:00 | a new image is available (once per image) |
 
-smartd runs confined (SELinux `fsdaemon_t`, dropped capabilities), so it only runs the self-tests; the daily check reads the results with `smartctl`. A failed check, scrub or backup sends the end of its journal (`nas-notify-failure@.service`); delivery is retried for up to about 10 minutes if ntfy can't be reached.
+smartd runs confined (SELinux `fsdaemon_t`, dropped capabilities), so it only runs the self-tests; the daily check reads the results with `smartctl`. A failed check, scrub or backup sends the end of its journal (`OnFailure=bootc-images-notify-failure@%n.service`; the old `nas-notify-failure@` still works the same); delivery is retried for up to about 10 minutes if ntfy can't be reached.
 
-The journal is capped at 200 MB (SD card) and only covers a few days, so each failure's last 200 journal lines are also saved to `/var/log/nas-argon-eon/failures/` (kept 90 days).
+The journal is capped at 200 MB (SD card) and only covers a few days, so each failure's last 200 journal lines are also saved to `/var/log/bootc-images/failures/` (kept 90 days; older ones in `/var/log/nas-argon-eon/failures/`).
 
 ### Backups
 

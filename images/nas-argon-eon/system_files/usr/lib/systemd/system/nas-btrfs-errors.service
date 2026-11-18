@@ -1,6 +1,6 @@
 [Unit]
 Description=Check the data disks' btrfs error counters
-OnFailure=nas-notify-failure@%n.service
+OnFailure=bootc-images-notify-failure@%n.service
 
 [Service]
 Type=oneshot

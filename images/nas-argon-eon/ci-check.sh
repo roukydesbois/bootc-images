@@ -24,3 +24,23 @@ podman run --rm "$image" cat /usr/share/nas-argon-eon/prometheus/agent.yml >"$pr
 chmod 0644 "$prom_cfg"
 podman run --rm --network none --entrypoint promtool -v "$prom_cfg:/agent.yml:ro,Z" "$prom_image" \
     check config --agent /agent.yml
+
+# The failure alert (common/): the handler keeps the log and calls the
+# sender with the unit name, priority and tags (stub instead of ntfy); the
+# NAS's ntfy.env is linked where the shared sender reads it
+podman run --rm "$image" sh -c '
+    set -e
+    test -f /usr/lib/systemd/system/bootc-images-notify-failure@.service
+    grep -q "^ExecStart=/usr/libexec/bootc-images/notify-unit-failure" /usr/lib/systemd/system/nas-notify-failure@.service
+    mkdir -p /tmp/failures
+    printf "#!/bin/sh\necho \"\$1|\$3|\$4\" >/tmp/sent\n" >/tmp/stub && chmod +x /tmp/stub
+    FAILURES=/tmp/failures NOTIFY=/tmp/stub /usr/libexec/bootc-images/notify-unit-failure test.service
+    grep -qx "test.service failed|high|warning" /tmp/sent
+    grep -qx "L /etc/bootc-images/ntfy.env - - - - /etc/nas-argon-eon/ntfy.env" /usr/lib/tmpfiles.d/nas-argon-eon.conf
+'
+# No unit names a handler that doesn't exist
+podman run --rm "$image" sh -c '
+    for h in $(grep -rhoE "OnFailure=[^ ]+" /usr/lib/systemd/system /usr/share/containers/systemd | sed "s/OnFailure=//; s/%n//" | sort -u); do
+        test -f "/usr/lib/systemd/system/$h" || { echo "missing OnFailure handler $h" >&2; exit 1; }
+    done
+'

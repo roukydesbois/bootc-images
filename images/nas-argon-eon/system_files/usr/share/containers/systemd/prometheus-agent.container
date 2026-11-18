@@ -4,7 +4,7 @@
 # thomelab is unreachable. Config: /usr/share/nas-argon-eon/prometheus/agent.yml.
 [Unit]
 Description=Prometheus agent (pushes metrics to thomelab)
-OnFailure=nas-notify-failure@%n.service
+OnFailure=bootc-images-notify-failure@%n.service
 # The remote-write target is only reachable over the mesh
 Wants=netbird.service
 After=netbird.service node-exporter.service

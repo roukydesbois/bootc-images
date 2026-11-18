@@ -1,0 +1,13 @@
+#!/bin/bash
+# Run by nas-backup.service after a successful borgmatic run: the time, for
+# node_exporter's textfile collector (thomelab alerts with NasBackupStale when
+# it gets old). Written aside then renamed, so the exporter never reads half
+# a file.
+set -euo pipefail
+dir=/var/lib/node-exporter/textfile
+{
+    echo "# HELP nas_backup_last_success_timestamp_seconds End of the last successful borgmatic run."
+    echo "# TYPE nas_backup_last_success_timestamp_seconds gauge"
+    echo "nas_backup_last_success_timestamp_seconds $(date +%s)"
+} >"$dir/nas_backup.prom.tmp"
+mv -f "$dir/nas_backup.prom.tmp" "$dir/nas_backup.prom"

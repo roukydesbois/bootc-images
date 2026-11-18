@@ -1,0 +1,30 @@
+# smartctl_exporter: SMART data of the data disks (health, temperature,
+# sector counts, self-tests) for thomelab's Prometheus, scraped by
+# prometheus-agent. Listens on 127.0.0.1:9633 only. nas-smart-check keeps
+# sending its own ntfy alerts; this adds the history.
+[Unit]
+Description=smartctl_exporter (disk SMART data for thomelab's Prometheus)
+OnFailure=nas-notify-failure@%n.service
+
+[Container]
+Image=quay.io/prometheuscommunity/smartctl-exporter:v0.15.0
+ContainerName=smartctl-exporter
+Network=host
+# smartctl talks to the disks directly (SG_IO), which needs root and the
+# devices: the image's default user (nobody) can't
+User=0
+PodmanArgs=--privileged
+# The disks sit behind the EON's USB-SATA bridge, hence -d sat (like
+# nas-smart-check). Disks in standby are skipped, not woken up (the default
+# powermode check).
+Exec=--web.listen-address=127.0.0.1:9633 --smartctl.scan-device-type=sat --smartctl.interval=5m
+ReadOnly=true
+
+[Service]
+# A stop sends SIGTERM and the exporter exits 128+15: not a failure
+SuccessExitStatus=143
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

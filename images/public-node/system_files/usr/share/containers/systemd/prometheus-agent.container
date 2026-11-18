@@ -22,6 +22,13 @@ DropCapability=ALL
 NoNewPrivileges=true
 
 [Service]
+# podman copies /etc/resolv.conf when the container starts. At boot NetBird
+# only takes over DNS once its client is up, a few minutes later: started
+# earlier, the agent kept the provider's resolver and never resolved
+# cluster.local. Wait until the remote-write target resolves on the host (at
+# most 10 minutes, then start anyway).
+ExecStartPre=/bin/sh -c 'for i in $$(seq 1 120); do getent hosts kube-prometheus-stack-prometheus.monitoring.svc.cluster.local >/dev/null && exit 0; sleep 5; done; exit 0'
+TimeoutStartSec=15min
 # A stop sends SIGTERM; apps that exit with 128+15 then counted as failed
 # and triggered OnFailure alerts (seen at every reboot). 137 (SIGKILL, OOM)
 # still counts as a failure.

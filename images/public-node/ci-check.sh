@@ -33,6 +33,15 @@ if grep -qiE 'panic|error parsing config' <<<"$gatus_out"; then
     exit 1
 fi
 
+# The Prometheus agent's config is valid (promtool from the same image)
+prom_image=$(podman run --rm "$image" sed -n 's/^Image=//p' /usr/share/containers/systemd/prometheus-agent.container)
+prom_cfg=$(mktemp)
+podman run --rm "$image" cat /usr/share/public-node/prometheus/agent.yml >"$prom_cfg"
+# mktemp makes it 0600; the Prometheus image runs as nobody
+chmod 0644 "$prom_cfg"
+podman run --rm --network none --entrypoint promtool -v "$prom_cfg:/agent.yml:ro,Z" "$prom_image" \
+    check config --agent /agent.yml
+
 # NetBird's config renders from the template with every secret in place, and
 # the template has no secret left in it
 podman run --rm "$image" sh -c '

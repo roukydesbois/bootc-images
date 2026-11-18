@@ -1,0 +1,33 @@
+# Prometheus in agent mode: scrapes node_exporter and Traefik locally and
+# pushes everything to thomelab's Prometheus over the NetBird mesh (remote
+# write; thomelab-infra#672). No local storage beyond the write-ahead log in
+# /var/lib/prometheus-agent, which holds samples while thomelab is
+# unreachable. Config: /usr/share/public-node/prometheus/agent.yml.
+[Unit]
+Description=Prometheus agent (pushes metrics to thomelab)
+OnFailure=bootc-images-notify-failure@%n.service
+# The remote-write target is only reachable over the mesh
+Wants=netbird.service
+After=netbird.service node-exporter.service
+
+[Container]
+Image=quay.io/prometheus/prometheus:v3.16.0
+ContainerName=prometheus-agent
+Network=host
+Volume=/usr/share/public-node/prometheus/agent.yml:/etc/prometheus/agent.yml:ro
+Volume=/var/lib/prometheus-agent:/data:Z
+Exec=--agent --config.file=/etc/prometheus/agent.yml --storage.agent.path=/data --web.listen-address=127.0.0.1:9095
+ReadOnly=true
+DropCapability=ALL
+NoNewPrivileges=true
+
+[Service]
+# A stop sends SIGTERM; apps that exit with 128+15 then counted as failed
+# and triggered OnFailure alerts (seen at every reboot). 137 (SIGKILL, OOM)
+# still counts as a failure.
+SuccessExitStatus=143
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

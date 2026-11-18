@@ -24,3 +24,9 @@ podman run --rm "$image" cat /usr/share/nas-argon-eon/prometheus/agent.yml >"$pr
 chmod 0644 "$prom_cfg"
 podman run --rm --network none --entrypoint promtool -v "$prom_cfg:/agent.yml:ro,Z" "$prom_image" \
     check config --agent /agent.yml
+
+# greenboot's checks parse, and its units are enabled (a renamed unit would
+# only show at boot)
+podman run --rm "$image" sh -c 'for f in /usr/lib/greenboot/check/*/*.sh; do bash -n "$f" || exit 1; test -x "$f" || { echo "not executable: $f" >&2; exit 1; }; done'
+podman run --rm "$image" systemctl --root=/ is-enabled \
+    greenboot-healthcheck.service greenboot-set-rollback-trigger.service

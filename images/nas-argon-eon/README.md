@@ -56,7 +56,7 @@ Each disk is mounted whole (top-level subvolume) under `/var/srv/<disk>`, and it
 
 ### Garage
 
-[Garage](https://garagehq.deuxfleurs.fr/) runs as a Podman Quadlet (`/usr/share/containers/systemd/garage.container`), with its config and metadata on the 1 TB SSD and its data on the 4 TB HDD. `garage.toml` holds secrets, so it stays on the data disk: `/var/srv/ssd1tb/compose-files/garage/garage.toml`.
+[Garage](https://garagehq.deuxfleurs.fr/) runs as a Podman Quadlet (`/usr/share/containers/systemd/garage.container`, image logically bound so `bootc upgrade` pulls it before restarting; a failure sends a ntfy alert), with its config and metadata on the 1 TB SSD and its data on the 4 TB HDD. `garage.toml` holds secrets, so it stays on the data disk: `/var/srv/ssd1tb/compose-files/garage/garage.toml`.
 
 ### Cockpit
 
@@ -129,6 +129,10 @@ sudo nas-update
 `nas-update` runs `bootc upgrade --apply --soft-reboot=auto`: when the new image keeps the kernel, initramfs and kernel arguments, systemd only restarts userspace on the new image (a **soft reboot**, no firmware or kernel boot, so NFS and Garage are back sooner); otherwise it falls back to a normal reboot. Before that it puts the image's compiled SELinux policy back in `/etc` (`/usr/libexec/bootc-images/sepolicy-match-image`, from `common/`): ostree recompiles it at each deployment, and bootc refuses a soft reboot when the policies differ. `systemctl show -p SoftRebootsCount` counts soft reboots since the last full boot. The Argon case's power-off hook and `config.txt` changes (I2C) only apply on a full reboot (`sudo systemctl reboot`).
 
 `sudo bootc rollback` goes back to the previous image.
+
+**greenboot** checks every boot (and soft reboot). The required checks (`/usr/lib/greenboot/check/required.d`) must pass, or the Pi reboots and, after a few failed attempts, goes back to the previous image. They are sshd running and Garage's unit generated. Then, once the data disks are mounted: NFS serving its exports and Garage answering `/health`. The disks unlock through Tang on another host. If they aren't mounted after 5 minutes, the disk checks are skipped instead of rolling back a good image. `wanted.d` only logs warnings: NetBird, the metrics units, the Argon fan/RTC services (also when masked), the disks unlocked. A failed health check sends a ntfy alert. Check the result with `journalctl -b -u greenboot-healthcheck`.
+
+If the first boot with greenboot fails its checks, GRUB can be left with `boot_counter=-1` and boot the rollback entry after the next update (seen on the public node). Reset it with `sudo mount -o remount,rw /boot && sudo grub2-editenv /boot/grub2/grubenv unset boot_counter && sudo grub2-editenv /boot/grub2/grubenv set boot_success=1`. A stale `/etc/motd.d/boot-status` from Fedora IoT's own greenboot can be deleted.
 
 ### Installation
 

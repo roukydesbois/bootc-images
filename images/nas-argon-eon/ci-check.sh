@@ -24,3 +24,8 @@ podman run --rm "$image" cat /usr/share/nas-argon-eon/prometheus/agent.yml >"$pr
 chmod 0644 "$prom_cfg"
 podman run --rm --network none --entrypoint promtool -v "$prom_cfg:/agent.yml:ro,Z" "$prom_image" \
     check config --agent /agent.yml
+
+# The system backup's helper parses, and every borgmatic job validates
+podman run --rm "$image" bash -n /usr/libexec/nas-argon-eon/system-backup-prepare
+podman run --rm -e BORGBASE_REPO=ssh://test@example.invalid/./repo "$image" \
+    sh -c 'for f in /etc/borgmatic.d/*.yaml; do borgmatic config validate -c "$f" || exit 1; done'

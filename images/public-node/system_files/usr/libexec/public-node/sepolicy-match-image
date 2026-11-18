@@ -1,0 +1,31 @@
+#!/bin/bash
+# Put the image's compiled SELinux policy back in /etc, so a staged update
+# can soft-reboot. Run by the nightly update before `bootc upgrade`.
+#
+# Why: ostree recompiles the policy when it finalizes a deployment. The inputs
+# are the image's, but the compiled files come out different from the ones
+# built in the image, so /etc's policy checksum never matches a freshly staged
+# deployment's, and bootc refuses a soft reboot ("SELinux policies differ").
+#
+# Only when the compiled outputs are the *only* SELinux differences from the
+# image (/usr/etc): a real local customization (booleans, modules, file
+# contexts...) leaves everything untouched. The running kernel keeps the policy
+# it loaded at boot; this only changes the files on disk, with identical
+# content in effect.
+set -euo pipefail
+
+dir=/etc/selinux/targeted
+diff=$(ostree admin config-diff 2>/dev/null | awk '$2 ~ /^selinux\// {print $1, $2}')
+[ -n "$diff" ] || exit 0
+
+compiled='^M selinux/targeted/(active/policy\.kern|active/commit_num|policy/policy\.[0-9]+)$'
+if grep -Evq "$compiled" <<<"$diff"; then
+    echo "local SELinux changes beyond the compiled policy, left as is:" >&2
+    grep -Ev "$compiled" <<<"$diff" >&2
+    exit 0
+fi
+
+while read -r _ path; do
+    cp -a "/usr/etc/$path" "/etc/$path"
+    echo "restored /etc/$path from the image"
+done <<<"$diff"

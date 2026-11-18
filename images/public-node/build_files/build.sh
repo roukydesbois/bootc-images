@@ -78,6 +78,11 @@ systemctl enable public-node-memory-check.timer
 systemctl enable cockpit.socket
 # Nightly updates (timer drop-in in system_files)
 systemctl enable bootc-fetch-apply-updates.timer
+
+# rpm-ostree's weekly anonymous "count me" ping to the CentOS mirrors: it
+# fails on carcavelos (and showed up in systemctl --failed), and a bootc
+# server updates from its own image, not from these repositories.
+systemctl mask rpm-ostree-countme.timer rpm-ostree-countme.service
 # The stock nftables.service would `flush ruleset` on reload/stop, wiping
 # NetBird's, Tailscale's and podman's tables
 systemctl mask nftables.service

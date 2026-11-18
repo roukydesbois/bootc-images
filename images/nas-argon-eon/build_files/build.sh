@@ -23,6 +23,8 @@ python3 -c 'import gpiod, smbus'
 
 # Install packages for the data disks (LUKS unlocked through Tang) and the NFS exports
 dnf5 install -y cryptsetup clevis clevis-luks clevis-systemd btrfs-progs nfs-utils
+# Host firewall (nas-firewall.service, its own nftables table)
+dnf5 install -y nftables
 # Compressed swap in RAM, the OS lives on an SD card
 dnf5 install -y zram-generator-defaults
 # NetBird client (repo and service come from system_files), for NetBird SSH from
@@ -60,6 +62,8 @@ systemctl enable clevis-luks-askpass.path
 systemctl enable var-srv-hdd4tb.mount var-srv-ssd2tb.mount var-srv-ssd1tb.mount
 systemctl enable 'export-thomelab\x2ddynamic\x2d4tb\x2dhdd.mount' 'export-thomelab\x2ddynamic\x2d2tb\x2dssd.mount' 'export-thomelab\x2ddynamic\x2d1tb\x2dssd.mount'
 systemctl enable nfs-server.service
+# Starts only once /etc/nas-argon-eon/firewall-local.nft exists (README)
+systemctl enable nas-firewall.service
 
 # Updates are applied by hand (nas-update: soft reboot when the kernel is
 # unchanged): an unplanned reboot takes down NFS for thomelab and Garage, which

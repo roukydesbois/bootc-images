@@ -24,3 +24,13 @@ podman run --rm "$image" cat /usr/share/nas-argon-eon/prometheus/agent.yml >"$pr
 chmod 0644 "$prom_cfg"
 podman run --rm --network none --entrypoint promtool -v "$prom_cfg:/agent.yml:ro,Z" "$prom_image" \
     check config --agent /agent.yml
+
+# The firewall ruleset parses, with an example local file. nft --check needs
+# netlink: its own network namespace with NET_ADMIN, nothing is loaded.
+podman run --rm --network none --cap-add NET_ADMIN "$image" sh -c '
+    set -e
+    mkdir -p /etc/nas-argon-eon
+    printf "add element inet nas_argon_eon clients { 192.0.2.0/24 }\nadd element inet nas_argon_eon admins { 198.51.100.7 }\n" >/etc/nas-argon-eon/firewall-local.nft
+    nft --check --file /usr/share/nas-argon-eon/firewall.nft
+'
+podman run --rm "$image" systemctl --root=/ is-enabled nas-firewall.service

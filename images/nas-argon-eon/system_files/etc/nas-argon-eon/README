@@ -15,3 +15,14 @@ Backups (nas-backup.timer, borgmatic with /etc/borgmatic.d) need, all mode 0600:
 /etc/nas-argon-eon/borgbase-ssh-key  the private SSH key registered in BorgBase
 
 Test with: sudo systemd-run --wait --pipe -p EnvironmentFile=/etc/nas-argon-eon/borg.env borgmatic list --last 3
+
+Firewall (nas-firewall.service, /usr/share/nas-argon-eon/firewall.nft) stays off
+until /etc/nas-argon-eon/firewall-local.nft exists. It says who may connect
+(IPv4 ranges; the mesh, wt0, is always allowed):
+
+add element inet nas_argon_eon clients { <cluster-nodes-cidr>, <router-ip> }
+add element inet nas_argon_eon admins { <admin-lan-cidr> }
+
+clients: NFS and Garage (S3, web, admin API). admins: SSH, Cockpit, Garage admin.
+Then: sudo systemctl start nas-firewall && sudo nft list table inet nas_argon_eon
+Undo at once: sudo systemctl stop nas-firewall (deletes the table).

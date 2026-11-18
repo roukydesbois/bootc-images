@@ -1,0 +1,30 @@
+# Prometheus agent on the public node (prometheus-agent.container). Scrapes
+# locally, pushes to thomelab's Prometheus (remote-write receiver, reachable
+# over the NetBird mesh through the netbird-operator's network resource;
+# thomelab-ops policy "carcavelos - metrics", tcp/9090 only).
+global:
+  scrape_interval: 60s
+  # Every series carries cluster="carcavelos": the chart's default node
+  # rules on thomelab cover this host too, and their descriptions read
+  # "on cluster carcavelos".
+  external_labels:
+    cluster: carcavelos
+
+scrape_configs:
+  # Same job name as the cluster's node exporters, so kube-prometheus-stack's
+  # node rules and dashboards apply unchanged
+  - job_name: node-exporter
+    static_configs:
+      - targets: ["127.0.0.1:9100"]
+    relabel_configs:
+      - target_label: instance
+        replacement: carcavelos
+  - job_name: traefik
+    static_configs:
+      - targets: ["127.0.0.1:8080"]
+    relabel_configs:
+      - target_label: instance
+        replacement: carcavelos
+
+remote_write:
+  - url: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090/api/v1/write

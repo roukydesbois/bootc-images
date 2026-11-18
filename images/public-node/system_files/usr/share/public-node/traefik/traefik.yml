@@ -35,6 +35,14 @@ entryPoints:
   traefik:
     address: "127.0.0.1:8080"
 
+# Prometheus metrics on the localhost-only "traefik" entry point
+# (127.0.0.1:8080/metrics), scraped by prometheus-agent
+metrics:
+  prometheus:
+    entryPoint: traefik
+    addEntryPointsLabels: true
+    addServicesLabels: true
+
 api:
   dashboard: true
   insecure: true

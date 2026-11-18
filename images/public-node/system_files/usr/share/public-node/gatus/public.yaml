@@ -15,8 +15,12 @@ storage:
   type: sqlite
   path: /data/data.db
 announcements:
+- timestamp: "2026-11-18T15:00:00Z"
+  type: operational
+  message: "The maintenance of Wednesday 18 November is finished: the public server runs on its new machine. Sign-in, Passwords and every site are back."
 - timestamp: "2026-11-17T14:27:00Z"
   type: warning
+  archived: true
   message: "**Maintenance on Wednesday 18 November, 15:00–16:00 CET.** The public server moves to a new machine: sign-in (SSO), Passwords and the sites that go through it will be unavailable for about an hour. Apps you are already signed in to keep working, and the Bitwarden apps keep their offline copy of your vault."
 - timestamp: "2026-11-05T18:56:00Z"
   type: operational

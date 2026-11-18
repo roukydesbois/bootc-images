@@ -8,7 +8,7 @@ OnFailure=bootc-images-notify-failure@%n.service
 ConditionPathExists=/etc/public-node/secrets/vaultwarden/vaultwarden.env
 
 [Container]
-Image=docker.io/vaultwarden/server:1.37.5
+Image=docker.io/vaultwarden/server:1.37.5@sha256:4fe17f415f90087377d37c755e0ea3cf189dcc6794e49cdd2a9adbb4937d9e1f
 ContainerName=vaultwarden
 Network=vaultwarden.network
 PublishPort=127.0.0.1:8091:8080

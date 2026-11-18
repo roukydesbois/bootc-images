@@ -18,7 +18,7 @@ Requires=public-node-netbird-config.service
 ConditionPathExists=/etc/public-node/secrets/netbird/datastore-encryption-key
 
 [Container]
-Image=docker.io/netbirdio/management:0.83.1
+Image=docker.io/netbirdio/management:0.83.1@sha256:77c74f342e4d36251ad4b920c2f21a9f13e62c69d8ae51a2ec5060052cd485d8
 ContainerName=netbird-management
 Network=netbird.network
 PublishPort=127.0.0.1:8081:80

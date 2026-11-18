@@ -1,4 +1,11 @@
 [Unit]
+# Fetches Keycloak's OIDC config at startup. After a reboot Keycloak needs
+# about a minute: ExecStartPre waits for it, and retries never stop
+# (systemd's default gives up after 5 failures in 10 s, which left this
+# failed after the first reboot with real data).
+Wants=keycloak.service
+After=keycloak.service
+StartLimitIntervalSec=0
 # ntfy alert with the end of the journal when it fails (common/)
 OnFailure=bootc-images-notify-failure@%n.service
 Description=NetBird management
@@ -23,7 +30,12 @@ Exec=--port=80 --log-file=console --log-level=info --disable-anonymous-metrics=f
 NoNewPrivileges=true
 
 [Service]
+# Wait until Keycloak answers locally (127.0.0.1:8090), so this doesn't start,
+# fail and alert while Keycloak is still booting
+ExecStartPre=/bin/sh -c 'until curl -fs -o /dev/null http://127.0.0.1:8090/realms/self-hosted-apps/.well-known/openid-configuration; do sleep 5; done'
+TimeoutStartSec=600
 Restart=always
+RestartSec=10
 
 [Install]
 WantedBy=multi-user.target

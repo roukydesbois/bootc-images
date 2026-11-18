@@ -26,6 +26,10 @@ Environment=NETBIRD_GOOGLE_AUTH_ENABLED=false
 NoNewPrivileges=true
 
 [Service]
+# A stop sends SIGTERM; apps that exit with 128+15 then counted as failed
+# and triggered OnFailure alerts (seen at every reboot). 137 (SIGKILL, OOM)
+# still counts as a failure.
+SuccessExitStatus=143
 Restart=always
 
 [Install]

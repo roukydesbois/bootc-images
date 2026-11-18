@@ -11,8 +11,13 @@ entryPoints:
   # HTTP to HTTPS is a low-priority route (dynamic/00-common.yml), not the
   # entrypoint redirection: on the public cluster that got in the way of
   # ACME HTTP-01 challenges
+  # graceTimeOut: on stop, give open connections 5 s (default 10 s, which is
+  # also podman's stop grace: Traefik got SIGKILLed at every reboot)
   web:
     address: ":80"
+    transport:
+      lifeCycle:
+        graceTimeOut: "5s"
   websecure:
     address: ":443"
     http:
@@ -24,6 +29,8 @@ entryPoints:
     transport:
       respondingTimeouts:
         readTimeout: "0s"
+      lifeCycle:
+        graceTimeOut: "5s"
   # Dashboard, API and ping, on localhost only (SSH tunnel to look at it)
   traefik:
     address: "127.0.0.1:8080"

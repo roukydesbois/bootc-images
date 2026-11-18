@@ -36,6 +36,10 @@ DropCapability=ALL
 NoNewPrivileges=true
 
 [Service]
+# A stop sends SIGTERM; apps that exit with 128+15 then counted as failed
+# and triggered OnFailure alerts (seen at every reboot). 137 (SIGKILL, OOM)
+# still counts as a failure.
+SuccessExitStatus=143
 # Wait until Keycloak answers locally (127.0.0.1:8090), so this doesn't start,
 # fail and alert while Keycloak is still booting
 ExecStartPre=/bin/sh -c 'until curl -fs -o /dev/null http://127.0.0.1:8090/realms/self-hosted-apps/.well-known/openid-configuration; do sleep 5; done'

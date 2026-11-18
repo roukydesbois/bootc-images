@@ -1,0 +1,18 @@
+#!/bin/bash
+# Update the NAS to the latest image and restart into it. Automatic updates
+# are off (NFS and Garage go down meanwhile), so this is run by hand.
+#
+# When the new image keeps the kernel, initramfs and kernel arguments, this is
+# a soft reboot: systemd restarts userspace only, on the new image, without
+# the Pi's firmware and kernel boot, so NFS and Garage are back sooner.
+# Otherwise bootc falls back to a full reboot (--soft-reboot=auto).
+set -euo pipefail
+[ "$(id -u)" = 0 ] || exec sudo "$0" "$@"
+
+# ostree's recompiled SELinux policy makes every update look incompatible
+# with a soft reboot: put the image's back (no-op when it already matches)
+/usr/libexec/bootc-images/sepolicy-match-image ||
+	echo "sepolicy-match-image failed: this update will likely be a full reboot" >&2
+
+echo "Updating: NFS and Garage go down until the NAS is back (soft reboot if the kernel is unchanged)."
+exec bootc upgrade --apply --soft-reboot=auto

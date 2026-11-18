@@ -103,6 +103,10 @@ Daily at 03:30 (`nas-backup.timer`), [borgmatic](https://torsion.org/borgmatic/)
   ```
 - The repository URL, passphrase and SSH key live on the machine, in `/etc/nas-argon-eon/` (see its README).
 
+### Metrics
+
+`node-exporter.container` (host metrics on `127.0.0.1:9100`: CPU, memory, temperatures, disks, btrfs, systemd) is scraped every minute by Prometheus in **agent mode** (`prometheus-agent.container`), which pushes to thomelab's Prometheus over the NetBird mesh (remote write; thomelab-ops policy `evora - metrics`, tcp/9090 only). Series carry `cluster="evora"` and keep the `node-exporter` job name, so the cluster's node alerts and dashboards apply. thomelab alerts with `NasMetricsMissing` when the push stops. The agent's write-ahead log (`/var/lib/prometheus-agent`) holds samples while thomelab is unreachable. Same setup as the public node.
+
 ### NetBird SSH
 
 The NetBird client is installed so admins can use NetBird SSH (`netbird ssh roukydesbois@evora.internal.thomelab`), independently of the LAN path through the router. The peer, its setup key and the SSH policy are managed in thomelab-ops (`tofu/netbird`). Enroll once on the machine:
@@ -119,9 +123,10 @@ NetBird's SSH server starts sessions through `login`, which SELinux blocks by de
 Automatic updates are off (`bootc-fetch-apply-updates.timer` is masked): a reboot takes NFS and Garage down. `nas-check-update.timer` sends a ntfy notification when a new image is available. Update by hand when convenient:
 
 ```bash
-sudo bootc upgrade   # downloads and stages the new image
-sudo systemctl reboot
+sudo nas-update
 ```
+
+`nas-update` runs `bootc upgrade --apply --soft-reboot=auto`: when the new image keeps the kernel, initramfs and kernel arguments, systemd only restarts userspace on the new image (a **soft reboot**, no firmware or kernel boot, so NFS and Garage are back sooner); otherwise it falls back to a normal reboot. Before that it puts the image's compiled SELinux policy back in `/etc` (`/usr/libexec/bootc-images/sepolicy-match-image`, from `common/`): ostree recompiles it at each deployment, and bootc refuses a soft reboot when the policies differ. `systemctl show -p SoftRebootsCount` counts soft reboots since the last full boot. The Argon case's power-off hook and `config.txt` changes (I2C) only apply on a full reboot (`sudo systemctl reboot`).
 
 `sudo bootc rollback` goes back to the previous image.
 

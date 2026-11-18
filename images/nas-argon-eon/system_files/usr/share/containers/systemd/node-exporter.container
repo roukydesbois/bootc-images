@@ -1,0 +1,30 @@
+# node_exporter: host metrics (CPU, memory, temperatures, disks, btrfs,
+# network, systemd), scraped by prometheus-agent and pushed to thomelab's
+# Prometheus. Listens on 127.0.0.1:9100 only.
+[Unit]
+Description=node_exporter (host metrics for thomelab's Prometheus)
+OnFailure=nas-notify-failure@%n.service
+
+[Container]
+Image=quay.io/prometheus/node-exporter:v1.12.1
+ContainerName=node-exporter
+Network=host
+# Reads the host through /host (read-only); SELinux would otherwise deny
+# a container reading the host's /proc, /sys and filesystems. rslave: the
+# data disks (/var/srv/*, unlocked through Tang) may be mounted after it starts.
+SecurityLabelDisable=true
+Volume=/:/host:ro,rslave
+Exec=--path.rootfs=/host --web.listen-address=127.0.0.1:9100 --collector.systemd --collector.processes
+ReadOnly=true
+DropCapability=ALL
+NoNewPrivileges=true
+
+[Service]
+# A stop sends SIGTERM and the exporter exits 128+15: not a failure.
+# 137 (SIGKILL, OOM) still counts as one.
+SuccessExitStatus=143
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

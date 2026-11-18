@@ -1,6 +1,7 @@
 #!/bin/bash
 # Put the image's compiled SELinux policy back in /etc, so a staged update
-# can soft-reboot. Run by the nightly update before `bootc upgrade`.
+# can soft-reboot. Run before `bootc upgrade --soft-reboot=auto` (public-node:
+# the nightly update's ExecStartPre; nas-argon-eon: nas-update).
 #
 # Why: ostree recompiles the policy when it finalizes a deployment. The inputs
 # are the image's, but the compiled files come out different from the ones

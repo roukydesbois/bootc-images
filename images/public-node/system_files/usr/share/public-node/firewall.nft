@@ -30,6 +30,12 @@ table inet public_node {
 		# SSH is only reachable this way.
 		iifname { "wt0", "tailscale0" } accept
 
+		# Containers on a podman network resolve names (each other, and the
+		# outside) through aardvark-dns on their bridge's gateway, which is
+		# this host: without this, Keycloak can't find keycloak-postgres and
+		# NetBird can't fetch Keycloak's OIDC config (seen at the cutover).
+		iifname "podman*" meta l4proto { udp, tcp } th dport 53 accept
+
 		# Web: reverse proxy (HTTPS, and HTTP for redirects and ACME)
 		tcp dport { 80, 443 } accept
 		# NetBird: STUN of the relay, and the WireGuard port of this peer

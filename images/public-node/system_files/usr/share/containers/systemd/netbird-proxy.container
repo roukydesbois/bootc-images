@@ -40,8 +40,15 @@ Environment=NB_PROXY_FORWARDED_PROTO=https
 EnvironmentFile=/run/public-node/netbird/proxy.env
 Volume=/var/lib/netbird/proxy-certs:/certs:Z
 NoNewPrivileges=true
+# Long-lived connections (NetBird's gRPC streams, proxied sessions): podman's
+# default 10 s stop grace ran out and they were SIGKILLed (exit 137).
+StopTimeout=30
 
 [Service]
+# A stop sends SIGTERM; apps that exit with 128+15 then counted as failed
+# and triggered OnFailure alerts (seen at every reboot). 137 (SIGKILL, OOM)
+# still counts as a failure.
+SuccessExitStatus=143
 Restart=always
 
 [Install]

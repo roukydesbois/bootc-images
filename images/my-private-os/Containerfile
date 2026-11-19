@@ -13,12 +13,12 @@ RUN wget -qO- "https://git.sr.ht/~emersion/gamja/archive/${GAMJA_VERSION}.tar.gz
 
 # DMS plugins pinned in dms/plugins.lock.json (the same list as the
 # surfacego3-os image), installed where DMS looks for system-wide plugins
-FROM quay.io/fedora/fedora-bootc:45@sha256:69b66da0839f186f799addae6620aae19a6998b3fd4d2def00168c8dab50c486 AS dms-plugins
+FROM quay.io/fedora/fedora-bootc:46@sha256:edc933292a2ec069fbcf57fb1a5db50d2975490efd46913291e066574a16df94 AS dms-plugins
 COPY build_files/dms-plugins.sh dms/plugins.lock.json /tmp/
 RUN dnf5 -y install git python3 && /tmp/dms-plugins.sh /tmp/plugins.lock.json /out
 
 # Base Image
-FROM quay.io/fedora/fedora-bootc:45@sha256:69b66da0839f186f799addae6620aae19a6998b3fd4d2def00168c8dab50c486
+FROM quay.io/fedora/fedora-bootc:46@sha256:edc933292a2ec069fbcf57fb1a5db50d2975490efd46913291e066574a16df94
 ## Other possible base images include:
 # FROM ghcr.io/ublue-os/bazzite:testing
 # FROM ghcr.io/ublue-os/aurora:stable

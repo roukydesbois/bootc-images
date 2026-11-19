@@ -7,7 +7,7 @@ Description=Prometheus agent (pushes metrics to thomelab)
 OnFailure=nas-notify-failure@%n.service
 # The remote-write target is only reachable over the mesh
 Wants=netbird.service
-After=netbird.service node-exporter.service
+After=netbird.service node-exporter.service smartctl-exporter.service garage.service
 
 [Container]
 Image=quay.io/prometheus/prometheus:v3.16.0@sha256:9332054523223e2ddc18d8101799d54a4a8d823b030c53216f063a6c117773cd
@@ -15,6 +15,8 @@ ContainerName=prometheus-agent
 Network=host
 Volume=/usr/share/nas-argon-eon/prometheus/agent.yml:/etc/prometheus/agent.yml:ro
 Volume=/var/lib/prometheus-agent:/data:Z
+# Garage's metrics token, set on the machine (README)
+Volume=/etc/nas-argon-eon/prometheus:/etc/prometheus/secrets:ro,Z
 Exec=--agent --config.file=/etc/prometheus/agent.yml --storage.agent.path=/data --web.listen-address=127.0.0.1:9095
 ReadOnly=true
 DropCapability=ALL

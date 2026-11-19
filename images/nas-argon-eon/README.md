@@ -58,6 +58,8 @@ Each disk is mounted whole (top-level subvolume) under `/var/srv/<disk>`, and it
 
 [Garage](https://garagehq.deuxfleurs.fr/) runs as a Podman Quadlet (`/usr/share/containers/systemd/garage.container`, image logically bound so `bootc upgrade` pulls it before restarting; a failure sends a ntfy alert), with its config and metadata on the 1 TB SSD and its data on the 4 TB HDD. `garage.toml` holds secrets, so it stays on the data disk: `/var/srv/ssd1tb/compose-files/garage/garage.toml`.
 
+Garage upgrades its metadata in place: a newer version can't be undone (v2.2.0 → v2.5.0, November 2026). Its version comes with the image, so a rollback (`bootc rollback`, or greenboot after a failed boot) would bring back the older Garage. `garage-version-guard` (the unit's `ExecCondition`) keeps the highest version that ever ran in `/var/srv/ssd1tb/compose-data/garage/highest-version`. An older Garage isn't started: the unit is skipped and a ntfy alert says so. Go forward again (`sudo bootc rollback && sudo systemctl reboot` back to the newer image, or update). Don't delete the file. Before merging a Garage version bump, read its release notes: once it has run, there's no way back.
+
 ### Cockpit
 
 [Cockpit](https://cockpit-project.org/) listens on port 9090 (`cockpit.socket`), with the system, storage (disks, LUKS, btrfs), networking, SELinux, Podman (the Garage container), files and bootc deployments pages. From outside the LAN it's reached through the NetBird reverse proxy, for NetBird admins only.

@@ -23,6 +23,9 @@ SecurityLabelDisable=true
 StopTimeout=30
 
 [Service]
+# Never an older Garage on metadata a newer one already upgraded (after a
+# bootc or greenboot rollback): skipped with a ntfy alert instead
+ExecCondition=/usr/libexec/nas-argon-eon/garage-version-guard
 # A stop sends SIGTERM: exiting 128+15 isn't a failure (it alerted at every
 # reboot on the public node). 137 (SIGKILL, OOM) still counts as one.
 SuccessExitStatus=143

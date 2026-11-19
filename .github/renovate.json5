@@ -18,6 +18,15 @@
       "matchUpdateTypes": ["pin", "pinDigest"]
     },
     {
+      // Garage upgrades its metadata in place: once the NAS runs a new
+      // version there's no going back (garage-version-guard then refuses the
+      // older one after a rollback). Never merged without reading the notes.
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["docker.io/dxflrs/garage"],
+      "automerge": false,
+      "prBodyNotes": ["⚠️ **One-way upgrade.** Garage migrates its metadata: after the NAS has run this version, a `bootc rollback` won't bring the old Garage back (`garage-version-guard` skips it with an alert). Read the release notes and make sure the night's `garage` backup succeeded before merging."]
+    },
+    {
       "enabled": false,
       "matchUpdateTypes": ["digest", "pinDigest", "pin"],
       "matchDepTypes": ["container"],

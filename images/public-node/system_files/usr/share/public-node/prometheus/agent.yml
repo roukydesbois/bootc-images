@@ -9,6 +9,11 @@ global:
   # "on cluster carcavelos".
   external_labels:
     cluster: carcavelos
+    # Same labels as thomelab's own nodes: node is the hostname, role what
+    # the host is (cp/worker there), and instance below reads
+    # "<node> (<role>)", which Grafana's Nodes dashboards list.
+    node: carcavelos
+    role: public-node
 
 scrape_configs:
   # Same job name as the cluster's node exporters, so kube-prometheus-stack's
@@ -18,13 +23,13 @@ scrape_configs:
       - targets: ["127.0.0.1:9100"]
     relabel_configs:
       - target_label: instance
-        replacement: carcavelos
+        replacement: "carcavelos (public-node)"
   - job_name: traefik
     static_configs:
       - targets: ["127.0.0.1:8080"]
     relabel_configs:
       - target_label: instance
-        replacement: carcavelos
+        replacement: "carcavelos (public-node)"
 
 remote_write:
   - url: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090/api/v1/write

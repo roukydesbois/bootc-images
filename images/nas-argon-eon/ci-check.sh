@@ -37,3 +37,21 @@ smart_help=$(podman run --rm "$smart_image" --help 2>&1)
 for flag in --web.listen-address --smartctl.scan-device-type --smartctl.interval; do
     grep -q -- "$flag" <<<"$smart_help" || { echo "smartctl_exporter has no $flag" >&2; exit 1; }
 done
+# greenboot's checks parse, and its units are enabled (a renamed unit would
+# only show at boot)
+podman run --rm "$image" sh -c 'for f in /usr/lib/greenboot/check/*/*.sh; do bash -n "$f" || exit 1; test -x "$f" || { echo "not executable: $f" >&2; exit 1; }; done'
+podman run --rm "$image" systemctl --root=/ is-enabled \
+    greenboot-healthcheck.service greenboot-set-rollback-trigger.service
+
+# Garage's version guard: an older version than the one stamped is refused
+# (stub sender), the same or newer passes and raises the stamp
+podman run --rm "$image" sh -c '
+    set -e
+    printf "#!/bin/sh\nexit 0\n" >/tmp/stub && chmod +x /tmp/stub
+    run() { printf "Image=docker.io/dxflrs/garage:%s@sha256:x\n" "$1" >/tmp/q; QUADLET=/tmp/q STAMP=/tmp/s NOTIFY=/tmp/stub /usr/libexec/nas-argon-eon/garage-version-guard; }
+    run v2.5.0 && test "$(cat /tmp/s)" = v2.5.0
+    ! run v2.2.0
+    run v2.10.0 && test "$(cat /tmp/s)" = v2.10.0
+    ! run v2.5.0
+    grep -q "^ExecCondition=/usr/libexec/nas-argon-eon/garage-version-guard" /usr/share/containers/systemd/garage.container
+'

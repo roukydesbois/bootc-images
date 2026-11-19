@@ -56,7 +56,9 @@ Each disk is mounted whole (top-level subvolume) under `/var/srv/<disk>`, and it
 
 ### Garage
 
-[Garage](https://garagehq.deuxfleurs.fr/) runs as a Podman Quadlet (`/usr/share/containers/systemd/garage.container`), with its config and metadata on the 1 TB SSD and its data on the 4 TB HDD. `garage.toml` holds secrets, so it stays on the data disk: `/var/srv/ssd1tb/compose-files/garage/garage.toml`.
+[Garage](https://garagehq.deuxfleurs.fr/) runs as a Podman Quadlet (`/usr/share/containers/systemd/garage.container`, image logically bound so `bootc upgrade` pulls it before restarting; a failure sends a ntfy alert), with its config and metadata on the 1 TB SSD and its data on the 4 TB HDD. `garage.toml` holds secrets, so it stays on the data disk: `/var/srv/ssd1tb/compose-files/garage/garage.toml`.
+
+Garage upgrades its metadata in place: a newer version can't be undone (v2.2.0 → v2.5.0, November 2026). Its version comes with the image, so a rollback (`bootc rollback`, or greenboot after a failed boot) would bring back the older Garage. `garage-version-guard` (the unit's `ExecCondition`) keeps the highest version that ever ran in `/var/srv/ssd1tb/compose-data/garage/highest-version`. An older Garage isn't started: the unit is skipped and a ntfy alert says so. Go forward again (`sudo bootc rollback && sudo systemctl reboot` back to the newer image, or update). Don't delete the file. Before merging a Garage version bump, read its release notes: once it has run, there's no way back.
 
 ### Cockpit
 
@@ -81,7 +83,7 @@ The journal is capped at 200 MB (SD card) and only covers a few days, so each fa
 
 ### Backups
 
-Daily at 03:30 (`nas-backup.timer`), [borgmatic](https://torsion.org/borgmatic/) sends each job in `/etc/borgmatic.d/` to a BorgBase repository. There's one file per job, and each keeps its own archive names and retention (7 daily, 4 weekly, 3 monthly):
+Daily at 03:30 (`nas-backup.timer`; after a missed run, at the next boot once chrony has synced the clock), [borgmatic](https://torsion.org/borgmatic/) sends each job in `/etc/borgmatic.d/` to a BorgBase repository. There's one file per job, and each keeps its own archive names and retention (7 daily, 4 weekly, 3 monthly):
 
 | Job | Source | Not backed up |
 |---|---|---|
@@ -124,6 +126,10 @@ Updates install on their own once a week (`bootc-fetch-apply-updates.timer`, Sun
 To update right away, `sudo nas-update` does the same by hand. To pause updates (before a migration, say): `sudo systemctl disable --now bootc-fetch-apply-updates.timer`.
 
 `sudo bootc rollback` goes back to the previous image.
+
+**greenboot** checks every boot (and soft reboot). The required checks (`/usr/lib/greenboot/check/required.d`) must pass, or the Pi reboots and, after a few failed attempts, goes back to the previous image. They are sshd running and Garage's unit generated. Then, once the data disks are mounted: NFS serving its exports and Garage answering `/health`. The disks unlock through Tang on another host. If they aren't mounted after 5 minutes, the disk checks are skipped instead of rolling back a good image. `wanted.d` only logs warnings: NetBird, the metrics units, the Argon fan/RTC services (also when masked), the disks unlocked. A failed health check sends a ntfy alert. Check the result with `journalctl -b -u greenboot-healthcheck`.
+
+If the first boot with greenboot fails its checks, GRUB can be left with `boot_counter=-1` and boot the rollback entry after the next update (seen on the public node). Reset it with `sudo mount -o remount,rw /boot && sudo grub2-editenv /boot/grub2/grubenv unset boot_counter && sudo grub2-editenv /boot/grub2/grubenv set boot_success=1`. A stale `/etc/motd.d/boot-status` from Fedora IoT's own greenboot can be deleted.
 
 ### Installation
 

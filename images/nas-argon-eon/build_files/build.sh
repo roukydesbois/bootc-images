@@ -25,6 +25,10 @@ python3 -c 'import gpiod, smbus'
 dnf5 install -y cryptsetup clevis clevis-luks clevis-systemd btrfs-progs nfs-utils
 # Compressed swap in RAM, the OS lives on an SD card
 dnf5 install -y zram-generator-defaults
+# greenboot: health checks after each boot, rollback to the previous image if
+# the required ones fail (/usr/lib/greenboot/check). Not
+# greenboot-default-health-checks: it makes the checks wait for network-online.
+dnf5 install -y greenboot
 # NetBird client (repo and service come from system_files), for NetBird SSH from
 # admins. The peer is enrolled on the machine with a setup key (README).
 dnf5 install -y --setopt=tsflags=noscripts netbird
@@ -49,11 +53,19 @@ systemctl enable cockpit.socket
 systemctl enable smartd.service
 systemctl enable nas-smart-check.timer nas-btrfs-errors.timer
 systemctl enable nas-backup.timer
+# The Pi has no clock Linux reads at boot, so each boot starts with an old date.
+# OnCalendar timers wait for time-sync.target, but without chrony-wait nothing
+# holds it until chrony has synced: Persistent=true timers then ignore their
+# last-run stamp ("in the future") and run again (a 2nd daily backup on every
+# reboot). chrony-wait waits for at most 180 s.
+systemctl enable chrony-wait.service
 systemctl enable netbird.service
 systemctl enable nas-btrfs-scrub-ssd1tb.timer nas-btrfs-scrub-ssd2tb.timer nas-btrfs-scrub-hdd4tb.timer
 systemctl enable argononed.service
 systemctl enable argoneond.service
 systemctl enable argon-enable-i2c.service
+# greenboot: the checks, and the boot counter that makes a failing image roll back
+systemctl enable greenboot-healthcheck.service greenboot-set-rollback-trigger.service
 # _netdev crypttab entries only start through this target
 systemctl enable remote-cryptsetup.target
 systemctl enable clevis-luks-askpass.path
@@ -71,7 +83,7 @@ systemctl enable bootc-fetch-apply-updates.timer
 # by their [Install] section). Their images are logically bound: `bootc upgrade`
 # pulls them before restarting, so a (soft) reboot never waits on a registry.
 mkdir -p /usr/lib/bootc/bound-images.d
-for quadlet in node-exporter.container prometheus-agent.container; do
+for quadlet in node-exporter.container prometheus-agent.container garage.container; do
 	ln -sf "/usr/share/containers/systemd/$quadlet" "/usr/lib/bootc/bound-images.d/$quadlet"
 done
 

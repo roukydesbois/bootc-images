@@ -1,5 +1,6 @@
 [Unit]
 Description=Garage S3 object storage
+OnFailure=nas-notify-failure@%n.service
 # Config and metadata on the 1 TB SSD, data blocks on the 4 TB HDD
 RequiresMountsFor=/var/srv/ssd1tb /var/srv/hdd4tb
 
@@ -17,9 +18,20 @@ Volume=/var/srv/hdd4tb/garage-data/garage/data:/var/lib/garage/data
 # The data was written without SELinux labels; relabelling it (:z) would walk
 # every object block, so run the container unconfined instead
 SecurityLabelDisable=true
+# Time to close its LMDB metadata cleanly before podman's SIGKILL (10 s by
+# default)
+StopTimeout=30
 
 [Service]
+# Never an older Garage on metadata a newer one already upgraded (after a
+# bootc or greenboot rollback): skipped with a ntfy alert instead
+ExecCondition=/usr/libexec/nas-argon-eon/garage-version-guard
+# A stop sends SIGTERM: exiting 128+15 isn't a failure (it alerted at every
+# reboot on the public node). 137 (SIGKILL, OOM) still counts as one.
+SuccessExitStatus=143
+TimeoutStopSec=45
 Restart=always
+RestartSec=10
 
 [Install]
 WantedBy=multi-user.target

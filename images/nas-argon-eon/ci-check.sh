@@ -22,7 +22,12 @@ prom_cfg=$(mktemp)
 podman run --rm "$image" cat /usr/share/nas-argon-eon/prometheus/agent.yml >"$prom_cfg"
 # mktemp makes it 0600; the Prometheus image runs as nobody
 chmod 0644 "$prom_cfg"
-podman run --rm --network none --entrypoint promtool -v "$prom_cfg:/agent.yml:ro,Z" "$prom_image" \
+# promtool also wants the files the config points to (Garage's token)
+prom_secrets=$(mktemp -d)
+echo test-token >"$prom_secrets/garage-metrics-token"
+chmod 0755 "$prom_secrets" && chmod 0644 "$prom_secrets/garage-metrics-token"
+podman run --rm --network none --entrypoint promtool -v "$prom_cfg:/agent.yml:ro,Z" \
+    -v "$prom_secrets:/etc/prometheus/secrets:ro,Z" "$prom_image" \
     check config --agent /agent.yml
 
 # The failure alert (common/): the handler keeps the log and calls the
@@ -46,6 +51,17 @@ podman run --rm "$image" sh -c '
     done
 '
 
+# smartctl_exporter knows the flags its quadlet passes (a renamed flag would
+# only show as a failing unit on the NAS)
+smart_image=$(podman run --rm "$image" sed -n 's/^Image=//p' /usr/share/containers/systemd/smartctl-exporter.container)
+smart_help=$(podman run --rm "$smart_image" --help 2>&1)
+for flag in --web.listen-address --smartctl.scan-device-type --smartctl.interval; do
+    grep -q -- "$flag" <<<"$smart_help" || { echo "smartctl_exporter has no $flag" >&2; exit 1; }
+done
+# The system backup's helper parses, and every borgmatic job validates
+podman run --rm "$image" bash -n /usr/libexec/nas-argon-eon/system-backup-prepare
+podman run --rm -e BORGBASE_REPO=ssh://test@example.invalid/./repo "$image" \
+    sh -c 'for f in /etc/borgmatic.d/*.yaml; do borgmatic config validate -c "$f" || exit 1; done'
 # greenboot's checks parse, and its units are enabled (a renamed unit would
 # only show at boot)
 podman run --rm "$image" sh -c 'for f in /usr/lib/greenboot/check/*/*.sh; do bash -n "$f" || exit 1; test -x "$f" || { echo "not executable: $f" >&2; exit 1; }; done'

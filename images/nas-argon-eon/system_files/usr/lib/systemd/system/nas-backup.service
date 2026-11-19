@@ -11,6 +11,8 @@ Type=oneshot
 EnvironmentFile=/etc/nas-argon-eon/borg.env
 # create, prune, compact (frees the pruned space) and the checks, for each job
 ExecStart=/usr/bin/borgmatic --verbosity 1 --stats
+# Only after a successful run: the time, for thomelab's NasBackupStale alert
+ExecStartPost=/usr/libexec/nas-argon-eon/backup-success-metric
 Nice=19
 IOSchedulingClass=idle
 LogRateLimitIntervalSec=0

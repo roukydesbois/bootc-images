@@ -18,6 +18,24 @@ scrape_configs:
     relabel_configs:
       - target_label: instance
         replacement: evora
+  # Disk SMART data (smartctl-exporter.container)
+  - job_name: smartctl
+    static_configs:
+      - targets: ["127.0.0.1:9633"]
+    relabel_configs:
+      - target_label: instance
+        replacement: evora
+  # Garage's own metrics (admin API, published on the host). The token is
+  # Garage's metrics_token from garage.toml, copied on the machine (README);
+  # an empty file works when garage.toml sets none.
+  - job_name: garage
+    static_configs:
+      - targets: ["127.0.0.1:3903"]
+    authorization:
+      credentials_file: /etc/prometheus/secrets/garage-metrics-token
+    relabel_configs:
+      - target_label: instance
+        replacement: evora
 
 remote_write:
   - url: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090/api/v1/write

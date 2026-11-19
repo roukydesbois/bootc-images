@@ -93,6 +93,7 @@ Daily at 03:30 (`nas-backup.timer`; after a missed run, at the next boot once ch
 | `paperless` | Paperless media | |
 | `cryptpad-files` | CryptPad blobs | |
 | `garage` | Garage config + metadata | Garage's own metadata snapshots (`meta/snapshots`) |
+| `system` | `/etc`, `/var/lib/netbird`, and from `system-backup-prepare`: each data disk's LUKS header, the `/etc` files changed from the image (`ostree admin config-diff`), `bootc status` | `/var/home` |
 
 - Each source's btrfs subvolume is snapshotted first, so the backup is consistent while the apps keep writing.
 - `compact` runs after `prune`, so pruned archives actually free space.
@@ -104,10 +105,18 @@ Daily at 03:30 (`nas-backup.timer`; after a missed run, at the next boot once ch
   sudo systemd-run --wait --pipe -p EnvironmentFile=/etc/nas-argon-eon/borg.env borgmatic compact -c /etc/borgmatic.d/garage.yaml
   ```
 - The repository URL, passphrase and SSH key live on the machine, in `/etc/nas-argon-eon/` (see its README).
+- **New SD card.** The `system` job holds what isn't in the image. Install the image as usual (see [Installation](#installation)), put back the borg secrets from the password manager, then restore with `borgmatic extract --archive latest -c /etc/borgmatic.d/system.yaml --path etc/exports.d --path etc/nas-argon-eon ...`. Start from `etc-config-diff.txt` (in `/var/lib/nas-argon-eon/system-backup/`) to see which files were set up by hand. Don't restore all of `/etc` over a different image version.
+- **Damaged LUKS header.** `cryptsetup luksHeaderRestore <device> --header-backup-file luks-header-<disk>.img`. The headers keep the Tang bindings and the passphrase slot as they were at backup time.
 
 ### Metrics
 
-`node-exporter.container` (host metrics on `127.0.0.1:9100`: CPU, memory, temperatures, disks, btrfs, systemd) is scraped every minute by Prometheus in **agent mode** (`prometheus-agent.container`), which pushes to thomelab's Prometheus over the NetBird mesh (remote write; thomelab-ops policy `evora - metrics`, tcp/9090 only). Series carry `cluster="evora"` and keep the `node-exporter` job name, so the cluster's node alerts and dashboards apply. thomelab alerts with `NasMetricsMissing` when the push stops. The agent's write-ahead log (`/var/lib/prometheus-agent`) holds samples while thomelab is unreachable. Same setup as the public node.
+`node-exporter.container` (host metrics on `127.0.0.1:9100`: CPU, memory, temperatures, disks, btrfs, systemd) is scraped every minute by Prometheus in **agent mode** (`prometheus-agent.container`), which pushes to thomelab's Prometheus over the NetBird mesh (remote write; thomelab-ops policy `evora - metrics`, tcp/9090 only). Series carry `cluster="evora"` and keep the `node-exporter` job name, so the cluster's node alerts and dashboards apply. thomelab alerts with `NasMetricsMissing` when the push stops.
+
+The agent also scrapes:
+
+- `smartctl-exporter.container` (`127.0.0.1:9633`): SMART data of the data disks every 5 minutes, through the USB-SATA bridge (`-d sat`). Disks in standby aren't woken up. It runs privileged, since smartctl talks to the disks directly. `nas-smart-check` keeps its ntfy alerts.
+- Garage's own metrics (admin API, `127.0.0.1:3903/metrics`). If `garage.toml` sets `metrics_token`, copy it into `/etc/nas-argon-eon/prometheus/garage-metrics-token`; it's created empty, which works when no token is set. A wrong or missing token shows as the `garage` target down on thomelab.
+- The time of the last successful backup, `nas_backup_last_success_timestamp_seconds`. `nas-backup.service` writes it to `/var/lib/node-exporter/textfile` and node_exporter serves it. thomelab alerts with `NasBackupStale` when it gets old. The agent's write-ahead log (`/var/lib/prometheus-agent`) holds samples while thomelab is unreachable. Same setup as the public node.
 
 ### NetBird SSH
 

@@ -8,6 +8,11 @@ global:
   # thomelab cover this host too, and their descriptions read "on cluster evora".
   external_labels:
     cluster: evora
+    # Same labels as thomelab's own nodes: node is the hostname, role what
+    # the host is (cp/worker there), and instance below reads
+    # "<node> (<role>)", which Grafana's Nodes dashboards list.
+    node: evora
+    role: nas
 
 scrape_configs:
   # Same job name as the cluster's node exporters, so kube-prometheus-stack's
@@ -17,14 +22,14 @@ scrape_configs:
       - targets: ["127.0.0.1:9100"]
     relabel_configs:
       - target_label: instance
-        replacement: evora
+        replacement: "evora (nas)"
   # Disk SMART data (smartctl-exporter.container)
   - job_name: smartctl
     static_configs:
       - targets: ["127.0.0.1:9633"]
     relabel_configs:
       - target_label: instance
-        replacement: evora
+        replacement: "evora (nas)"
   # Garage's own metrics (admin API, published on the host). The token is
   # Garage's metrics_token from garage.toml, copied on the machine (README);
   # an empty file works when garage.toml sets none.
@@ -35,7 +40,7 @@ scrape_configs:
       credentials_file: /etc/prometheus/secrets/garage-metrics-token
     relabel_configs:
       - target_label: instance
-        replacement: evora
+        replacement: "evora (nas)"
 
 remote_write:
   - url: http://kube-prometheus-stack-prometheus.monitoring.svc.cluster.local:9090/api/v1/write

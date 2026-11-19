@@ -49,6 +49,12 @@ systemctl enable cockpit.socket
 systemctl enable smartd.service
 systemctl enable nas-smart-check.timer nas-btrfs-errors.timer nas-check-update.timer
 systemctl enable nas-backup.timer
+# The Pi has no clock Linux reads at boot, so each boot starts with an old date.
+# OnCalendar timers wait for time-sync.target, but without chrony-wait nothing
+# holds it until chrony has synced: Persistent=true timers then ignore their
+# last-run stamp ("in the future") and run again (a 2nd daily backup on every
+# reboot). chrony-wait waits for at most 180 s.
+systemctl enable chrony-wait.service
 systemctl enable netbird.service
 systemctl enable nas-btrfs-scrub-ssd1tb.timer nas-btrfs-scrub-ssd2tb.timer nas-btrfs-scrub-hdd4tb.timer
 systemctl enable argononed.service

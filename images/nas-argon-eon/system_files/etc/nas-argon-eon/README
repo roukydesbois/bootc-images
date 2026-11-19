@@ -6,7 +6,10 @@ NTFY_URL=https://ntfy.thomelab.net
 NTFY_TOPIC=<topic>
 NTFY_TOKEN=<token>
 
-Test with: sudo /usr/libexec/nas-argon-eon/notify test "hello from $(hostname)"
+/etc/bootc-images/ntfy.env, read by the shared sender (common/), is a symlink to it
+(tmpfiles.d/nas-argon-eon.conf).
+
+Test with: sudo /usr/libexec/bootc-images/notify test "hello from $(hostname)"
 
 Backups (nas-backup.timer, borgmatic with /etc/borgmatic.d) need, all mode 0600:
 

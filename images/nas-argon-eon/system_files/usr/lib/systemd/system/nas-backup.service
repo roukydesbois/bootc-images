@@ -3,7 +3,7 @@ Description=Backups to BorgBase (borgmatic, /etc/borgmatic.d)
 Wants=network-online.target
 After=network-online.target
 RequiresMountsFor=/export/thomelab-dynamic-1tb-ssd /export/thomelab-dynamic-2tb-ssd /var/srv/ssd1tb
-OnFailure=nas-notify-failure@%n.service
+OnFailure=bootc-images-notify-failure@%n.service
 
 [Service]
 Type=oneshot

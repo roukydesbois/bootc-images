@@ -13,6 +13,9 @@ Network=host
 # a container reading the host's /proc, /sys and filesystems
 SecurityLabelDisable=true
 Volume=/:/host:ro,rslave
+# --collector.systemd asks systemd over the system bus: without the socket it
+# failed on every scrape (node_scrape_collector_success 0, no unit states)
+Volume=/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket:ro
 Exec=--path.rootfs=/host --web.listen-address=127.0.0.1:9100 --collector.systemd --collector.processes
 ReadOnly=true
 DropCapability=ALL

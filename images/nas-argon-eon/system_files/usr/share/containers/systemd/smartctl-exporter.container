@@ -7,7 +7,7 @@ Description=smartctl_exporter (disk SMART data for thomelab's Prometheus)
 OnFailure=nas-notify-failure@%n.service
 
 [Container]
-Image=quay.io/prometheuscommunity/smartctl-exporter:v0.15.0
+Image=quay.io/prometheuscommunity/smartctl-exporter:v0.15.0@sha256:a76e08dbf5db4781fefd1ed81c65ad46ae8d2849dae6b6d3acebcde2fc4e59d6
 ContainerName=smartctl-exporter
 Network=host
 # smartctl talks to the disks directly (SG_IO), which needs root and the

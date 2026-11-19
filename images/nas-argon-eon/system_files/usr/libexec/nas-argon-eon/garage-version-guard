@@ -1,0 +1,35 @@
+#!/bin/bash
+# ExecCondition of garage.service: never start an older Garage on metadata a
+# newer one has already used. Garage upgrades its metadata in place (v2.2.0 ->
+# v2.5.0 can't go back), and its version comes with the image: `bootc
+# rollback`, or greenboot rolling back a failed boot, would otherwise start
+# the previous image's Garage on the new metadata.
+#
+# The highest version that ever ran is kept next to the metadata (on the data
+# disk, so it survives image changes). An older version than that refuses to
+# start: Garage is skipped (ExecCondition: no restart loop) and a ntfy alert
+# says why. Fix by going forward again (`bootc rollback` once more, or
+# update), never by deleting the stamp.
+set -euo pipefail
+quadlet=${QUADLET:-/usr/share/containers/systemd/garage.container}
+stamp=${STAMP:-/var/srv/ssd1tb/compose-data/garage/highest-version}
+
+current=$(sed -n 's/^Image=[^:]*:\(v[0-9][0-9.]*\).*/\1/p' "$quadlet")
+if [ -z "$current" ]; then
+    echo "can't read Garage's version from $quadlet, starting without the check" >&2
+    exit 0
+fi
+highest=$(cat "$stamp" 2>/dev/null || true)
+
+if [ -n "$highest" ] && [ "$current" != "$highest" ] &&
+    [ "$(printf '%s\n%s\n' "$current" "$highest" | sort -V | tail -n1)" = "$highest" ]; then
+    msg="Garage $current not started: its metadata was already used by Garage $highest and can't go back. This image is older than the data: boot the newer one again (sudo bootc rollback && sudo systemctl reboot, or update)."
+    echo "$msg" >&2
+    ${NOTIFY:-/usr/libexec/nas-argon-eon/notify} "Garage not started (older than its data)" "$msg" urgent rotating_light || true
+    exit 1
+fi
+
+if [ "$current" != "$highest" ]; then
+    echo "$current" >"$stamp.tmp" && mv -f "$stamp.tmp" "$stamp"
+    echo "Garage $current (previous highest: ${highest:-none})"
+fi

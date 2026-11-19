@@ -37,6 +37,10 @@ smart_help=$(podman run --rm "$smart_image" --help 2>&1)
 for flag in --web.listen-address --smartctl.scan-device-type --smartctl.interval; do
     grep -q -- "$flag" <<<"$smart_help" || { echo "smartctl_exporter has no $flag" >&2; exit 1; }
 done
+# The system backup's helper parses, and every borgmatic job validates
+podman run --rm "$image" bash -n /usr/libexec/nas-argon-eon/system-backup-prepare
+podman run --rm -e BORGBASE_REPO=ssh://test@example.invalid/./repo "$image" \
+    sh -c 'for f in /etc/borgmatic.d/*.yaml; do borgmatic config validate -c "$f" || exit 1; done'
 # greenboot's checks parse, and its units are enabled (a renamed unit would
 # only show at boot)
 podman run --rm "$image" sh -c 'for f in /usr/lib/greenboot/check/*/*.sh; do bash -n "$f" || exit 1; test -x "$f" || { echo "not executable: $f" >&2; exit 1; }; done'

@@ -7,7 +7,7 @@ Description=node_exporter (host metrics for thomelab's Prometheus)
 OnFailure=nas-notify-failure@%n.service
 
 [Container]
-Image=quay.io/prometheus/node-exporter:v1.12.1
+Image=quay.io/prometheus/node-exporter:v1.12.1@sha256:1b4e4438faca4dd7e001dd445d161a4a2091b0fededa84093b3a8dfeae1f1be0
 ContainerName=node-exporter
 Network=host
 # Reads the host through /host (read-only); SELinux would otherwise deny

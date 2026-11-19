@@ -93,6 +93,7 @@ Daily at 03:30 (`nas-backup.timer`; after a missed run, at the next boot once ch
 | `paperless` | Paperless media | |
 | `cryptpad-files` | CryptPad blobs | |
 | `garage` | Garage config + metadata | Garage's own metadata snapshots (`meta/snapshots`) |
+| `system` | `/etc`, `/var/lib/netbird`, and from `system-backup-prepare`: each data disk's LUKS header, the `/etc` files changed from the image (`ostree admin config-diff`), `bootc status` | `/var/home` |
 
 - Each source's btrfs subvolume is snapshotted first, so the backup is consistent while the apps keep writing.
 - `compact` runs after `prune`, so pruned archives actually free space.
@@ -104,6 +105,8 @@ Daily at 03:30 (`nas-backup.timer`; after a missed run, at the next boot once ch
   sudo systemd-run --wait --pipe -p EnvironmentFile=/etc/nas-argon-eon/borg.env borgmatic compact -c /etc/borgmatic.d/garage.yaml
   ```
 - The repository URL, passphrase and SSH key live on the machine, in `/etc/nas-argon-eon/` (see its README).
+- **New SD card.** The `system` job holds what isn't in the image. Install the image as usual (see [Installation](#installation)), put back the borg secrets from the password manager, then restore with `borgmatic extract --archive latest -c /etc/borgmatic.d/system.yaml --path etc/exports.d --path etc/nas-argon-eon ...`. Start from `etc-config-diff.txt` (in `/var/lib/nas-argon-eon/system-backup/`) to see which files were set up by hand. Don't restore all of `/etc` over a different image version.
+- **Damaged LUKS header.** `cryptsetup luksHeaderRestore <device> --header-backup-file luks-header-<disk>.img`. The headers keep the Tang bindings and the passphrase slot as they were at backup time.
 
 ### Metrics
 

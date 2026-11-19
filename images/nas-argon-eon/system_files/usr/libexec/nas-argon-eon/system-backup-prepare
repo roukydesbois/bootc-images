@@ -1,0 +1,25 @@
+#!/bin/bash
+# Run by borgmatic before the "system" job (/etc/borgmatic.d/system.yaml):
+# what /etc doesn't hold, needed to rebuild the NAS from a new SD card.
+#  - a LUKS header backup of each data disk: a damaged header makes a disk
+#    unreadable even with the passphrase (the Tang bindings live there too)
+#  - the list of /etc files changed from the image (ostree admin config-diff),
+#    to know which ones were set up on the machine
+#  - bootc status (image, digest, deployments)
+set -euo pipefail
+out=/var/lib/nas-argon-eon/system-backup
+install -d -m 0700 "$out"
+
+while read -r name device _; do
+    case "$name" in ''|'#'*) continue ;; esac
+    file="$out/luks-header-$name.img"
+    # luksHeaderBackup refuses to overwrite: write a new file, then swap it in
+    tmp="$out/.luks-header-$name.new"
+    rm -f -- "$tmp"
+    cryptsetup luksHeaderBackup "$device" --header-backup-file "$tmp"
+    chmod 0600 "$tmp"
+    mv -f -- "$tmp" "$file"
+done </etc/crypttab
+
+ostree admin config-diff >"$out/etc-config-diff.txt"
+bootc status >"$out/bootc-status.txt"

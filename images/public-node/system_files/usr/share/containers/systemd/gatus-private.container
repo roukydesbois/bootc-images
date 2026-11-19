@@ -18,7 +18,7 @@ After=network-online.target
 ConditionPathExists=/etc/public-node/secrets/gatus/gatus.env
 
 [Container]
-Image=docker.io/twinproduction/gatus:v5.34.0@sha256:3fff895e77d35ee62e898860f4613755bc2344127d93e3f326429d40270e2115
+Image=docker.io/twinproduction/gatus:v5.38.0@sha256:085ed63da963728965d00a3c78aa6167e3bf135218485b893201758e079e8415
 ContainerName=gatus-private
 # Host network: it also checks this box's local services (127.0.0.1) and
 # takes the backup's heartbeat there; listens on 127.0.0.1:8094 only

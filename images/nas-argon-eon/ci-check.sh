@@ -38,9 +38,10 @@ podman run --rm "$image" sh -c '
     grep -qx "test.service failed|high|warning" /tmp/sent
     grep -qx "L /etc/bootc-images/ntfy.env - - - - /etc/nas-argon-eon/ntfy.env" /usr/lib/tmpfiles.d/nas-argon-eon.conf
 '
-# No unit names a handler that doesn't exist
+# No unit names a ntfy failure handler that doesn't exist (only ours:
+# Fedora's own units have other OnFailure= targets, like getty@%i)
 podman run --rm "$image" sh -c '
-    for h in $(grep -rhoE "OnFailure=[^ ]+" /usr/lib/systemd/system /usr/share/containers/systemd | sed "s/OnFailure=//; s/%n//" | sort -u); do
+    for h in $(grep -rhoE "OnFailure=[^ ]*notify-failure@%n\.service" /usr/lib/systemd/system /usr/share/containers/systemd | sed "s/OnFailure=//; s/%n//" | sort -u); do
         test -f "/usr/lib/systemd/system/$h" || { echo "missing OnFailure handler $h" >&2; exit 1; }
     done
 '

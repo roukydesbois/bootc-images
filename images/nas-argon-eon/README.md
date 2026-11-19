@@ -82,7 +82,7 @@ The journal is capped at 200 MB (SD card) and only covers a few days, so each fa
 
 ### Backups
 
-Daily at 03:30 (`nas-backup.timer`), [borgmatic](https://torsion.org/borgmatic/) sends each job in `/etc/borgmatic.d/` to a BorgBase repository. There's one file per job, and each keeps its own archive names and retention (7 daily, 4 weekly, 3 monthly):
+Daily at 03:30 (`nas-backup.timer`; after a missed run, at the next boot once chrony has synced the clock), [borgmatic](https://torsion.org/borgmatic/) sends each job in `/etc/borgmatic.d/` to a BorgBase repository. There's one file per job, and each keeps its own archive names and retention (7 daily, 4 weekly, 3 monthly):
 
 | Job | Source | Not backed up |
 |---|---|---|

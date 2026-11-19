@@ -3,6 +3,8 @@ FROM scratch AS ctx
 COPY build_files /
 COPY system_files /system_files
 COPY cosign.pub /cosign.pub
+# Shared with other images (common/, passed as a named build context)
+COPY --from=common system_files /common_files
 
 # Base Image
 FROM quay.io/fedora/fedora-bootc:45@sha256:69b66da0839f186f799addae6620aae19a6998b3fd4d2def00168c8dab50c486

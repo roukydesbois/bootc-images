@@ -2,6 +2,8 @@
 
 set -ouex pipefail
 
+# Shared files first (common/), so this image's own files can override them
+cp -avf /ctx/common_files/. /
 # Copy the contents of system_files/ of the git repo to /
 cp -avf "/ctx/system_files"/. /
 
@@ -59,9 +61,18 @@ systemctl enable var-srv-hdd4tb.mount var-srv-ssd2tb.mount var-srv-ssd1tb.mount
 systemctl enable 'export-thomelab\x2ddynamic\x2d4tb\x2dhdd.mount' 'export-thomelab\x2ddynamic\x2d2tb\x2dssd.mount' 'export-thomelab\x2ddynamic\x2d1tb\x2dssd.mount'
 systemctl enable nfs-server.service
 
-# Updates are applied by hand (bootc upgrade + reboot): an unplanned reboot takes
-# down NFS for thomelab and Garage, which has no replica
+# Updates are applied by hand (nas-update: soft reboot when the kernel is
+# unchanged): an unplanned reboot takes down NFS for thomelab and Garage, which
+# has no replica
 systemctl mask bootc-fetch-apply-updates.timer
+
+# Metrics pushed to thomelab (node-exporter + prometheus-agent quadlets, enabled
+# by their [Install] section). Their images are logically bound: `bootc upgrade`
+# pulls them before restarting, so a (soft) reboot never waits on a registry.
+mkdir -p /usr/lib/bootc/bound-images.d
+for quadlet in node-exporter.container prometheus-agent.container; do
+	ln -sf "/usr/share/containers/systemd/$quadlet" "/usr/lib/bootc/bound-images.d/$quadlet"
+done
 
 ### Image signature check
 # bootc only accepts updates of this image signed with its cosign key

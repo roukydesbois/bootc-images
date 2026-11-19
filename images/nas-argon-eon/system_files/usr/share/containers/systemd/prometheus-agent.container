@@ -1,0 +1,36 @@
+# Prometheus in agent mode: scrapes node_exporter locally and pushes to
+# thomelab's Prometheus over the NetBird mesh (remote write, like the public
+# node). The write-ahead log in /var/lib/prometheus-agent holds samples while
+# thomelab is unreachable. Config: /usr/share/nas-argon-eon/prometheus/agent.yml.
+[Unit]
+Description=Prometheus agent (pushes metrics to thomelab)
+OnFailure=nas-notify-failure@%n.service
+# The remote-write target is only reachable over the mesh
+Wants=netbird.service
+After=netbird.service node-exporter.service
+
+[Container]
+Image=quay.io/prometheus/prometheus:v3.16.0
+ContainerName=prometheus-agent
+Network=host
+Volume=/usr/share/nas-argon-eon/prometheus/agent.yml:/etc/prometheus/agent.yml:ro
+Volume=/var/lib/prometheus-agent:/data:Z
+Exec=--agent --config.file=/etc/prometheus/agent.yml --storage.agent.path=/data --web.listen-address=127.0.0.1:9095
+ReadOnly=true
+DropCapability=ALL
+NoNewPrivileges=true
+
+[Service]
+# podman copies /etc/resolv.conf when the container starts, and NetBird's
+# DNS (cluster.local) only answers once its client is up. Wait until the
+# remote-write target resolves on the host (at most 10 minutes, then start
+# anyway). Same as on the public node.
+ExecStartPre=/bin/sh -c 'for i in $$(seq 1 120); do getent hosts kube-prometheus-stack-prometheus.monitoring.svc.cluster.local >/dev/null && exit 0; sleep 5; done; exit 0'
+TimeoutStartSec=15min
+# A stop sends SIGTERM and Prometheus exits 128+15: not a failure
+SuccessExitStatus=143
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target

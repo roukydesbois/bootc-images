@@ -6,7 +6,7 @@ COPY cosign.pub /cosign.pub
 
 # gamja web IRC client (https://git.sr.ht/~emersion/gamja), built to static
 # files served by Caddy from /usr/share/gamja
-FROM docker.io/library/node:22-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a AS gamja
+FROM docker.io/library/node:26-alpine@sha256:6bd9ab43c0ec0190ca7b2d193906cb8b7edf6e7f4afa43ddeccd6452710bffb5 AS gamja
 ARG GAMJA_VERSION=v1.0.0-beta.9
 RUN wget -qO- "https://git.sr.ht/~emersion/gamja/archive/${GAMJA_VERSION}.tar.gz" | tar xz -C /tmp && \
     cd /tmp/gamja-* && npm ci && npm run build && mv dist /gamja

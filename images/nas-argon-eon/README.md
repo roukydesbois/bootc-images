@@ -54,6 +54,18 @@ Each disk is mounted whole (top-level subvolume) under `/var/srv/<disk>`, and it
 
 `nfs-server` only starts once the three exports are mounted. The exports file isn't part of the image since it holds the LAN range: create `/etc/exports.d/thomelab.exports` on the machine (see `/etc/exports.d/README`). NFS v3 and v4 are both enabled.
 
+### Firewall
+
+`nas-firewall.service` loads its own nftables table (`/usr/share/nas-argon-eon/firewall.nft`) before the network comes up. NetBird's and podman's tables are left alone. Inbound connections are dropped except:
+
+- the NetBird mesh (`wt0`, NetBird's ACLs decide) and NetBird's WireGuard port
+- from the **clients** set: NFS (2049, and for v3 rpcbind 111, mountd 20048, statd 662, lockd 32803/32769, pinned in `/etc/nfs.conf.d/`) and Garage's S3, web and admin ports
+- from the **admins** set: SSH, Cockpit, Garage's admin API
+
+Garage's ports are published by podman, so they're filtered in a `forward` chain (DNAT'ed traffic never reaches `input`). Garage's RPC port (3901) is closed: single node.
+
+The sets hold LAN ranges, which don't belong in this public image. They live in `/etc/nas-argon-eon/firewall-local.nft`, and the service doesn't start without that file. An update therefore never cuts NFS by itself. Create the file (see `/etc/nas-argon-eon/README`), `sudo systemctl start nas-firewall`, and check NFS and Garage from the cluster. `sudo systemctl stop nas-firewall` removes the table at once. statd and lockd only move to the pinned ports after a restart of NFS (or the next reboot), and NFS clients mounted before that keep working.
+
 ### Garage
 
 [Garage](https://garagehq.deuxfleurs.fr/) runs as a Podman Quadlet (`/usr/share/containers/systemd/garage.container`, image logically bound so `bootc upgrade` pulls it before restarting; a failure sends a ntfy alert), with its config and metadata on the 1 TB SSD and its data on the 4 TB HDD. `garage.toml` holds secrets, so it stays on the data disk: `/var/srv/ssd1tb/compose-files/garage/garage.toml`.

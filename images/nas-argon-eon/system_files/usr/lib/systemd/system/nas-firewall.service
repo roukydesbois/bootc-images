@@ -1,0 +1,22 @@
+[Unit]
+Description=Host firewall (nftables table inet nas_argon_eon)
+Documentation=file:///usr/share/nas-argon-eon/firewall.nft
+OnFailure=bootc-images-notify-failure@%n.service
+# Off until the allowed ranges are set on the machine (README, Firewall):
+# without them it would cut NFS for the cluster
+ConditionPathExists=/etc/nas-argon-eon/firewall-local.nft
+# Up before any interface, so there's no window without it
+DefaultDependencies=no
+Before=network-pre.target shutdown.target
+Wants=network-pre.target
+Conflicts=shutdown.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/sbin/nft -f /usr/share/nas-argon-eon/firewall.nft
+ExecReload=/usr/sbin/nft -f /usr/share/nas-argon-eon/firewall.nft
+ExecStop=/usr/sbin/nft delete table inet nas_argon_eon
+
+[Install]
+WantedBy=sysinit.target

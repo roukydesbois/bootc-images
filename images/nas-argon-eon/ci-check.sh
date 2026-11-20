@@ -30,6 +30,16 @@ podman run --rm --network none --entrypoint promtool -v "$prom_cfg:/agent.yml:ro
     -v "$prom_secrets:/etc/prometheus/secrets:ro,Z" "$prom_image" \
     check config --agent /agent.yml
 
+# The firewall ruleset parses, with an example local file. nft --check needs
+# netlink: its own network namespace with NET_ADMIN, nothing is loaded.
+podman run --rm --network none --cap-add NET_ADMIN "$image" sh -c '
+    set -e
+    mkdir -p /etc/nas-argon-eon
+    printf "add element inet nas_argon_eon clients { 192.0.2.0/24 }\nadd element inet nas_argon_eon admins { 198.51.100.7 }\n" >/etc/nas-argon-eon/firewall-local.nft
+    nft --check --file /usr/share/nas-argon-eon/firewall.nft
+'
+podman run --rm "$image" systemctl --root=/ is-enabled nas-firewall.service
+
 # The failure alert (common/): the handler keeps the log and calls the
 # sender with the unit name, priority and tags (stub instead of ntfy); the
 # NAS's ntfy.env is linked where the shared sender reads it

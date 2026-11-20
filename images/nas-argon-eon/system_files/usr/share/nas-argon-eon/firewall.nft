@@ -1,0 +1,72 @@
+#!/usr/sbin/nft -f
+# Host firewall (nas-firewall.service). Inbound only, stateful: replies to
+# our own traffic come back, new connections only as listed below. Only this
+# table is touched: NetBird and podman keep their own tables (the stock
+# nftables.service would `flush ruleset` them).
+#
+# Who may connect is host-local: the LAN ranges aren't in this public image.
+# /etc/nas-argon-eon/firewall-local.nft fills the two sets (see the README);
+# without that file the service doesn't start and the NAS stays open as before.
+#   clients: NFS and Garage (S3, web, admin): the cluster's nodes, the router
+#            (NetBird reverse proxy, routed peers)
+#   admins:  SSH, Cockpit and Garage's admin API
+
+table inet nas_argon_eon
+delete table inet nas_argon_eon
+
+table inet nas_argon_eon {
+	set clients {
+		type ipv4_addr
+		flags interval
+	}
+	set admins {
+		type ipv4_addr
+		flags interval
+	}
+
+	chain input {
+		type filter hook input priority filter; policy drop;
+
+		ct state established,related accept
+		ct state invalid drop
+		iif lo accept
+
+		# ICMP, and ICMPv6 which IPv6 needs to work at all
+		meta l4proto icmp accept
+		meta l4proto ipv6-icmp accept
+		# DHCPv6 replies (DHCPv4 uses a raw socket and doesn't pass here)
+		ip6 saddr fe80::/10 udp dport 546 accept
+
+		# The mesh: NetBird's own ACLs decide what gets in (NetBird SSH,
+		# Prometheus doesn't need anything inbound)
+		iifname "wt0" accept
+		# NetBird's WireGuard port, for direct connections to other peers
+		udp dport 51820 accept
+
+		# Containers on a podman network resolve names through aardvark-dns
+		# on their bridge's gateway, i.e. this host
+		iifname "podman*" meta l4proto { udp, tcp } th dport 53 accept
+
+		# NFS: v4 needs 2049 only; v3 also rpcbind, mountd, statd and lockd,
+		# pinned in /etc/nfs.conf.d/50-nas-argon-eon-ports.conf
+		ip saddr @clients meta l4proto { tcp, udp } th dport { 111, 2049, 20048, 662, 32803, 32769 } accept
+
+		ip saddr @admins tcp dport { 22, 9090 } accept
+	}
+
+	# Garage's ports are published by podman: DNAT'ed in prerouting, they go
+	# through forward, not input. Base chains on the same hook each get a
+	# say, so a drop here wins over netavark's accept.
+	chain forward {
+		type filter hook forward priority filter; policy accept;
+
+		ct state established,related accept
+		ct status dnat tcp dport { 3900, 3902, 3903 } ip saddr @clients accept
+		ct status dnat tcp dport 3903 ip saddr @admins accept
+		ct status dnat iifname "wt0" accept
+		# Anything else published (3901, Garage's RPC: single node, unused)
+		ct status dnat drop
+	}
+}
+
+include "/etc/nas-argon-eon/firewall-local.nft"

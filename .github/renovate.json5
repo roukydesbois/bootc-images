@@ -6,6 +6,19 @@
 
   "rebaseWhen": "never",
 
+  // Versions pinned in shell scripts, marked with a comment line
+  //   # renovate: datasource=<datasource> depName=<name>
+  // right above NAME_VERSION=<version> (zellij in the servers' build.sh)
+  "customManagers": [
+    {
+      "customType": "regex",
+      "managerFilePatterns": ["/^images/[^/]+/build_files/[^/]+\\.sh$/"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>\\S+) depName=(?<depName>\\S+)\\n[A-Z_]+_VERSION=(?<currentValue>\\S+)"
+      ]
+    }
+  ],
+
   "packageRules": [
     {
       // One PR per base image bump, covering every image built on it

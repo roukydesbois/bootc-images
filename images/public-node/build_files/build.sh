@@ -51,7 +51,24 @@ ssh-keygen -q -t ed25519 -N '' -f /tmp/sshd-check-key
 sshd -t -h /tmp/sshd-check-key
 test -s /usr/share/public-node/ssh/roukydesbois.keys
 
+# zellij, terminal multiplexer for SSH sessions (config: /etc/zellij from
+# common/). Upstream's static "no-web" build: Fedora and EPEL don't package
+# zellij, and the COPR the desktops use is stuck at 0.42 (too old for this
+# config). The published checksum is the binary's, so check after unpacking.
+# renovate: datasource=github-releases depName=zellij-org/zellij
+ZELLIJ_VERSION=v0.46.0
+zellij_name="zellij-no-web-$(uname -m)-unknown-linux-musl"
+zellij_url="https://github.com/zellij-org/zellij/releases/download/${ZELLIJ_VERSION}/${zellij_name}"
+zellij_tmp=$(mktemp -d)
+curl -fsSL --retry 3 -o "$zellij_tmp/zellij.tar.gz" "${zellij_url}.tar.gz"
+curl -fsSL --retry 3 -o "$zellij_tmp/zellij.sha256sum" "${zellij_url}.sha256sum"
+tar -xzf "$zellij_tmp/zellij.tar.gz" -C "$zellij_tmp" zellij
+echo "$(cut -d' ' -f1 "$zellij_tmp/zellij.sha256sum")  $zellij_tmp/zellij" | sha256sum -c -
+install -m 0755 "$zellij_tmp/zellij" /usr/bin/zellij
+rm -rf "$zellij_tmp"
+
 ### Services
+
 systemctl enable public-node-firewall.service
 systemctl enable sshd.service
 systemctl enable netbird.service

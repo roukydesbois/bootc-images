@@ -128,3 +128,12 @@ podman run --rm "$image" systemctl --root=/ is-enabled \
     greenboot-set-rollback-trigger.service bootc-fetch-apply-updates.timer \
     public-node-backup.timer public-node-backup-prune.timer cockpit.socket \
     public-node-memory-check.timer
+
+# zellij (common/ config, upstream binary from build.sh): runs, and the
+# config in /etc/zellij parses with this exact version
+podman run --rm -e HOME=/tmp "$image" sh -c '
+    set -e
+    zellij --version
+    zellij setup --check | grep -q "\[CONFIG FILE\]: Well defined"
+    zellij setup --check | grep -q "LOOKING FOR CONFIG FILE FROM\]: \"/etc/zellij/config.kdl\""
+'

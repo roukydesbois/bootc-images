@@ -126,7 +126,7 @@ Daily at 03:30 (`nas-backup.timer`; after a missed run, at the next boot once ch
 
 The agent also scrapes:
 
-- `smartctl-exporter.container` (`127.0.0.1:9633`): SMART data of the data disks every 5 minutes, through the USB-SATA bridge (`-d sat`). Disks in standby aren't woken up. It runs privileged, since smartctl talks to the disks directly. `nas-smart-check` keeps its ntfy alerts.
+- No SMART exporter: polling SMART through the Argon EON's USB-SATA bridge every few minutes (smartctl_exporter, 19–20 November 2026) was followed by two bridge resets within a day, which forced a disk's btrfs read-only each time. SMART stays with `nas-smart-check` (daily) and smartd's self-tests.
 - Garage's own metrics (admin API, `127.0.0.1:3903/metrics`). If `garage.toml` sets `metrics_token`, copy it into `/etc/nas-argon-eon/prometheus/garage-metrics-token`; it's created empty, which works when no token is set. A wrong or missing token shows as the `garage` target down on thomelab.
 - The time of the last successful backup, `nas_backup_last_success_timestamp_seconds`. `nas-backup.service` writes it to `/var/lib/node-exporter/textfile` and node_exporter serves it. thomelab alerts with `NasBackupStale` when it gets old. The agent's write-ahead log (`/var/lib/prometheus-agent`) holds samples while thomelab is unreachable. Same setup as the public node.
 

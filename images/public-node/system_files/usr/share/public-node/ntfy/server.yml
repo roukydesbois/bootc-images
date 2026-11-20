@@ -37,6 +37,8 @@ auth-access:
   - "alertmanager:ops:wo"
   # Daily MR digests
   - "argo-workflows:digest:wo"
+  # CVE triage verdicts and its daily summary (thomelab-infra#697)
+  - "argo-workflows:security:wo"
   # ArgoCD sync events, both clusters
   - "argocd:deploys:wo"
   # Application events. The consuming repo picks topic names inside the

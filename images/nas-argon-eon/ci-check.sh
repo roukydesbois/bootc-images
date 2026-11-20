@@ -88,3 +88,12 @@ podman run --rm "$image" sh -c '
 # dropping a unit's start job (argononed after greenboot waited on it)
 cycles=$(podman run --rm "$image" systemd-analyze verify multi-user.target 2>&1 | grep -i 'ordering cycle' || true)
 [ -z "$cycles" ] || { echo "$cycles" >&2; exit 1; }
+
+# zellij (common/ config, upstream binary from build.sh): runs, and the
+# config in /etc/zellij parses with this exact version
+podman run --rm -e HOME=/tmp "$image" sh -c '
+    set -e
+    zellij --version
+    zellij setup --check | grep -q "\[CONFIG FILE\]: Well defined"
+    zellij setup --check | grep -q "LOOKING FOR CONFIG FILE FROM\]: \"/etc/zellij/config.kdl\""
+'

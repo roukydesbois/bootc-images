@@ -25,7 +25,7 @@ if [ -n "$highest" ] && [ "$current" != "$highest" ] &&
     [ "$(printf '%s\n%s\n' "$current" "$highest" | sort -V | tail -n1)" = "$highest" ]; then
     msg="Garage $current not started: its metadata was already used by Garage $highest and can't go back. This image is older than the data: boot the newer one again (sudo bootc rollback && sudo systemctl reboot, or update)."
     echo "$msg" >&2
-    ${NOTIFY:-/usr/libexec/nas-argon-eon/notify} "Garage not started (older than its data)" "$msg" urgent rotating_light || true
+    ${NOTIFY:-/usr/libexec/bootc-images/notify} "Garage not started (older than its data)" "$msg" urgent rotating_light || true
     exit 1
 fi
 

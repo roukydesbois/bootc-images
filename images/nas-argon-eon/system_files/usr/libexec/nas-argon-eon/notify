@@ -1,4 +1,0 @@
-#!/bin/bash
-# Kept for scripts still calling it: the shared sender (common/), with this
-# image's default tag. notify <title> <message> [priority] [tags]
-exec /usr/libexec/bootc-images/notify "$1" "$2" "${3:-default}" "${4:-floppy_disk}"

@@ -1,6 +1,6 @@
 [Unit]
 Description=Garage S3 object storage
-OnFailure=nas-notify-failure@%n.service
+OnFailure=bootc-images-notify-failure@%n.service
 # Config and metadata on the 1 TB SSD, data blocks on the 4 TB HDD
 RequiresMountsFor=/var/srv/ssd1tb /var/srv/hdd4tb
 

@@ -88,8 +88,8 @@ podman run --rm "$image" sh -c '
     restic ls latest >/tmp/files
     grep -qx /tmp/state/staging/vaultwarden.sqlite3 /tmp/files
     grep -qx /var/lib/vaultwarden/attachments/f /tmp/files
-    ! grep -q "^/var/lib/vaultwarden/db.sqlite3" /tmp/files
-    ! grep -q "^/tmp/sec" /tmp/files
+    if grep -q "^/var/lib/vaultwarden/db.sqlite3" /tmp/files; then echo "live database in the backup" >&2; exit 1; fi
+    if grep -q "^/tmp/sec" /tmp/files; then echo "backup secrets in the backup" >&2; exit 1; fi
     BORG_PASSCOMMAND="cat /tmp/sec/borg-passphrase" borg list --short /tmp/borg | grep -q .
 '
 

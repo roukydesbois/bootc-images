@@ -1,7 +1,7 @@
 [Unit]
 Description=Host firewall (nftables table inet nas_argon_eon)
 Documentation=file:///usr/share/nas-argon-eon/firewall.nft
-OnFailure=nas-notify-failure@%n.service
+OnFailure=bootc-images-notify-failure@%n.service
 # Off until the allowed ranges are set on the machine (README, Firewall):
 # without them it would cut NFS for the cluster
 ConditionPathExists=/etc/nas-argon-eon/firewall-local.nft

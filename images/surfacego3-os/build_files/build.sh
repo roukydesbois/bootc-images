@@ -54,8 +54,8 @@ dnf5 -y copr disable varlad/zellij
 dnf5 -y copr enable avengemedia/dms
 dnf5 -y install niri dms dms-greeter dankcalendar-git
 dnf5 -y copr disable avengemedia/dms
-# Unlock the login keyring with the greetd login password. Fedora's
-# /etc/pam.d/greetd already calls pam_gnome_keyring, but as optional
+# Unlock the login keyring with the greetd login password. Fedora's greetd
+# PAM config already calls pam_gnome_keyring, but as optional
 # ("-auth"), so it was silently skipped: gnome-keyring comes in as a weak
 # dependency, its PAM module doesn't.
 dnf5 -y install gnome-keyring-pam
@@ -73,9 +73,12 @@ cp -avf "/ctx/system_files"/. /
 # Fail the build rather than ship a niri config that doesn't parse
 niri validate -c /usr/share/niri/surfacego3.kdl
 # greetd only unlocks the keyring if the module is there and the PAM config
-# still calls it
+# still calls it. Fedora 45 ships greetd's PAM config in /usr/lib/pam.d
+# instead of /etc/pam.d; check whichever one PAM will use (/etc wins).
 test -e /usr/lib64/security/pam_gnome_keyring.so
-grep -q pam_gnome_keyring /etc/pam.d/greetd
+greetd_pam=/etc/pam.d/greetd
+[ -e "$greetd_pam" ] || greetd_pam=/usr/lib/pam.d/greetd
+grep -q pam_gnome_keyring "$greetd_pam"
 test -x /usr/libexec/gvfsd-mtp
 
 ### Services

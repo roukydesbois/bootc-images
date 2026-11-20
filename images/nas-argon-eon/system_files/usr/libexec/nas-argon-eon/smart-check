@@ -32,7 +32,7 @@ print(json.dumps(out, sort_keys=True))'
 
 previous="$(cat "$state" 2>/dev/null || echo '{}')"
 if [ "$problems" != "$previous" ] && [ "$problems" != "{}" ]; then
-	/usr/libexec/nas-argon-eon/notify "SMART problems on a data disk" \
+	/usr/libexec/bootc-images/notify "SMART problems on a data disk" \
 		"$(python3 -I -c 'import json,sys; [print(k + ": " + ", ".join(v)) for k, v in json.loads(sys.argv[1]).items()]' "$problems")" \
 		urgent rotating_light
 fi

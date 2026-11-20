@@ -1,12 +1,13 @@
 # node_exporter: host metrics (CPU, memory, temperatures, disks, btrfs,
 # network, systemd), scraped by prometheus-agent and pushed to thomelab's
-# Prometheus. Listens on 127.0.0.1:9100 only.
+# Prometheus. Listens on 127.0.0.1:9100 only. Also serves the *.prom files in
+# /var/lib/node-exporter/textfile (the last successful backup's time).
 [Unit]
 Description=node_exporter (host metrics for thomelab's Prometheus)
-OnFailure=nas-notify-failure@%n.service
+OnFailure=bootc-images-notify-failure@%n.service
 
 [Container]
-Image=quay.io/prometheus/node-exporter:v1.12.1
+Image=quay.io/prometheus/node-exporter:v1.13.1@sha256:011e2d12c5bff759b90804bda642664775d7b4b127bf5148539bb82d3f590bb7
 ContainerName=node-exporter
 Network=host
 # Reads the host through /host (read-only); SELinux would otherwise deny
@@ -17,7 +18,7 @@ Volume=/:/host:ro,rslave
 # --collector.systemd asks systemd over the system bus: without the socket it
 # failed on every scrape (node_scrape_collector_success 0, no unit states)
 Volume=/run/dbus/system_bus_socket:/var/run/dbus/system_bus_socket:ro
-Exec=--path.rootfs=/host --web.listen-address=127.0.0.1:9100 --collector.systemd --collector.processes
+Exec=--path.rootfs=/host --web.listen-address=127.0.0.1:9100 --collector.systemd --collector.processes --collector.textfile.directory=/host/var/lib/node-exporter/textfile
 ReadOnly=true
 DropCapability=ALL
 NoNewPrivileges=true

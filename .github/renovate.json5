@@ -14,6 +14,17 @@
       "matchPackageNames": ["quay.io/fedora/fedora-bootc"]
     },
     {
+      // A new Fedora release waits for a tick in the Dependency Dashboard:
+      // the next number's tag exists long before the release (fedora-bootc:46
+      // was rawhide in November 2026), and Renovate can't tell the two apart.
+      // Tick it once Fedora has released it. Digest updates within the
+      // current release still come on their own (old digests get deleted).
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["quay.io/fedora/fedora-bootc"],
+      "matchUpdateTypes": ["major"],
+      "dependencyDashboardApproval": true
+    },
+    {
       "automerge": true,
       "matchUpdateTypes": ["pin", "pinDigest"]
     },

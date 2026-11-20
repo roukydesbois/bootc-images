@@ -86,7 +86,7 @@ systemctl mask bootc-fetch-apply-updates.timer
 # by their [Install] section). Their images are logically bound: `bootc upgrade`
 # pulls them before restarting, so a (soft) reboot never waits on a registry.
 mkdir -p /usr/lib/bootc/bound-images.d
-for quadlet in node-exporter.container prometheus-agent.container garage.container; do
+for quadlet in node-exporter.container prometheus-agent.container garage.container smartctl-exporter.container; do
 	ln -sf "/usr/share/containers/systemd/$quadlet" "/usr/lib/bootc/bound-images.d/$quadlet"
 done
 

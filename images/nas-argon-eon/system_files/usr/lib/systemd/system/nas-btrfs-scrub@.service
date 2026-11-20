@@ -1,7 +1,7 @@
 [Unit]
 Description=btrfs scrub of /var/srv/%i
 RequiresMountsFor=/var/srv/%i
-OnFailure=nas-notify-failure@%n.service
+OnFailure=bootc-images-notify-failure@%n.service
 
 [Service]
 Type=oneshot

@@ -1,6 +1,8 @@
 [Unit]
 Description=Argon EON RTC Service
-After=multi-user.target
+# No After=multi-user.target (upstream has it): greenboot-healthcheck waits
+# for this unit and multi-user.target waits for greenboot, so it made an
+# ordering cycle and systemd dropped this unit at boot
 [Service]
 Type=simple
 Restart=always

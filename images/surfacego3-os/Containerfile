@@ -2,7 +2,7 @@
 # release on its own, possibly before the COPRs used in build.sh have builds
 # for it. Bump this in a PR when upgrading. Both stages use the same image so
 # wvkbd is compiled against the libraries the final image ships.
-ARG BASE_IMAGE=ghcr.io/ublue-os/base-main:44@sha256:0dce5cd6b3d112dfa1f28f3eba1c3bef1896b7096edb3d6b3d0661849718bcb5
+ARG BASE_IMAGE=ghcr.io/ublue-os/base-main:44@sha256:85e509b3f96c7fc8845b1c06f1c21cd84e19d5c42e740629b031efcbda52edc7
 
 # Allow build scripts to be referenced without being copied into the final image
 FROM scratch AS ctx

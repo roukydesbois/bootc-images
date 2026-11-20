@@ -80,3 +80,8 @@ podman run --rm "$image" sh -c '
     ! run v2.5.0
     grep -q "^ExecCondition=/usr/libexec/nas-argon-eon/garage-version-guard" /usr/share/containers/systemd/garage.container
 '
+
+# No ordering cycles in the boot transaction: systemd breaks one by silently
+# dropping a unit's start job (argononed after greenboot waited on it)
+cycles=$(podman run --rm "$image" systemd-analyze verify multi-user.target 2>&1 | grep -i 'ordering cycle' || true)
+[ -z "$cycles" ] || { echo "$cycles" >&2; exit 1; }

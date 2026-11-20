@@ -46,7 +46,8 @@ podman run --rm "$image" systemctl --root=/ is-enabled nas-firewall.service
 podman run --rm "$image" sh -c '
     set -e
     test -f /usr/lib/systemd/system/bootc-images-notify-failure@.service
-    grep -q "^ExecStart=/usr/libexec/bootc-images/notify-unit-failure" /usr/lib/systemd/system/nas-notify-failure@.service
+    # The NAS-only names are gone: nothing may still call them
+    if grep -rnE "nas-notify-failure@|/usr/libexec/nas-argon-eon/notify( |\"|$)" /usr/lib/systemd /usr/share/containers/systemd /usr/libexec /usr/lib/greenboot; then echo "removed notify names still used" >&2; exit 1; fi
     mkdir -p /tmp/failures
     printf "#!/bin/sh\necho \"\$1|\$3|\$4\" >/tmp/sent\n" >/tmp/stub && chmod +x /tmp/stub
     FAILURES=/tmp/failures NOTIFY=/tmp/stub /usr/libexec/bootc-images/notify-unit-failure test.service
@@ -77,10 +78,12 @@ podman run --rm "$image" sh -c '
     set -e
     printf "#!/bin/sh\nexit 0\n" >/tmp/stub && chmod +x /tmp/stub
     run() { printf "Image=docker.io/dxflrs/garage:%s@sha256:x\n" "$1" >/tmp/q; QUADLET=/tmp/q STAMP=/tmp/s NOTIFY=/tmp/stub /usr/libexec/nas-argon-eon/garage-version-guard; }
-    run v2.5.0 && test "$(cat /tmp/s)" = v2.5.0
-    ! run v2.2.0
-    run v2.10.0 && test "$(cat /tmp/s)" = v2.10.0
-    ! run v2.5.0
+    run v2.5.0
+    test "$(cat /tmp/s)" = v2.5.0
+    if run v2.2.0; then echo "guard let an older Garage start" >&2; exit 1; fi
+    run v2.10.0
+    test "$(cat /tmp/s)" = v2.10.0
+    if run v2.5.0; then echo "guard let an older Garage start" >&2; exit 1; fi
     grep -q "^ExecCondition=/usr/libexec/nas-argon-eon/garage-version-guard" /usr/share/containers/systemd/garage.container
 '
 

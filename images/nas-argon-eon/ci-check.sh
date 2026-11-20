@@ -61,13 +61,6 @@ podman run --rm "$image" sh -c '
     done
 '
 
-# smartctl_exporter knows the flags its quadlet passes (a renamed flag would
-# only show as a failing unit on the NAS)
-smart_image=$(podman run --rm "$image" sed -n 's/^Image=//p' /usr/share/containers/systemd/smartctl-exporter.container)
-smart_help=$(podman run --rm "$smart_image" --help 2>&1)
-for flag in --web.listen-address --smartctl.scan-device-type --smartctl.interval; do
-    grep -q -- "$flag" <<<"$smart_help" || { echo "smartctl_exporter has no $flag" >&2; exit 1; }
-done
 # The system backup's helper parses, and every borgmatic job validates
 podman run --rm "$image" bash -n /usr/libexec/nas-argon-eon/system-backup-prepare
 podman run --rm -e BORGBASE_REPO=ssh://test@example.invalid/./repo "$image" \

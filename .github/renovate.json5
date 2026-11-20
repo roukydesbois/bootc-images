@@ -14,6 +14,17 @@
       "matchPackageNames": ["quay.io/fedora/fedora-bootc"]
     },
     {
+      // No digest pin: Fedora pushes a new fedora-bootc:45 every day
+      // (~11:30 UTC) and the previous digest stops being pullable at once
+      // (404 / "manifest unknown"), so a pinned build broke daily until a
+      // Renovate PR was merged (#71, #102). The tag gets the current
+      // Fedora 45; the daily scheduled build picks it up. (CentOS keeps
+      // old stream10 digests, so the public node stays pinned.)
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["quay.io/fedora/fedora-bootc"],
+      "pinDigests": false
+    },
+    {
       // A new Fedora release waits for a tick in the Dependency Dashboard:
       // the next number's tag exists long before the release (fedora-bootc:46
       // was rawhide in November 2026), and Renovate can't tell the two apart.

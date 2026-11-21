@@ -1,0 +1,5 @@
+# System default: use the Plasma Keyboard as on-screen keyboard (KWin shows
+# it when a text field gets focus by touch). Users can still pick another
+# one in System Settings > Keyboard > Virtual Keyboard.
+[Wayland]
+InputMethod=/usr/share/applications/org.kde.plasma.keyboard.desktop

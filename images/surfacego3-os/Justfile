@@ -9,6 +9,9 @@ export image_logo_url := env_var("IMAGE_LOGO_URL")
 export default_tag := env_var("DEFAULT_TAG")
 export bib_image := env_var("BIB_IMAGE")
 
+# Desktop variant (niri, gnome or kde), see the Containerfile
+export desktop := env_var_or_default("DESKTOP", "niri")
+
 alias build-vm := build-qcow2
 alias rebuild-vm := rebuild-qcow2
 alias run-vm := run-vm-qcow2
@@ -98,7 +101,7 @@ build $target_image=image_name $tag=default_tag:
 
     set -euox pipefail
 
-    BUILD_ARGS=()
+    BUILD_ARGS=("--build-arg" "DESKTOP={{ desktop }}")
     LABELS=()
     if [[ -z "$(git status -s)" ]]; then
         GIT_SHA=$(git rev-parse --short HEAD)
@@ -202,14 +205,20 @@ generate-build-tags $target_image=image_name $tag=default_tag:
 
     DATE=$(date +%Y%m%d)
     BUILD_TAGS=()
+    # The date-only tags belong to the niri image (:latest): the other
+    # desktops (:gnome, :kde) only get tags starting with their name
     if [[ -z "$(git status -s)" ]]; then
         GIT_SHA=$(git rev-parse --short HEAD)
         BUILD_TAGS+=("${tag}-${GIT_SHA}")
         BUILD_TAGS+=("${tag}-${DATE}-${GIT_SHA}")
-        BUILD_TAGS+=("${DATE}-${GIT_SHA}")
+        if [[ "{{ desktop }}" == niri ]]; then
+            BUILD_TAGS+=("${DATE}-${GIT_SHA}")
+        fi
     fi
 
-    BUILD_TAGS+=("${DATE}")
+    if [[ "{{ desktop }}" == niri ]]; then
+        BUILD_TAGS+=("${DATE}")
+    fi
     BUILD_TAGS+=("${tag}")
     BUILD_TAGS+=("${tag}-${DATE}")
 

@@ -49,6 +49,14 @@
       "dependencyDashboardApproval": true
     },
     {
+      // One PR for the Universal Blue bases of surfacego3-os's desktop
+      // variants (base-main, silverblue-main, kinoite-main), so all three
+      // variants get rebuilt and checked together
+      "groupName": "Universal Blue base images",
+      "matchDatasources": ["docker"],
+      "matchPackageNames": ["ghcr.io/ublue-os/**"]
+    },
+    {
       "automerge": true,
       "matchUpdateTypes": ["pin", "pinDigest"]
     },

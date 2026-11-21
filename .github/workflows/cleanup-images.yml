@@ -30,7 +30,8 @@ jobs:
       packages: write
 
     steps:
-      # Keeps every image from the last 30 days, `latest`, and the 5 newest
+      # Keeps every image from the last 30 days, `latest` (plus the
+      # surfacego3-os `gnome`/`kde` variants), and the 5 newest
       # tagged images older than that. Cosign signatures and multi-arch
       # children follow their parent image; orphaned signatures are deleted.
       # Older images can be restored from the version IDs in the job log.
@@ -39,7 +40,8 @@ jobs:
         with:
           package: ${{ github.event.repository.name }}/${{ matrix.image }}
           older-than: 30 days
-          exclude-tags: latest
+          # gnome/kde: surfacego3-os desktop variants
+          exclude-tags: latest,gnome,kde
           keep-n-tagged: 5
           delete-untagged: true
           delete-orphaned-images: true

@@ -52,6 +52,11 @@ jobs:
             [surfacego3-os]=ubuntu-26.04
             [public-node]=ubuntu-26.04
           )
+          # Images built in several desktop variants (build arg DESKTOP).
+          # The first one is pushed as :latest, the others as :<variant>.
+          declare -A DESKTOPS=(
+            [surfacego3-os]="niri gnome kde"
+          )
           case "$EVENT" in
             pull_request) base=$PR_BASE ;;
             push) base=$PUSH_BEFORE ;;
@@ -72,8 +77,19 @@ jobs:
             if $all || grep -q "^images/${image}/" <<<"$changed"; then
               # Secret names can't contain '-': nas-argon-eon -> SIGNING_SECRET_NAS_ARGON_EON
               secret="SIGNING_SECRET_$(tr 'a-z-' 'A-Z_' <<<"$image")"
-              include+=("$(jq -nc --arg image "$image" --arg runner "${RUNNERS[$image]}" \
-                --arg secret "$secret" '{image: $image, runner: $runner, secret: $secret}')")
+              read -ra desktops <<<"${DESKTOPS[$image]:-}"
+              if [ "${#desktops[@]}" -eq 0 ]; then
+                include+=("$(jq -nc --arg image "$image" --arg runner "${RUNNERS[$image]}" \
+                  --arg secret "$secret" '{image: $image, runner: $runner, secret: $secret, desktop: "", tag: "", suffix: ""}')")
+              else
+                for desktop in "${desktops[@]}"; do
+                  # The first variant keeps the image's default tag and job name
+                  if [ "$desktop" = "${desktops[0]}" ]; then tag= suffix=; else tag=$desktop suffix=" ($desktop)"; fi
+                  include+=("$(jq -nc --arg image "$image" --arg runner "${RUNNERS[$image]}" \
+                    --arg secret "$secret" --arg desktop "$desktop" --arg tag "$tag" --arg suffix "$suffix" \
+                    '{image: $image, runner: $runner, secret: $secret, desktop: $desktop, tag: $tag, suffix: $suffix}')")
+                done
+              fi
             fi
           done
           matrix=$(printf '%s\n' "${include[@]}" | jq -sc '{include: map(select(. != null and . != ""))}')
@@ -81,7 +97,7 @@ jobs:
           echo "Images to build: ${matrix}"
 
   build_push:
-    name: Build and push ${{ matrix.image }}
+    name: Build and push ${{ matrix.image }}${{ matrix.suffix }}
     needs: changes
     if: fromJSON(needs.changes.outputs.matrix).include[0] != null
     runs-on: ${{ matrix.runner }}
@@ -95,6 +111,9 @@ jobs:
     defaults:
       run:
         working-directory: images/${{ matrix.image }}
+    env:
+      # Desktop variant for images that have some (read by their Justfile)
+      DESKTOP: ${{ matrix.desktop }}
 
     steps:
       - name: Checkout
@@ -120,8 +139,11 @@ jobs:
 
       - name: Default Tag
         id: gen-default-tag
+        env:
+          VARIANT_TAG: ${{ matrix.tag }}
         run: |
-          DEFAULT_TAG=$(just generate-default-tag)
+          # Desktop variants other than the first are tagged with their name
+          DEFAULT_TAG=$(just generate-default-tag ${VARIANT_TAG})
           echo "DEFAULT_TAG=${DEFAULT_TAG}" >> $GITHUB_ENV
 
       # Registry must be lowercase

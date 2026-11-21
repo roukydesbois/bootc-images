@@ -15,7 +15,7 @@ ConditionPathExists=/etc/public-node/secrets/netbird/datastore-encryption-key
 After=netbird-management.service
 
 [Container]
-Image=docker.io/netbirdio/reverse-proxy:0.83.1@sha256:7c8e11d39dfd88bd9f5a9e281b802b7e5772dc11869f53be81685283800816c5
+Image=docker.io/netbirdio/reverse-proxy:0.83.2@sha256:4cc53c2b8edc29334c29cd05c301ddfd07cfcd619ed7f75697b7dce38b0a98a0
 ContainerName=netbird-proxy
 Network=netbird.network
 PublishPort=127.0.0.1:8443:8443

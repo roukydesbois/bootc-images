@@ -1,0 +1,6 @@
+# Extra Flathub apps for the KDE variant (see surfacego3.preinstall).
+# Fedora Kinoite ships no document viewer: Okular is the PDF reader and
+# annotator here.
+
+[Flatpak Preinstall org.kde.okular]
+Branch=stable

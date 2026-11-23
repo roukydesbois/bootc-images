@@ -9,9 +9,9 @@
 #   gnome -> :gnome   GNOME on silverblue-main
 #   kde   -> :kde     Plasma on kinoite-main
 ARG DESKTOP=niri
-ARG BASE_IMAGE=ghcr.io/ublue-os/base-main:45@sha256:4c4dfe7e00c45693e89bd1df6e8f53c69b84c293cb4d7f6432482acffc91a0b4
-ARG BASE_IMAGE_GNOME=ghcr.io/ublue-os/silverblue-main:45@sha256:f16909c15ed874a03c355c4e3d18ed7a9aa941f7896c3ec6dd7234db31d21103
-ARG BASE_IMAGE_KDE=ghcr.io/ublue-os/kinoite-main:45@sha256:c12051d5a476fb1f8f8e3611a48e4b071a6c050d2ed140a5547ec206aa007c25
+ARG BASE_IMAGE=ghcr.io/ublue-os/base-main:45@sha256:590defe1077d902f77280cbbf0c393303e4669adfa5394beee667c5d2016bc3c
+ARG BASE_IMAGE_GNOME=ghcr.io/ublue-os/silverblue-main:45@sha256:5267b53118a240aedebe3f075c6c8329c8f1c8406fccccbf2e939466cecbef15
+ARG BASE_IMAGE_KDE=ghcr.io/ublue-os/kinoite-main:45@sha256:e3bc6849dfdc2fae4e2b72fb6d39cf695cf47ac54d0b83415a8ae97ef25b1d85
 
 # Allow build scripts to be referenced without being copied into the final image
 FROM scratch AS ctx

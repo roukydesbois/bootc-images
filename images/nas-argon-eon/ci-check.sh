@@ -100,3 +100,7 @@ podman run --rm -e HOME=/tmp "$image" sh -c '
     zellij setup --check | grep -q "\[CONFIG FILE\]: Well defined"
     zellij setup --check | grep -q "LOOKING FOR CONFIG FILE FROM\]: \"/etc/zellij/config.kdl\""
 '
+
+# nas-smart-check alerts on the right SMART attributes, once per change
+# (fake smartctl and ntfy, smart-check-test.sh)
+podman run --rm -v "$PWD/smart-check-test.sh:/smart-check-test.sh:ro,Z" "$image" sh /smart-check-test.sh

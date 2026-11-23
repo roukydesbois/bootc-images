@@ -85,7 +85,7 @@ Alerts go to ntfy through the sender shared by the images, `/usr/libexec/bootc-i
 | What | When | Alerts when |
 |---|---|---|
 | `smartd` | short self-test daily 03:00, long test on the 1st 04:00 | (logs only, see below) |
-| `nas-smart-check.timer` | daily 07:15 | SMART health fails, reallocated/pending/uncorrectable sectors, ≥ 55 °C, failed self-test. Only when that list changes, not every day |
+| `nas-smart-check.timer` | daily 07:15 | SMART health fails, reallocated/pending/uncorrectable sectors, UDMA CRC errors (disk ↔ USB bridge transfers), ≥ 55 °C, failed self-test. Only when that list changes, not every day |
 | `nas-btrfs-errors.timer` | daily 07:00 | any btrfs error counter is non-zero, or a disk isn't mounted |
 | `nas-btrfs-scrub-<disk>.timer` | monthly: SSD 1 TB on the 1st, SSD 2 TB on the 8th, HDD on the 15th, 02:00 | the scrub fails or finds errors |
 | `nas-check-update.timer` | Mondays 09:00 | a new image is available (once per image) |

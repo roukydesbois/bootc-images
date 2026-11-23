@@ -23,12 +23,16 @@ concurrency:
 
 jobs:
   # Picks the images to build: the ones whose folder changed, or all of them
-  # for scheduled/manual runs and changes to this workflow.
+  # for scheduled/manual runs and changes to this workflow. On main, "changed"
+  # means since the last successful build of main, not since the previous
+  # commit: a run cancelled by the next merge (cancel-in-progress) or a failed
+  # one would otherwise never push its images.
   changes:
     name: Select images
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      actions: read
     outputs:
       matrix: ${{ steps.select.outputs.matrix }}
     steps:
@@ -43,6 +47,8 @@ jobs:
           EVENT: ${{ github.event_name }}
           PR_BASE: ${{ github.event.pull_request.base.sha }}
           PUSH_BEFORE: ${{ github.event.before }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
         run: |
           set -euo pipefail
           # Runner per image: the Pis are arm64, the Surface and the server amd64.
@@ -59,7 +65,19 @@ jobs:
           )
           case "$EVENT" in
             pull_request) base=$PR_BASE ;;
-            push) base=$PUSH_BEFORE ;;
+            push)
+              # Commit of the last fully successful run of this workflow on
+              # main (push, schedule or manual; a run with a failed image
+              # doesn't count). No such run, or one GitHub can't tell us
+              # about: build everything.
+              base=$(gh api "repos/${REPO}/actions/workflows/build.yml/runs?branch=main&status=success&per_page=1" \
+                --jq '.workflow_runs[0].head_sha // empty' || true)
+              # Must be an ancestor of this commit, or the diff means nothing
+              if [ -n "$base" ] && ! git merge-base --is-ancestor "$base" HEAD 2>/dev/null; then
+                base=
+              fi
+              echo "Previous commit: ${PUSH_BEFORE}, last successful build: ${base:-none (building all)}"
+              ;;
             *) base= ;;
           esac
           all=false

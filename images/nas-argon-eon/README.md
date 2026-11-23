@@ -171,6 +171,6 @@ On a Raspberry Pi 4, install Fedora IoT first (with an SSH public key for the us
    - `diff /usr/etc/crypttab /etc/crypttab` is empty: `/etc` files changed locally are kept over the image's.
    - Reboot once more so the I2C bus is on (see [Argon EON case](#argon-eon-case)).
 
-SSH only accepts public keys. Ignition writes them to `~/.ssh/authorized_keys.d/ignition`, which sshd reads next to `~/.ssh/authorized_keys` (`/etc/ssh/sshd_config.d/40-authorized-keys-ignition.conf`).
+SSH only accepts public keys. Ignition writes them to `~/.ssh/authorized_keys.d/ignition`, which sshd reads next to `~/.ssh/authorized_keys` and the image's own list, `/usr/share/bootc-images/ssh/roukydesbois.keys` (`common/`, the GitHub account's keys, one per device) (`/etc/ssh/sshd_config.d/40-authorized-keys-ignition.conf`). A device added to that list gets in after the next image update, without touching the NAS.
 
 After choosing an older entry by hand in the boot menu, check `sudo bootc status`: during the evora install that made the old Fedora IoT deployment the default. `sudo bootc rollback` switches back.

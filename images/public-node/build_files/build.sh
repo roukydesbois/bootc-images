@@ -49,7 +49,7 @@ ln -sf ../usr/share/zoneinfo/Europe/Paris /etc/localtime
 visudo -c -f /etc/sudoers.d/wheel-nopasswd
 ssh-keygen -q -t ed25519 -N '' -f /tmp/sshd-check-key
 sshd -t -h /tmp/sshd-check-key
-test -s /usr/share/public-node/ssh/roukydesbois.keys
+test -s /usr/share/bootc-images/ssh/roukydesbois.keys
 
 # zellij, terminal multiplexer for SSH sessions (config: /etc/zellij from
 # common/). Upstream's static "no-web" build: Fedora and EPEL don't package

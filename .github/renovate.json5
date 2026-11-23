@@ -6,6 +6,16 @@
 
   "rebaseWhen": "never",
 
+  // Automerge (patch/minor rules below). Renovate merges itself once all
+  // checks on the PR are green, instead of GitHub's auto-merge: the ruleset
+  // has no required status checks, so GitHub would merge at once. Only
+  // during the week in the daytime, so a broken image lands when someone
+  // is around (devices pick up merged images on their next bootc update).
+  "timezone": "Europe/Paris",
+  "platformAutomerge": false,
+  "automergeType": "pr",
+  "automergeSchedule": ["* 8-19 * * 1-5"],
+
   // Versions pinned in shell scripts, marked with a comment line
   //   # renovate: datasource=<datasource> depName=<name>
   // right above NAME_VERSION=<version> (zellij in the servers' build.sh)
@@ -59,6 +69,33 @@
     {
       "automerge": true,
       "matchUpdateTypes": ["pin", "pinDigest"]
+    },
+    {
+      // Patch and minor updates merge on their own once 3 days old, which
+      // gives upstream time to pull a broken release. The PR still opens
+      // at once (internalChecksFilter none) with a pending
+      // renovate/stability-days check. An update whose registry gives no
+      // release date keeps that check pending: it never automerges, but
+      // you still see the PR.
+      "automerge": true,
+      "matchUpdateTypes": ["patch", "minor"],
+      "minimumReleaseAge": "3 days",
+      "internalChecksFilter": "none"
+    },
+    {
+      // Stateful or access-critical services stay manual whatever the
+      // update: they migrate their database on upgrade (Keycloak,
+      // Vaultwarden, NetBird management, Postgres), and NetBird is the way
+      // into everything (0.x minors are its regular releases, and 0.83
+      // broke the reverse proxy). Garage has its own rule below.
+      "matchDatasources": ["docker"],
+      "matchPackageNames": [
+        "quay.io/keycloak/keycloak",
+        "docker.io/vaultwarden/server",
+        "docker.io/library/postgres",
+        "docker.io/netbirdio/**"
+      ],
+      "automerge": false
     },
     {
       // Garage upgrades its metadata in place: once the NAS runs a new

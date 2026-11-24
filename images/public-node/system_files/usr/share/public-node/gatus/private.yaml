@@ -35,6 +35,16 @@ alerting:
     default-alert:
       failure-threshold: 3
       send-on-resolved: true
+    # The groups shown on status.thomelab.net go to the "status" topic, which
+    # the day-to-day ntfy user (thomas) reads; the other groups stay on ops
+    # (admin only). One override per group (gatus matches on the group).
+    overrides:
+    - group: General
+      topic: status
+      click: "https://status.thomelab.net"
+    - group: Personal
+      topic: status
+      click: "https://status.thomelab.net"
 storage:
   type: sqlite
   path: /data/data.db

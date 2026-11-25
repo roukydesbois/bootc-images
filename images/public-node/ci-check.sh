@@ -69,7 +69,8 @@ podman run --rm "$image" sh -c '
 podman run --rm "$image" sh -c '
     set -e
     # Created by tmpfiles on a booted system
-    mkdir -p /tmp/sec /tmp/state /etc/public-node/secrets /var/lib/traefik /var/lib/vaultwarden
+    mkdir -p /tmp/sec /tmp/state /etc/public-node/secrets /etc/bootc-images /var/lib/traefik /var/lib/vaultwarden
+    echo NTFY_TOKEN=test >/etc/bootc-images/ntfy.env
     echo restic-pw >/tmp/sec/restic-password
     printf "RESTIC_REPOSITORY=/tmp/restic\nRESTIC_PASSWORD_FILE=/tmp/sec/restic-password\n" >/tmp/sec/restic.env
     echo borg-pw >/tmp/sec/borg-passphrase
@@ -88,6 +89,7 @@ podman run --rm "$image" sh -c '
     restic ls latest >/tmp/files
     grep -qx /tmp/state/staging/vaultwarden.sqlite3 /tmp/files
     grep -qx /var/lib/vaultwarden/attachments/f /tmp/files
+    grep -qx /etc/bootc-images/ntfy.env /tmp/files
     if grep -q "^/var/lib/vaultwarden/db.sqlite3" /tmp/files; then echo "live database in the backup" >&2; exit 1; fi
     if grep -q "^/tmp/sec" /tmp/files; then echo "backup secrets in the backup" >&2; exit 1; fi
     BORG_PASSCOMMAND="cat /tmp/sec/borg-passphrase" borg list --short /tmp/borg | grep -q .

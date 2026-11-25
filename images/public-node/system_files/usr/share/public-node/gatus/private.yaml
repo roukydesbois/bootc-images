@@ -167,14 +167,6 @@ endpoints:
   - "[STATUS] == 200"
   alerts:
   - type: ntfy
-- name: joplin
-  group: Personal
-  url: "https://joplin.thomelab.net"
-  interval: 60s
-  conditions:
-  - "[STATUS] < 400"
-  alerts:
-  - type: ntfy
 - name: harbor
   group: Infrastructure
   url: "https://harbor.thomelab.net"

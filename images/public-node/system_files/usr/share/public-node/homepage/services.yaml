@@ -34,11 +34,6 @@
         description: Encrypted collaboration
         icon: cryptpad.png
         siteMonitor: https://cryptpad.thomelab.net
-    - Joplin:
-        href: https://joplin.thomelab.net
-        description: Note-taking sync server
-        icon: joplin.png
-        siteMonitor: https://joplin.thomelab.net
     - Karakeep:
         href: https://karakeep.thomelab.net
         description: Read-it-later / bookmarks

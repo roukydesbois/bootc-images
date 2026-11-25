@@ -5,8 +5,8 @@
 #      consistent copies of the SQLite databases (sqlite3 .backup) of
 #      NetBird, Vaultwarden and ntfy
 #   2. backs up the staging dir, the secrets (the NetBird store is useless
-#      without its encryption key), Vaultwarden's other files (attachments,
-#      keys) and Traefik's certificates
+#      without its encryption key) and the alerts' ntfy token, Vaultwarden's
+#      other files (attachments, keys) and Traefik's certificates
 # A destination is used when its file is in the secrets dir (README,
 # "Backups"). Paths can be overridden for tests: SECRETS, STATE.
 set -euo pipefail
@@ -18,7 +18,8 @@ staging="$state/staging"
 # security and cache dirs live under the state dir instead
 export RESTIC_CACHE_DIR=${RESTIC_CACHE_DIR:-$state/cache/restic}
 export BORG_BASE_DIR=${BORG_BASE_DIR:-$state/borg}
-paths=("$staging" /etc/public-node/secrets /var/lib/traefik /var/lib/vaultwarden)
+# /etc/bootc-images: the alerts' ntfy token (ntfy.env), needed after a restore
+paths=("$staging" /etc/public-node/secrets /etc/bootc-images /var/lib/traefik /var/lib/vaultwarden)
 # Live SQLite files: their consistent copies are in the staging dir. The
 # backup's own secrets stay out: they're needed to read it.
 excludes=("$secrets" "/var/lib/vaultwarden/db.sqlite3*")

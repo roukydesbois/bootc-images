@@ -138,21 +138,37 @@ sudo systemctl start public-node-backup.service && journalctl -u public-node-bac
 
 Without the repository passwords, the backups can't be read: keep them outside this box (password manager), with borg's paper key export (the `repokey` key otherwise only lives in the repository).
 
-Restore (from either destination; restic shown):
+Restore (from either destination; restic shown). On a new box: write the five backup secrets first (they're deliberately not in the backup), then everything else comes from it. Data before secrets, since each service starts once its secret exists:
 
 ```bash
-sudo bash -c 'set -a; . /etc/public-node/secrets/backup/restic.env; restic restore latest --target /var/tmp/restore'
-# secrets and certificates back in place
-sudo cp -a /var/tmp/restore/etc/public-node/secrets/. /etc/public-node/secrets/
-sudo cp -a /var/tmp/restore/var/lib/traefik/. /var/lib/traefik/
-# NetBird's store, with NetBird stopped
-sudo systemctl stop netbird-proxy netbird-management
-sudo install -m 0600 /var/tmp/restore/var/lib/public-node/backup/staging/netbird-store.db /var/lib/netbird/management/store.db
+sudo -i
+set -a; . /etc/public-node/secrets/backup/restic.env; set +a
+export RESTIC_CACHE_DIR=/var/lib/public-node/backup/cache/restic
+restic restore latest --target /var/tmp/restore
+S=/var/tmp/restore/var/lib/public-node/backup/staging
+# NetBird's store (with NetBird stopped, on a running box)
+systemctl stop netbird-proxy netbird-management
+install -m 0600 $S/netbird-store.db /var/lib/netbird/management/store.db
+# Vaultwarden: its files, then the consistent database copy
+systemctl stop vaultwarden
+cp -a /var/tmp/restore/var/lib/vaultwarden/. /var/lib/vaultwarden/
+install -m 0600 $S/vaultwarden.sqlite3 /var/lib/vaultwarden/db.sqlite3
+chown -R 1000:1000 /var/lib/vaultwarden
+# ntfy's users and tokens (also recreated from ntfy.env)
+install -m 0600 -o 1000 -g 1000 $S/ntfy-user.db /var/lib/ntfy/user.db
+# certificates, every app secret, the alerts' ntfy token
+cp -a /var/tmp/restore/var/lib/traefik/. /var/lib/traefik/
+cp -a /var/tmp/restore/etc/public-node/secrets/. /etc/public-node/secrets/
+cp -a /var/tmp/restore/etc/bootc-images/. /etc/bootc-images/
 # Keycloak's database, with Keycloak stopped and Postgres running
-sudo systemctl stop keycloak
-sudo podman exec -i keycloak-postgres pg_restore -U keycloak -d keycloak --clean --if-exists </var/tmp/restore/var/lib/public-node/backup/staging/keycloak.pgdump
-sudo systemctl start keycloak netbird-management netbird-proxy
+systemctl stop keycloak; systemctl start keycloak-postgres
+until podman exec keycloak-postgres pg_isready -U keycloak; do sleep 2; done
+podman exec -i keycloak-postgres pg_restore -U keycloak -d keycloak --clean --if-exists --no-owner --role=keycloak <$S/keycloak.pgdump
+# then start everything: a reboot is simplest
+systemctl reboot
 ```
+
+From BorgBase instead: `borg list` for the archives, `borg extract ::<archive>` from `/var/tmp/restore` (same `BORG_*` variables as for `borg init` above), then the same steps.
 
 ## Recovery
 

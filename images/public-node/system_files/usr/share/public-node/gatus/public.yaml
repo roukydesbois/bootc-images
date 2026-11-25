@@ -161,12 +161,3 @@ endpoints:
   ui:
     hide-url: true
     hide-hostname: true
-- name: joplin
-  group: Personal
-  url: "https://joplin.thomelab.net"
-  interval: 60s
-  conditions:
-  - "[STATUS] < 400"
-  ui:
-    hide-url: true
-    hide-hostname: true

@@ -50,6 +50,7 @@ auth-access:
   # Application events. The consuming repo picks topic names inside the
   # prefix, so adding one doesn't need a change here.
   - "apps:apps-*:wo"
+  - "thomas:apps-*:ro"
   # Home network (personal-ops)
   - "openwrt:personal-infra:wo"
   # Public read-only

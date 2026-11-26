@@ -156,6 +156,11 @@ install -m 0600 $S/vaultwarden.sqlite3 /var/lib/vaultwarden/db.sqlite3
 chown -R 1000:1000 /var/lib/vaultwarden
 # ntfy's users and tokens (also recreated from ntfy.env)
 install -m 0600 -o 1000 -g 1000 $S/ntfy-user.db /var/lib/ntfy/user.db
+# this box's NetBird identity (client key and peer config) and the proxy's
+# certificates: it rejoins the mesh as the same peer, no setup key needed. Never
+# while the box it came from still runs: one identity, one machine.
+systemctl stop netbird
+cp -a /var/tmp/restore/var/lib/netbird/. /var/lib/netbird/
 # certificates, every app secret, the alerts' ntfy token
 cp -a /var/tmp/restore/var/lib/traefik/. /var/lib/traefik/
 cp -a /var/tmp/restore/etc/public-node/secrets/. /etc/public-node/secrets/

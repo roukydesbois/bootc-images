@@ -18,11 +18,15 @@ staging="$state/staging"
 # security and cache dirs live under the state dir instead
 export RESTIC_CACHE_DIR=${RESTIC_CACHE_DIR:-$state/cache/restic}
 export BORG_BASE_DIR=${BORG_BASE_DIR:-$state/borg}
-# /etc/bootc-images: the alerts' ntfy token (ntfy.env), needed after a restore
-paths=("$staging" /etc/public-node/secrets /etc/bootc-images /var/lib/traefik /var/lib/vaultwarden)
+# /etc/bootc-images: the alerts' ntfy token (ntfy.env), needed after a restore.
+# /var/lib/netbird: this box's own NetBird client identity (WireGuard key, peer
+# config) and the reverse proxy's certificates. A restored box rejoins the mesh
+# as the same peer, with no setup key, which doesn't exist in a disaster
+# (NetBird's management runs here).
+paths=("$staging" /etc/public-node/secrets /etc/bootc-images /var/lib/traefik /var/lib/vaultwarden /var/lib/netbird)
 # Live SQLite files: their consistent copies are in the staging dir. The
 # backup's own secrets stay out: they're needed to read it.
-excludes=("$secrets" "/var/lib/vaultwarden/db.sqlite3*")
+excludes=("$secrets" "/var/lib/vaultwarden/db.sqlite3*" "/var/lib/netbird/management")
 # Retention, the same on both sides
 keep=(--keep-hourly 48 --keep-daily 14 --keep-weekly 8 --keep-monthly 12)
 

@@ -22,13 +22,19 @@ visitor-request-limit-replenishment: 50ms
 
 # Topics are named after what they're for, not who sends them; severity goes
 # through the Priority header. One user per publisher, write-only on its own
-# topics. "thomas" is admin and reads everything.
+# topics. "roukydesbois" is admin: reads everything, writes announcements.
+# "thomas" is a regular user for day-to-day use: it only reads what's
+# granted to it below (an ACL entry for an admin makes ntfy crash at start).
 #
 # Format: "<username>:<topic-pattern>:<access>" (rw | ro | wo, "*" = anonymous)
 auth-access:
   # Cluster health, backups, certs, OpenBao, uptime
   - "argo-workflows:ops:wo"
   - "gatus:ops:wo"
+  # Up/down of the services people use (gatus groups General and Personal,
+  # the ones on status.thomelab.net); the other gatus groups stay on ops
+  - "gatus:status:wo"
+  - "thomas:status:ro"
   # NAS image: disk health, btrfs errors, scrubs, backups, image updates
   - "nas:ops:wo"
   # carcavelos (public node replacement): failed units, backups, updates, memory

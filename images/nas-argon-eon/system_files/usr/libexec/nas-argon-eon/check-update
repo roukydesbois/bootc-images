@@ -17,6 +17,6 @@ if [ "$(cat "$state" 2>/dev/null)" = "$cached" ]; then
 	exit 0
 fi
 /usr/libexec/bootc-images/notify "image update available" \
-	"New nas-argon-eon image ${cached}. Apply when NFS/Garage can go down for a few minutes: sudo nas-update (a soft reboot when the kernel is unchanged)" \
+	"New nas-argon-eon image ${cached}. Apply when NFS/Garage can go down for a few minutes: sudo nas-update (full reboot)" \
 	default arrow_up
 echo "$cached" >"$state"

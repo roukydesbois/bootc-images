@@ -93,8 +93,8 @@ systemctl enable nfs-server.service
 # Starts only once /etc/nas-argon-eon/firewall-local.nft exists (README)
 systemctl enable nas-firewall.service
 
-# Updates are applied by hand (nas-update: soft reboot when the kernel is
-# unchanged): an unplanned reboot takes down NFS for thomelab and Garage, which
+# Updates are applied by hand (nas-update, a full reboot): an unplanned
+# reboot takes down NFS for thomelab and Garage, which
 # has no replica
 systemctl mask bootc-fetch-apply-updates.timer
 

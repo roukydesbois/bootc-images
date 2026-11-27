@@ -4,10 +4,6 @@
 set -euo pipefail
 image="$1"
 
-# nas-update uses --soft-reboot: fail the build if this bootc doesn't know
-# it, rather than the next update
-podman run --rm "$image" bootc upgrade --help | grep -q -- '--soft-reboot'
-podman run --rm "$image" test -x /usr/libexec/bootc-images/sepolicy-match-image
 podman run --rm "$image" bash -n /usr/bin/nas-update
 
 # The quadlets generate valid units

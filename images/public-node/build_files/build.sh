@@ -56,7 +56,7 @@ test -s /usr/share/bootc-images/ssh/roukydesbois.keys
 # zellij, and the COPR the desktops use is stuck at 0.42 (too old for this
 # config). The published checksum is the binary's, so check after unpacking.
 # renovate: datasource=github-releases depName=zellij-org/zellij
-ZELLIJ_VERSION=v0.46.0
+ZELLIJ_VERSION=v0.46.1
 zellij_name="zellij-no-web-$(uname -m)-unknown-linux-musl"
 zellij_url="https://github.com/zellij-org/zellij/releases/download/${ZELLIJ_VERSION}/${zellij_name}"
 zellij_tmp=$(mktemp -d)

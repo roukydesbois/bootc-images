@@ -5,7 +5,7 @@ OnFailure=bootc-images-notify-failure@%n.service
 RequiresMountsFor=/var/srv/ssd1tb /var/srv/hdd4tb
 
 [Container]
-Image=docker.io/dxflrs/garage:v2.5.0@sha256:677e5b758e4425a325b811c425c026bf35a4bf42f7ddbaa773de3f4fd779a5a5
+Image=docker.io/dxflrs/garage:v2.6.0@sha256:4b5a318fc9fe2fbec5d3af590eeafe05d83492e6411266fa0b9e215c20264013
 ContainerName=garage
 PublishPort=3900:3900
 PublishPort=3901:3901
